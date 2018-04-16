@@ -1,0 +1,21 @@
+vec3 normalizeColor(vec3 color, float meanr)
+{
+	return (color * vec3(0.75 + meanr, 1.0, 1.0 - meanr));
+}
+
+kernel vec4 apply(sampler inputImage, sampler inputBackgroundImage, vec4 inputColor)
+{
+	vec4 outputColor;
+	
+	vec4 foregroundColor = sample(inputImage, samplerCoord(inputImage));
+	vec4 backgroundColor = sample(inputBackgroundImage, samplerCoord(inputBackgroundImage));
+	
+	float meanr = ((foregroundColor.r + inputColor.r) / 8.0);
+vec3 foregroundNormalized = normalizeColor(foregroundColor.rgb, meanr);
+vec3 inputColorNormalized = normalizeColor(inputColor.rgb, meanr);
+	float dist = distance(foregroundNormalized, inputColorNormalized);
+	
+	outputColor = (dist > 0.65 ? foregroundColor : backgroundColor);
+	
+	return outputColor;
+}

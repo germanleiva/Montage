@@ -1,4 +1,69 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="1" systemVersion="11A491" minimumToolsVersion="Automatic" sourceLanguage="Swift" userDefinedModelVersionIdentifier="">
-    <elements/>
+<model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="14133" systemVersion="17E199" minimumToolsVersion="Automatic" sourceLanguage="Swift" userDefinedModelVersionIdentifier="">
+    <entity name="Board" representedClassName="Board" syncable="YES" codeGenerationType="category">
+        <attribute name="name" optional="YES" attributeType="String" syncable="YES"/>
+        <attribute name="updatedAt" optional="YES" attributeType="Date" usesScalarValueType="NO" syncable="YES"/>
+        <relationship name="lines" toMany="YES" deletionRule="Cascade" ordered="YES" destinationEntity="Line" inverseName="board" inverseEntity="Line" syncable="YES"/>
+        <relationship name="sketches" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="Sketch" inverseName="board" inverseEntity="Sketch" syncable="YES"/>
+    </entity>
+    <entity name="Line" representedClassName="Line" syncable="YES" codeGenerationType="category">
+        <attribute name="createdAt" optional="YES" attributeType="Date" usesScalarValueType="NO" syncable="YES"/>
+        <attribute name="sortIndex" optional="YES" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="YES" syncable="YES"/>
+        <relationship name="alternatives" toMany="YES" deletionRule="Cascade" ordered="YES" destinationEntity="Line" inverseName="parent" inverseEntity="Line" syncable="YES"/>
+        <relationship name="board" maxCount="1" deletionRule="Nullify" destinationEntity="Board" inverseName="lines" inverseEntity="Board" syncable="YES"/>
+        <relationship name="elements" optional="YES" toMany="YES" deletionRule="Cascade" ordered="YES" destinationEntity="Video" inverseName="line" inverseEntity="Video" syncable="YES"/>
+        <relationship name="parent" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Line" inverseName="alternatives" inverseEntity="Line" syncable="YES"/>
+    </entity>
+    <entity name="Sketch" representedClassName="Sketch" syncable="YES" codeGenerationType="category">
+        <attribute name="fillColor" optional="YES" attributeType="Transformable" customClassName="UIColor" syncable="YES"/>
+        <attribute name="lineCap" optional="YES" attributeType="String" syncable="YES"/>
+        <attribute name="lineWidth" optional="YES" attributeType="Float" defaultValueString="0.0" usesScalarValueType="YES" syncable="YES"/>
+        <attribute name="pathActions" optional="YES" attributeType="Transformable" customClassName="Array&lt;PathAction&gt;" syncable="YES"/>
+        <attribute name="strokeColor" optional="YES" attributeType="Transformable" customClassName="UIColor" syncable="YES"/>
+        <relationship name="board" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Board" inverseName="sketches" inverseEntity="Board" syncable="YES"/>
+        <relationship name="tiers" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="Tier" inverseName="sketch" inverseEntity="Tier" syncable="YES"/>
+    </entity>
+    <entity name="Tier" representedClassName="Tier" syncable="YES" codeGenerationType="category">
+        <attribute name="appearedAt" optional="YES" attributeType="Transformable" customClassName="NSNumber" syncable="YES"/>
+        <attribute name="createdAt" optional="YES" attributeType="Date" usesScalarValueType="NO" syncable="YES"/>
+        <attribute name="end" optional="YES" attributeType="Float" defaultValueString="0.0" usesScalarValueType="YES" syncable="YES"/>
+        <attribute name="fillColor" optional="YES" attributeType="Transformable" customClassName="UIColor" syncable="YES"/>
+        <attribute name="hasDrawnPath" optional="YES" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="NO" syncable="YES"/>
+        <attribute name="lineWidth" optional="YES" attributeType="Float" defaultValueString="0.0" usesScalarValueType="YES" syncable="YES"/>
+        <attribute name="rotationValue" optional="YES" attributeType="Float" defaultValueString="0.0" usesScalarValueType="YES" syncable="YES"/>
+        <attribute name="scalingValue" optional="YES" attributeType="Transformable" customClassName="PointWrapper" syncable="YES"/>
+        <attribute name="selected" optional="YES" attributeType="Boolean" usesScalarValueType="YES" syncable="YES"/>
+        <attribute name="start" optional="YES" attributeType="Float" defaultValueString="0.0" usesScalarValueType="YES" syncable="YES"/>
+        <attribute name="strokeColor" optional="YES" attributeType="Transformable" customClassName="UIColor" syncable="YES"/>
+        <attribute name="translationValue" optional="YES" attributeType="Transformable" customClassName="PointWrapper" syncable="YES"/>
+        <attribute name="zIndex" optional="YES" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="YES" syncable="YES"/>
+        <relationship name="sketch" maxCount="1" deletionRule="Cascade" destinationEntity="Sketch" inverseName="tiers" inverseEntity="Sketch" syncable="YES"/>
+        <relationship name="videoTrack" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="VideoTrack" inverseName="tiers" inverseEntity="VideoTrack" syncable="YES"/>
+    </entity>
+    <entity name="Video" representedClassName="Video" syncable="YES" codeGenerationType="category">
+        <attribute name="identifier" optional="YES" attributeType="UUID" usesScalarValueType="NO" syncable="YES"/>
+        <attribute name="isRecorded" optional="YES" attributeType="Boolean" usesScalarValueType="YES" syncable="YES"/>
+        <attribute name="pausedTimeRanges" optional="YES" attributeType="Transformable" customClassName="Array&lt;TimeRange&gt;" syncable="YES"/>
+        <attribute name="sequenceNumber" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="YES" syncable="YES"/>
+        <attribute name="snapshot" optional="YES" attributeType="Transformable" customClassName="Data" syncable="YES"/>
+        <attribute name="thumbnail" optional="YES" attributeType="Transformable" customClassName="Data" syncable="YES"/>
+        <relationship name="backgroundTrack" optional="YES" maxCount="1" deletionRule="Cascade" destinationEntity="VideoTrack" inverseName="inverseBackgroundTrack" inverseEntity="VideoTrack" syncable="YES"/>
+        <relationship name="line" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Line" inverseName="elements" inverseEntity="Line" syncable="YES"/>
+        <relationship name="prototypeTrack" optional="YES" maxCount="1" deletionRule="Cascade" destinationEntity="VideoTrack" inverseName="inversePrototypeTrack" inverseEntity="VideoTrack" syncable="YES"/>
+    </entity>
+    <entity name="VideoTrack" representedClassName="VideoTrack" syncable="YES" codeGenerationType="category">
+        <attribute name="fileURL" optional="YES" attributeType="Transformable" customClassName="URL" syncable="YES"/>
+        <attribute name="name" optional="YES" attributeType="String" syncable="YES"/>
+        <relationship name="inverseBackgroundTrack" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Video" inverseName="backgroundTrack" inverseEntity="Video" syncable="YES"/>
+        <relationship name="inversePrototypeTrack" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Video" inverseName="prototypeTrack" inverseEntity="Video" syncable="YES"/>
+        <relationship name="tiers" optional="YES" toMany="YES" deletionRule="Cascade" ordered="YES" destinationEntity="Tier" inverseName="videoTrack" inverseEntity="Tier" syncable="YES"/>
+    </entity>
+    <elements>
+        <element name="Board" positionX="261" positionY="198" width="128" height="103"/>
+        <element name="Line" positionX="556" positionY="198" width="128" height="133"/>
+        <element name="Sketch" positionX="603" positionY="536" width="128" height="150"/>
+        <element name="Tier" positionX="900" positionY="486" width="128" height="270"/>
+        <element name="Video" positionX="835" positionY="224" width="128" height="178"/>
+        <element name="VideoTrack" positionX="1123" positionY="296" width="128" height="118"/>
+    </elements>
 </model>
