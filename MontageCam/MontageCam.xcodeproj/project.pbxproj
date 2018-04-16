@@ -9,12 +9,15 @@
 /* Begin PBXBuildFile section */
 		A4D59B732084C46E002350B5 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4D59B722084C46E002350B5 /* AppDelegate.swift */; };
 		A4D59B752084C46E002350B5 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4D59B742084C46E002350B5 /* ViewController.swift */; };
-		A4D59B782084C46E002350B5 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = A4D59B762084C46E002350B5 /* Main.storyboard */; };
 		A4D59B7B2084C46E002350B5 /* MontageCam.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = A4D59B792084C46E002350B5 /* MontageCam.xcdatamodeld */; };
 		A4D59B7D2084C46F002350B5 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A4D59B7C2084C46F002350B5 /* Assets.xcassets */; };
 		A4D59B802084C46F002350B5 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = A4D59B7E2084C46F002350B5 /* LaunchScreen.storyboard */; };
 		A4D59B8B2084C46F002350B5 /* MontageCamTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4D59B8A2084C46F002350B5 /* MontageCamTests.swift */; };
 		A4D59B962084C46F002350B5 /* MontageCamUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4D59B952084C46F002350B5 /* MontageCamUITests.swift */; };
+		A4F50D652084CD8C00E2E200 /* MovieWriter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4F50D622084CD8C00E2E200 /* MovieWriter.swift */; };
+		A4F50D662084CD8C00E2E200 /* InputStreamHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4F50D632084CD8C00E2E200 /* InputStreamHandler.swift */; };
+		A4F50D672084CD8C00E2E200 /* OutputStreamHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4F50D642084CD8C00E2E200 /* OutputStreamHandler.swift */; };
+		A4F50D692084CDA900E2E200 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = A4F50D682084CDA900E2E200 /* Main.storyboard */; };
 		CC53BE52368293126CA95C88 /* Pods_MontageCam.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E1F73B1586E63B36B7EE356A /* Pods_MontageCam.framework */; };
 /* End PBXBuildFile section */
 
@@ -41,7 +44,6 @@
 		A4D59B6F2084C46E002350B5 /* MontageCam.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MontageCam.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A4D59B722084C46E002350B5 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		A4D59B742084C46E002350B5 /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
-		A4D59B772084C46E002350B5 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		A4D59B7A2084C46E002350B5 /* MontageCam.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = MontageCam.xcdatamodel; sourceTree = "<group>"; };
 		A4D59B7C2084C46F002350B5 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A4D59B7F2084C46F002350B5 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
@@ -52,6 +54,10 @@
 		A4D59B912084C46F002350B5 /* MontageCamUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MontageCamUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A4D59B952084C46F002350B5 /* MontageCamUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MontageCamUITests.swift; sourceTree = "<group>"; };
 		A4D59B972084C46F002350B5 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		A4F50D622084CD8C00E2E200 /* MovieWriter.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MovieWriter.swift; sourceTree = "<group>"; };
+		A4F50D632084CD8C00E2E200 /* InputStreamHandler.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = InputStreamHandler.swift; sourceTree = "<group>"; };
+		A4F50D642084CD8C00E2E200 /* OutputStreamHandler.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = OutputStreamHandler.swift; sourceTree = "<group>"; };
+		A4F50D682084CDA900E2E200 /* Main.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; path = Main.storyboard; sourceTree = "<group>"; };
 		E1F73B1586E63B36B7EE356A /* Pods_MontageCam.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_MontageCam.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -116,7 +122,10 @@
 			children = (
 				A4D59B722084C46E002350B5 /* AppDelegate.swift */,
 				A4D59B742084C46E002350B5 /* ViewController.swift */,
-				A4D59B762084C46E002350B5 /* Main.storyboard */,
+				A4F50D632084CD8C00E2E200 /* InputStreamHandler.swift */,
+				A4F50D622084CD8C00E2E200 /* MovieWriter.swift */,
+				A4F50D642084CD8C00E2E200 /* OutputStreamHandler.swift */,
+				A4F50D682084CDA900E2E200 /* Main.storyboard */,
 				A4D59B7C2084C46F002350B5 /* Assets.xcassets */,
 				A4D59B7E2084C46F002350B5 /* LaunchScreen.storyboard */,
 				A4D59B812084C46F002350B5 /* Info.plist */,
@@ -258,9 +267,9 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A4F50D692084CDA900E2E200 /* Main.storyboard in Resources */,
 				A4D59B802084C46F002350B5 /* LaunchScreen.storyboard in Resources */,
 				A4D59B7D2084C46F002350B5 /* Assets.xcassets in Resources */,
-				A4D59B782084C46E002350B5 /* Main.storyboard in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -325,6 +334,9 @@
 			buildActionMask = 2147483647;
 			files = (
 				A4D59B752084C46E002350B5 /* ViewController.swift in Sources */,
+				A4F50D672084CD8C00E2E200 /* OutputStreamHandler.swift in Sources */,
+				A4F50D652084CD8C00E2E200 /* MovieWriter.swift in Sources */,
+				A4F50D662084CD8C00E2E200 /* InputStreamHandler.swift in Sources */,
 				A4D59B7B2084C46E002350B5 /* MontageCam.xcdatamodeld in Sources */,
 				A4D59B732084C46E002350B5 /* AppDelegate.swift in Sources */,
 			);
@@ -362,14 +374,6 @@
 /* End PBXTargetDependency section */
 
 /* Begin PBXVariantGroup section */
-		A4D59B762084C46E002350B5 /* Main.storyboard */ = {
-			isa = PBXVariantGroup;
-			children = (
-				A4D59B772084C46E002350B5 /* Base */,
-			);
-			name = Main.storyboard;
-			sourceTree = "<group>";
-		};
 		A4D59B7E2084C46F002350B5 /* LaunchScreen.storyboard */ = {
 			isa = PBXVariantGroup;
 			children = (
@@ -503,7 +507,10 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 7HVPEZWBRD;
 				INFOPLIST_FILE = MontageCam/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = "ex-situ.lri.fr.MontageCam";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 4.0;
@@ -519,7 +526,10 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 7HVPEZWBRD;
 				INFOPLIST_FILE = MontageCam/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = "ex-situ.lri.fr.MontageCam";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 4.0;
@@ -535,7 +545,11 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 7HVPEZWBRD;
 				INFOPLIST_FILE = MontageCamTests/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = "ex-situ.lri.fr.MontageCamTests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 4.0;
@@ -552,7 +566,11 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 7HVPEZWBRD;
 				INFOPLIST_FILE = MontageCamTests/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = "ex-situ.lri.fr.MontageCamTests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 4.0;
@@ -568,7 +586,11 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 7HVPEZWBRD;
 				INFOPLIST_FILE = MontageCamUITests/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = "ex-situ.lri.fr.MontageCamUITests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 4.0;
@@ -584,7 +606,11 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 7HVPEZWBRD;
 				INFOPLIST_FILE = MontageCamUITests/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = "ex-situ.lri.fr.MontageCamUITests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 4.0;
