@@ -16,6 +16,22 @@
 		A4D59BD32084C47F002350B5 /* MontageMirrorUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4D59BD22084C47F002350B5 /* MontageMirrorUITests.swift */; };
 		A4F50D6B2084D91400E2E200 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = A4F50D6A2084D91400E2E200 /* Main.storyboard */; };
 		A4F50D6D2084D92300E2E200 /* InputStreamHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4F50D6C2084D92200E2E200 /* InputStreamHandler.swift */; };
+		A4F50D742084DE3900E2E200 /* Interface.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = A4F50D722084DE3900E2E200 /* Interface.storyboard */; };
+		A4F50D762084DE3A00E2E200 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A4F50D752084DE3A00E2E200 /* Assets.xcassets */; };
+		A4F50D7D2084DE3A00E2E200 /* MontageWatch Extension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = A4F50D7C2084DE3A00E2E200 /* MontageWatch Extension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		A4F50D822084DE3A00E2E200 /* InterfaceController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4F50D812084DE3A00E2E200 /* InterfaceController.swift */; };
+		A4F50D842084DE3A00E2E200 /* ExtensionDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4F50D832084DE3A00E2E200 /* ExtensionDelegate.swift */; };
+		A4F50D862084DE3A00E2E200 /* NotificationController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4F50D852084DE3A00E2E200 /* NotificationController.swift */; };
+		A4F50D882084DE3B00E2E200 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A4F50D872084DE3B00E2E200 /* Assets.xcassets */; };
+		A4F50D8D2084DE3B00E2E200 /* MontageWatch.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = A4F50D702084DE3900E2E200 /* MontageWatch.app */; };
+		A4F50D9D2084DF5400E2E200 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4F50D9C2084DF5400E2E200 /* AppDelegate.swift */; };
+		A4F50D9F2084DF5400E2E200 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4F50D9E2084DF5400E2E200 /* ViewController.swift */; };
+		A4F50DA22084DF5400E2E200 /* MontageMirrorMac.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = A4F50DA02084DF5400E2E200 /* MontageMirrorMac.xcdatamodeld */; };
+		A4F50DA42084DF5500E2E200 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A4F50DA32084DF5500E2E200 /* Assets.xcassets */; };
+		A4F50DB32084DF5500E2E200 /* MontageMirrorMacTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4F50DB22084DF5500E2E200 /* MontageMirrorMacTests.swift */; };
+		A4F50DBE2084DF5500E2E200 /* MontageMirrorMacUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4F50DBD2084DF5500E2E200 /* MontageMirrorMacUITests.swift */; };
+		A4F50DCA2084E00300E2E200 /* InputStreamHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4F50DC92084E00300E2E200 /* InputStreamHandler.swift */; };
+		A4F50DCC2084E02800E2E200 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = A4F50DCB2084E02800E2E200 /* Main.storyboard */; };
 		ED5AD3FA9A8B85D845A25CD6 /* Pods_MontageMirror.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6E74C24329C1047DD8834665 /* Pods_MontageMirror.framework */; };
 /* End PBXBuildFile section */
 
@@ -34,7 +50,60 @@
 			remoteGlobalIDString = A4D59BAB2084C47E002350B5;
 			remoteInfo = MontageMirror;
 		};
+		A4F50D7E2084DE3A00E2E200 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A4D59BA42084C47E002350B5 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A4F50D7B2084DE3A00E2E200;
+			remoteInfo = "MontageWatch Extension";
+		};
+		A4F50D8B2084DE3B00E2E200 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A4D59BA42084C47E002350B5 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A4F50D6F2084DE3900E2E200;
+			remoteInfo = MontageWatch;
+		};
+		A4F50DAF2084DF5500E2E200 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A4D59BA42084C47E002350B5 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A4F50D992084DF5400E2E200;
+			remoteInfo = MontageMirrorMac;
+		};
+		A4F50DBA2084DF5500E2E200 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A4D59BA42084C47E002350B5 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A4F50D992084DF5400E2E200;
+			remoteInfo = MontageMirrorMac;
+		};
 /* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		A4F50D912084DE3B00E2E200 /* Embed App Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				A4F50D7D2084DE3A00E2E200 /* MontageWatch Extension.appex in Embed App Extensions */,
+			);
+			name = "Embed App Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A4F50D952084DE3B00E2E200 /* Embed Watch Content */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "$(CONTENTS_FOLDER_PATH)/Watch";
+			dstSubfolderSpec = 16;
+			files = (
+				A4F50D8D2084DE3B00E2E200 /* MontageWatch.app in Embed Watch Content */,
+			);
+			name = "Embed Watch Content";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		14D38043F4A6AF533CD86BE4 /* Pods-MontageMirror.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-MontageMirror.debug.xcconfig"; path = "../Pods/Target Support Files/Pods-MontageMirror/Pods-MontageMirror.debug.xcconfig"; sourceTree = "<group>"; };
@@ -54,6 +123,32 @@
 		A4D59BD42084C47F002350B5 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A4F50D6A2084D91400E2E200 /* Main.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; path = Main.storyboard; sourceTree = "<group>"; };
 		A4F50D6C2084D92200E2E200 /* InputStreamHandler.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = InputStreamHandler.swift; sourceTree = "<group>"; };
+		A4F50D702084DE3900E2E200 /* MontageWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MontageWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A4F50D732084DE3900E2E200 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Interface.storyboard; sourceTree = "<group>"; };
+		A4F50D752084DE3A00E2E200 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		A4F50D772084DE3A00E2E200 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		A4F50D7C2084DE3A00E2E200 /* MontageWatch Extension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = "MontageWatch Extension.appex"; sourceTree = BUILT_PRODUCTS_DIR; };
+		A4F50D812084DE3A00E2E200 /* InterfaceController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InterfaceController.swift; sourceTree = "<group>"; };
+		A4F50D832084DE3A00E2E200 /* ExtensionDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExtensionDelegate.swift; sourceTree = "<group>"; };
+		A4F50D852084DE3A00E2E200 /* NotificationController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationController.swift; sourceTree = "<group>"; };
+		A4F50D872084DE3B00E2E200 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		A4F50D892084DE3B00E2E200 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		A4F50D8A2084DE3B00E2E200 /* PushNotificationPayload.apns */ = {isa = PBXFileReference; lastKnownFileType = text; path = PushNotificationPayload.apns; sourceTree = "<group>"; };
+		A4F50D9A2084DF5400E2E200 /* MontageMirrorMac.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MontageMirrorMac.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A4F50D9C2084DF5400E2E200 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		A4F50D9E2084DF5400E2E200 /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
+		A4F50DA12084DF5400E2E200 /* MontageMirrorMac.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = MontageMirrorMac.xcdatamodel; sourceTree = "<group>"; };
+		A4F50DA32084DF5500E2E200 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		A4F50DA82084DF5500E2E200 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		A4F50DA92084DF5500E2E200 /* MontageMirrorMac.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MontageMirrorMac.entitlements; sourceTree = "<group>"; };
+		A4F50DAE2084DF5500E2E200 /* MontageMirrorMacTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MontageMirrorMacTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		A4F50DB22084DF5500E2E200 /* MontageMirrorMacTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MontageMirrorMacTests.swift; sourceTree = "<group>"; };
+		A4F50DB42084DF5500E2E200 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		A4F50DB92084DF5500E2E200 /* MontageMirrorMacUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MontageMirrorMacUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		A4F50DBD2084DF5500E2E200 /* MontageMirrorMacUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MontageMirrorMacUITests.swift; sourceTree = "<group>"; };
+		A4F50DBF2084DF5500E2E200 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		A4F50DC92084E00300E2E200 /* InputStreamHandler.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = InputStreamHandler.swift; sourceTree = "<group>"; };
+		A4F50DCB2084E02800E2E200 /* Main.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; path = Main.storyboard; sourceTree = "<group>"; };
 		B90757BB4B7959F479BF34A0 /* Pods-MontageMirror.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-MontageMirror.release.xcconfig"; path = "../Pods/Target Support Files/Pods-MontageMirror/Pods-MontageMirror.release.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -74,6 +169,34 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		A4D59BCB2084C47F002350B5 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A4F50D792084DE3A00E2E200 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A4F50D972084DF5400E2E200 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A4F50DAB2084DF5500E2E200 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A4F50DB62084DF5500E2E200 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -106,6 +229,11 @@
 				A4D59BAE2084C47E002350B5 /* MontageMirror */,
 				A4D59BC62084C47F002350B5 /* MontageMirrorTests */,
 				A4D59BD12084C47F002350B5 /* MontageMirrorUITests */,
+				A4F50D712084DE3900E2E200 /* MontageWatch */,
+				A4F50D802084DE3A00E2E200 /* MontageWatch Extension */,
+				A4F50D9B2084DF5400E2E200 /* MontageMirrorMac */,
+				A4F50DB12084DF5500E2E200 /* MontageMirrorMacTests */,
+				A4F50DBC2084DF5500E2E200 /* MontageMirrorMacUITests */,
 				A4D59BAD2084C47E002350B5 /* Products */,
 				39647FC4D8E3118CE04F0F58 /* Pods */,
 				3BA495B667AC871F9FB23A39 /* Frameworks */,
@@ -118,6 +246,11 @@
 				A4D59BAC2084C47E002350B5 /* MontageMirror.app */,
 				A4D59BC32084C47F002350B5 /* MontageMirrorTests.xctest */,
 				A4D59BCE2084C47F002350B5 /* MontageMirrorUITests.xctest */,
+				A4F50D702084DE3900E2E200 /* MontageWatch.app */,
+				A4F50D7C2084DE3A00E2E200 /* MontageWatch Extension.appex */,
+				A4F50D9A2084DF5400E2E200 /* MontageMirrorMac.app */,
+				A4F50DAE2084DF5500E2E200 /* MontageMirrorMacTests.xctest */,
+				A4F50DB92084DF5500E2E200 /* MontageMirrorMacUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -155,6 +288,62 @@
 			path = MontageMirrorUITests;
 			sourceTree = "<group>";
 		};
+		A4F50D712084DE3900E2E200 /* MontageWatch */ = {
+			isa = PBXGroup;
+			children = (
+				A4F50D722084DE3900E2E200 /* Interface.storyboard */,
+				A4F50D752084DE3A00E2E200 /* Assets.xcassets */,
+				A4F50D772084DE3A00E2E200 /* Info.plist */,
+			);
+			path = MontageWatch;
+			sourceTree = "<group>";
+		};
+		A4F50D802084DE3A00E2E200 /* MontageWatch Extension */ = {
+			isa = PBXGroup;
+			children = (
+				A4F50D812084DE3A00E2E200 /* InterfaceController.swift */,
+				A4F50D832084DE3A00E2E200 /* ExtensionDelegate.swift */,
+				A4F50D852084DE3A00E2E200 /* NotificationController.swift */,
+				A4F50D872084DE3B00E2E200 /* Assets.xcassets */,
+				A4F50D892084DE3B00E2E200 /* Info.plist */,
+				A4F50D8A2084DE3B00E2E200 /* PushNotificationPayload.apns */,
+			);
+			path = "MontageWatch Extension";
+			sourceTree = "<group>";
+		};
+		A4F50D9B2084DF5400E2E200 /* MontageMirrorMac */ = {
+			isa = PBXGroup;
+			children = (
+				A4F50DC92084E00300E2E200 /* InputStreamHandler.swift */,
+				A4F50D9C2084DF5400E2E200 /* AppDelegate.swift */,
+				A4F50D9E2084DF5400E2E200 /* ViewController.swift */,
+				A4F50DCB2084E02800E2E200 /* Main.storyboard */,
+				A4F50DA32084DF5500E2E200 /* Assets.xcassets */,
+				A4F50DA82084DF5500E2E200 /* Info.plist */,
+				A4F50DA92084DF5500E2E200 /* MontageMirrorMac.entitlements */,
+				A4F50DA02084DF5400E2E200 /* MontageMirrorMac.xcdatamodeld */,
+			);
+			path = MontageMirrorMac;
+			sourceTree = "<group>";
+		};
+		A4F50DB12084DF5500E2E200 /* MontageMirrorMacTests */ = {
+			isa = PBXGroup;
+			children = (
+				A4F50DB22084DF5500E2E200 /* MontageMirrorMacTests.swift */,
+				A4F50DB42084DF5500E2E200 /* Info.plist */,
+			);
+			path = MontageMirrorMacTests;
+			sourceTree = "<group>";
+		};
+		A4F50DBC2084DF5500E2E200 /* MontageMirrorMacUITests */ = {
+			isa = PBXGroup;
+			children = (
+				A4F50DBD2084DF5500E2E200 /* MontageMirrorMacUITests.swift */,
+				A4F50DBF2084DF5500E2E200 /* Info.plist */,
+			);
+			path = MontageMirrorMacUITests;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -167,10 +356,12 @@
 				A4D59BA92084C47E002350B5 /* Frameworks */,
 				A4D59BAA2084C47E002350B5 /* Resources */,
 				53061BD6EBE803678E1CB012 /* [CP] Embed Pods Frameworks */,
+				A4F50D952084DE3B00E2E200 /* Embed Watch Content */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				A4F50D8C2084DE3B00E2E200 /* PBXTargetDependency */,
 			);
 			name = MontageMirror;
 			productName = MontageMirror;
@@ -213,6 +404,93 @@
 			productReference = A4D59BCE2084C47F002350B5 /* MontageMirrorUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
+		A4F50D6F2084DE3900E2E200 /* MontageWatch */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A4F50D922084DE3B00E2E200 /* Build configuration list for PBXNativeTarget "MontageWatch" */;
+			buildPhases = (
+				A4F50D6E2084DE3900E2E200 /* Resources */,
+				A4F50D912084DE3B00E2E200 /* Embed App Extensions */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				A4F50D7F2084DE3A00E2E200 /* PBXTargetDependency */,
+			);
+			name = MontageWatch;
+			productName = MontageWatch;
+			productReference = A4F50D702084DE3900E2E200 /* MontageWatch.app */;
+			productType = "com.apple.product-type.application.watchapp2";
+		};
+		A4F50D7B2084DE3A00E2E200 /* MontageWatch Extension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A4F50D8E2084DE3B00E2E200 /* Build configuration list for PBXNativeTarget "MontageWatch Extension" */;
+			buildPhases = (
+				A4F50D782084DE3A00E2E200 /* Sources */,
+				A4F50D792084DE3A00E2E200 /* Frameworks */,
+				A4F50D7A2084DE3A00E2E200 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "MontageWatch Extension";
+			productName = "MontageWatch Extension";
+			productReference = A4F50D7C2084DE3A00E2E200 /* MontageWatch Extension.appex */;
+			productType = "com.apple.product-type.watchkit2-extension";
+		};
+		A4F50D992084DF5400E2E200 /* MontageMirrorMac */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A4F50DC02084DF5500E2E200 /* Build configuration list for PBXNativeTarget "MontageMirrorMac" */;
+			buildPhases = (
+				A4F50D962084DF5400E2E200 /* Sources */,
+				A4F50D972084DF5400E2E200 /* Frameworks */,
+				A4F50D982084DF5400E2E200 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = MontageMirrorMac;
+			productName = MontageMirrorMac;
+			productReference = A4F50D9A2084DF5400E2E200 /* MontageMirrorMac.app */;
+			productType = "com.apple.product-type.application";
+		};
+		A4F50DAD2084DF5500E2E200 /* MontageMirrorMacTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A4F50DC32084DF5500E2E200 /* Build configuration list for PBXNativeTarget "MontageMirrorMacTests" */;
+			buildPhases = (
+				A4F50DAA2084DF5500E2E200 /* Sources */,
+				A4F50DAB2084DF5500E2E200 /* Frameworks */,
+				A4F50DAC2084DF5500E2E200 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				A4F50DB02084DF5500E2E200 /* PBXTargetDependency */,
+			);
+			name = MontageMirrorMacTests;
+			productName = MontageMirrorMacTests;
+			productReference = A4F50DAE2084DF5500E2E200 /* MontageMirrorMacTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		A4F50DB82084DF5500E2E200 /* MontageMirrorMacUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A4F50DC62084DF5500E2E200 /* Build configuration list for PBXNativeTarget "MontageMirrorMacUITests" */;
+			buildPhases = (
+				A4F50DB52084DF5500E2E200 /* Sources */,
+				A4F50DB62084DF5500E2E200 /* Frameworks */,
+				A4F50DB72084DF5500E2E200 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				A4F50DBB2084DF5500E2E200 /* PBXTargetDependency */,
+			);
+			name = MontageMirrorMacUITests;
+			productName = MontageMirrorMacUITests;
+			productReference = A4F50DB92084DF5500E2E200 /* MontageMirrorMacUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -234,6 +512,28 @@
 						CreatedOnToolsVersion = 9.3;
 						TestTargetID = A4D59BAB2084C47E002350B5;
 					};
+					A4F50D6F2084DE3900E2E200 = {
+						CreatedOnToolsVersion = 9.3;
+					};
+					A4F50D7B2084DE3A00E2E200 = {
+						CreatedOnToolsVersion = 9.3;
+					};
+					A4F50D992084DF5400E2E200 = {
+						CreatedOnToolsVersion = 9.3;
+						SystemCapabilities = {
+							com.apple.Sandbox = {
+								enabled = 1;
+							};
+						};
+					};
+					A4F50DAD2084DF5500E2E200 = {
+						CreatedOnToolsVersion = 9.3;
+						TestTargetID = A4F50D992084DF5400E2E200;
+					};
+					A4F50DB82084DF5500E2E200 = {
+						CreatedOnToolsVersion = 9.3;
+						TestTargetID = A4F50D992084DF5400E2E200;
+					};
 				};
 			};
 			buildConfigurationList = A4D59BA72084C47E002350B5 /* Build configuration list for PBXProject "MontageMirror" */;
@@ -252,6 +552,11 @@
 				A4D59BAB2084C47E002350B5 /* MontageMirror */,
 				A4D59BC22084C47F002350B5 /* MontageMirrorTests */,
 				A4D59BCD2084C47F002350B5 /* MontageMirrorUITests */,
+				A4F50D6F2084DE3900E2E200 /* MontageWatch */,
+				A4F50D7B2084DE3A00E2E200 /* MontageWatch Extension */,
+				A4F50D992084DF5400E2E200 /* MontageMirrorMac */,
+				A4F50DAD2084DF5500E2E200 /* MontageMirrorMacTests */,
+				A4F50DB82084DF5500E2E200 /* MontageMirrorMacUITests */,
 			);
 		};
 /* End PBXProject section */
@@ -275,6 +580,46 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		A4D59BCC2084C47F002350B5 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A4F50D6E2084DE3900E2E200 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A4F50D762084DE3A00E2E200 /* Assets.xcassets in Resources */,
+				A4F50D742084DE3900E2E200 /* Interface.storyboard in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A4F50D7A2084DE3A00E2E200 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A4F50D882084DE3B00E2E200 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A4F50D982084DF5400E2E200 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A4F50DA42084DF5500E2E200 /* Assets.xcassets in Resources */,
+				A4F50DCC2084E02800E2E200 /* Main.storyboard in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A4F50DAC2084DF5500E2E200 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A4F50DB72084DF5500E2E200 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -350,6 +695,43 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		A4F50D782084DE3A00E2E200 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A4F50D862084DE3A00E2E200 /* NotificationController.swift in Sources */,
+				A4F50D842084DE3A00E2E200 /* ExtensionDelegate.swift in Sources */,
+				A4F50D822084DE3A00E2E200 /* InterfaceController.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A4F50D962084DF5400E2E200 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A4F50D9F2084DF5400E2E200 /* ViewController.swift in Sources */,
+				A4F50DCA2084E00300E2E200 /* InputStreamHandler.swift in Sources */,
+				A4F50DA22084DF5400E2E200 /* MontageMirrorMac.xcdatamodeld in Sources */,
+				A4F50D9D2084DF5400E2E200 /* AppDelegate.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A4F50DAA2084DF5500E2E200 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A4F50DB32084DF5500E2E200 /* MontageMirrorMacTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A4F50DB52084DF5500E2E200 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A4F50DBE2084DF5500E2E200 /* MontageMirrorMacUITests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -363,6 +745,26 @@
 			target = A4D59BAB2084C47E002350B5 /* MontageMirror */;
 			targetProxy = A4D59BCF2084C47F002350B5 /* PBXContainerItemProxy */;
 		};
+		A4F50D7F2084DE3A00E2E200 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A4F50D7B2084DE3A00E2E200 /* MontageWatch Extension */;
+			targetProxy = A4F50D7E2084DE3A00E2E200 /* PBXContainerItemProxy */;
+		};
+		A4F50D8C2084DE3B00E2E200 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A4F50D6F2084DE3900E2E200 /* MontageWatch */;
+			targetProxy = A4F50D8B2084DE3B00E2E200 /* PBXContainerItemProxy */;
+		};
+		A4F50DB02084DF5500E2E200 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A4F50D992084DF5400E2E200 /* MontageMirrorMac */;
+			targetProxy = A4F50DAF2084DF5500E2E200 /* PBXContainerItemProxy */;
+		};
+		A4F50DBB2084DF5500E2E200 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A4F50D992084DF5400E2E200 /* MontageMirrorMac */;
+			targetProxy = A4F50DBA2084DF5500E2E200 /* PBXContainerItemProxy */;
+		};
 /* End PBXTargetDependency section */
 
 /* Begin PBXVariantGroup section */
@@ -372,6 +774,14 @@
 				A4D59BBC2084C47F002350B5 /* Base */,
 			);
 			name = LaunchScreen.storyboard;
+			sourceTree = "<group>";
+		};
+		A4F50D722084DE3900E2E200 /* Interface.storyboard */ = {
+			isa = PBXVariantGroup;
+			children = (
+				A4F50D732084DE3900E2E200 /* Base */,
+			);
+			name = Interface.storyboard;
 			sourceTree = "<group>";
 		};
 /* End PBXVariantGroup section */
@@ -611,6 +1021,226 @@
 			};
 			name = Release;
 		};
+		A4F50D8F2084DE3B00E2E200 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_COMPLICATION_NAME = Complication;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 7HVPEZWBRD;
+				INFOPLIST_FILE = "MontageWatch Extension/Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "ex-situ.lri.fr.MontageMirror.watchkitapp.watchkitextension";
+				PRODUCT_NAME = "${TARGET_NAME}";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 4.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 4.3;
+			};
+			name = Debug;
+		};
+		A4F50D902084DE3B00E2E200 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_COMPLICATION_NAME = Complication;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 7HVPEZWBRD;
+				INFOPLIST_FILE = "MontageWatch Extension/Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "ex-situ.lri.fr.MontageMirror.watchkitapp.watchkitextension";
+				PRODUCT_NAME = "${TARGET_NAME}";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 4.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 4.3;
+			};
+			name = Release;
+		};
+		A4F50D932084DE3B00E2E200 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 7HVPEZWBRD;
+				IBSC_MODULE = MontageWatch_Extension;
+				INFOPLIST_FILE = MontageWatch/Info.plist;
+				PRODUCT_BUNDLE_IDENTIFIER = "ex-situ.lri.fr.MontageMirror.watchkitapp";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 4.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 4.3;
+			};
+			name = Debug;
+		};
+		A4F50D942084DE3B00E2E200 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 7HVPEZWBRD;
+				IBSC_MODULE = MontageWatch_Extension;
+				INFOPLIST_FILE = MontageWatch/Info.plist;
+				PRODUCT_BUNDLE_IDENTIFIER = "ex-situ.lri.fr.MontageMirror.watchkitapp";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 4.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 4.3;
+			};
+			name = Release;
+		};
+		A4F50DC12084DF5500E2E200 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = MontageMirrorMac/MontageMirrorMac.entitlements;
+				CODE_SIGN_IDENTITY = "Mac Developer";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				DEVELOPMENT_TEAM = NJZSW7J9AZ;
+				INFOPLIST_FILE = MontageMirrorMac/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.13;
+				PRODUCT_BUNDLE_IDENTIFIER = "ex-situ.lri.fr.MontageMirrorMac";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_VERSION = 4.0;
+			};
+			name = Debug;
+		};
+		A4F50DC22084DF5500E2E200 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = MontageMirrorMac/MontageMirrorMac.entitlements;
+				CODE_SIGN_IDENTITY = "Mac Developer";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				DEVELOPMENT_TEAM = NJZSW7J9AZ;
+				INFOPLIST_FILE = MontageMirrorMac/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.13;
+				PRODUCT_BUNDLE_IDENTIFIER = "ex-situ.lri.fr.MontageMirrorMac";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_VERSION = 4.0;
+			};
+			name = Release;
+		};
+		A4F50DC42084DF5500E2E200 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_IDENTITY = "Mac Developer";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				DEVELOPMENT_TEAM = NJZSW7J9AZ;
+				INFOPLIST_FILE = MontageMirrorMacTests/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.13;
+				PRODUCT_BUNDLE_IDENTIFIER = "ex-situ.lri.fr.MontageMirrorMacTests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_VERSION = 4.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/MontageMirrorMac.app/Contents/MacOS/MontageMirrorMac";
+			};
+			name = Debug;
+		};
+		A4F50DC52084DF5500E2E200 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_IDENTITY = "Mac Developer";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				DEVELOPMENT_TEAM = NJZSW7J9AZ;
+				INFOPLIST_FILE = MontageMirrorMacTests/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.13;
+				PRODUCT_BUNDLE_IDENTIFIER = "ex-situ.lri.fr.MontageMirrorMacTests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_VERSION = 4.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/MontageMirrorMac.app/Contents/MacOS/MontageMirrorMac";
+			};
+			name = Release;
+		};
+		A4F50DC72084DF5500E2E200 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				CODE_SIGN_IDENTITY = "Mac Developer";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				DEVELOPMENT_TEAM = NJZSW7J9AZ;
+				INFOPLIST_FILE = MontageMirrorMacUITests/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.13;
+				PRODUCT_BUNDLE_IDENTIFIER = "ex-situ.lri.fr.MontageMirrorMacUITests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_VERSION = 4.0;
+				TEST_TARGET_NAME = MontageMirrorMac;
+			};
+			name = Debug;
+		};
+		A4F50DC82084DF5500E2E200 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				CODE_SIGN_IDENTITY = "Mac Developer";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				DEVELOPMENT_TEAM = NJZSW7J9AZ;
+				INFOPLIST_FILE = MontageMirrorMacUITests/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.13;
+				PRODUCT_BUNDLE_IDENTIFIER = "ex-situ.lri.fr.MontageMirrorMacUITests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_VERSION = 4.0;
+				TEST_TARGET_NAME = MontageMirrorMac;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -650,6 +1280,51 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
+		A4F50D8E2084DE3B00E2E200 /* Build configuration list for PBXNativeTarget "MontageWatch Extension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A4F50D8F2084DE3B00E2E200 /* Debug */,
+				A4F50D902084DE3B00E2E200 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A4F50D922084DE3B00E2E200 /* Build configuration list for PBXNativeTarget "MontageWatch" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A4F50D932084DE3B00E2E200 /* Debug */,
+				A4F50D942084DE3B00E2E200 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A4F50DC02084DF5500E2E200 /* Build configuration list for PBXNativeTarget "MontageMirrorMac" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A4F50DC12084DF5500E2E200 /* Debug */,
+				A4F50DC22084DF5500E2E200 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A4F50DC32084DF5500E2E200 /* Build configuration list for PBXNativeTarget "MontageMirrorMacTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A4F50DC42084DF5500E2E200 /* Debug */,
+				A4F50DC52084DF5500E2E200 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A4F50DC62084DF5500E2E200 /* Build configuration list for PBXNativeTarget "MontageMirrorMacUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A4F50DC72084DF5500E2E200 /* Debug */,
+				A4F50DC82084DF5500E2E200 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 /* End XCConfigurationList section */
 
 /* Begin XCVersionGroup section */
@@ -660,6 +1335,16 @@
 			);
 			currentVersion = A4D59BB72084C47E002350B5 /* MontageMirror.xcdatamodel */;
 			path = MontageMirror.xcdatamodeld;
+			sourceTree = "<group>";
+			versionGroupType = wrapper.xcdatamodel;
+		};
+		A4F50DA02084DF5400E2E200 /* MontageMirrorMac.xcdatamodeld */ = {
+			isa = XCVersionGroup;
+			children = (
+				A4F50DA12084DF5400E2E200 /* MontageMirrorMac.xcdatamodel */,
+			);
+			currentVersion = A4F50DA12084DF5400E2E200 /* MontageMirrorMac.xcdatamodel */;
+			path = MontageMirrorMac.xcdatamodeld;
 			sourceTree = "<group>";
 			versionGroupType = wrapper.xcdatamodel;
 		};
