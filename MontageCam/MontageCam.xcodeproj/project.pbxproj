@@ -18,6 +18,7 @@
 		A4F50D662084CD8C00E2E200 /* InputStreamHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4F50D632084CD8C00E2E200 /* InputStreamHandler.swift */; };
 		A4F50D672084CD8C00E2E200 /* OutputStreamHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4F50D642084CD8C00E2E200 /* OutputStreamHandler.swift */; };
 		A4F50D692084CDA900E2E200 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = A4F50D682084CDA900E2E200 /* Main.storyboard */; };
+		A4F50DCF2084E13200E2E200 /* CloudKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A4F50DCE2084E13200E2E200 /* CloudKit.framework */; };
 		CC53BE52368293126CA95C88 /* Pods_MontageCam.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E1F73B1586E63B36B7EE356A /* Pods_MontageCam.framework */; };
 /* End PBXBuildFile section */
 
@@ -58,6 +59,8 @@
 		A4F50D632084CD8C00E2E200 /* InputStreamHandler.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = InputStreamHandler.swift; sourceTree = "<group>"; };
 		A4F50D642084CD8C00E2E200 /* OutputStreamHandler.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = OutputStreamHandler.swift; sourceTree = "<group>"; };
 		A4F50D682084CDA900E2E200 /* Main.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; path = Main.storyboard; sourceTree = "<group>"; };
+		A4F50DCD2084E11900E2E200 /* MontageCam.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MontageCam.entitlements; sourceTree = "<group>"; };
+		A4F50DCE2084E13200E2E200 /* CloudKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CloudKit.framework; path = System/Library/Frameworks/CloudKit.framework; sourceTree = SDKROOT; };
 		E1F73B1586E63B36B7EE356A /* Pods_MontageCam.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_MontageCam.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -67,6 +70,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				CC53BE52368293126CA95C88 /* Pods_MontageCam.framework in Frameworks */,
+				A4F50DCF2084E13200E2E200 /* CloudKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -90,6 +94,7 @@
 		01515451710439212B282813 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				A4F50DCE2084E13200E2E200 /* CloudKit.framework */,
 				E1F73B1586E63B36B7EE356A /* Pods_MontageCam.framework */,
 			);
 			name = Frameworks;
@@ -120,6 +125,7 @@
 		A4D59B712084C46E002350B5 /* MontageCam */ = {
 			isa = PBXGroup;
 			children = (
+				A4F50DCD2084E11900E2E200 /* MontageCam.entitlements */,
 				A4D59B722084C46E002350B5 /* AppDelegate.swift */,
 				A4D59B742084C46E002350B5 /* ViewController.swift */,
 				A4F50D632084CD8C00E2E200 /* InputStreamHandler.swift */,
@@ -231,6 +237,14 @@
 				TargetAttributes = {
 					A4D59B6E2084C46E002350B5 = {
 						CreatedOnToolsVersion = 9.3;
+						SystemCapabilities = {
+							com.apple.Push = {
+								enabled = 1;
+							};
+							com.apple.iCloud = {
+								enabled = 1;
+							};
+						};
 					};
 					A4D59B852084C46F002350B5 = {
 						CreatedOnToolsVersion = 9.3;
@@ -504,6 +518,7 @@
 			baseConfigurationReference = 61E7D079743F2B483A1E2822 /* Pods-MontageCam.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = MontageCam/MontageCam.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 7HVPEZWBRD;
 				INFOPLIST_FILE = MontageCam/Info.plist;
@@ -523,6 +538,7 @@
 			baseConfigurationReference = 20A170AC2B0DB3509BBBC846 /* Pods-MontageCam.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = MontageCam/MontageCam.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 7HVPEZWBRD;
 				INFOPLIST_FILE = MontageCam/Info.plist;
