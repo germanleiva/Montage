@@ -10,24 +10,29 @@ project 'MontageCam/MontageCam.xcodeproj'
 project 'MontageMirror/MontageMirror.xcodeproj'
 
 def common_ui_pods
-pod 'MBProgressHUD'
+    pod 'MBProgressHUD'
 end
 
 def other_pods
-pod 'Reachability'
+    pod 'Logboard'
+end
+
+target 'Streamer' do
+    project 'Streamer/Streamer.xcodeproj'
+    other_pods
 end
 
 target 'MontageCanvas' do
-project 'MontageCanvas/MontageCanvas.xcodeproj'
-common_ui_pods
+    project 'MontageCanvas/MontageCanvas.xcodeproj'
+    common_ui_pods
 end
 
 target 'MontageCam' do
-project 'MontageCam/MontageCam.xcodeproj'
-common_ui_pods
+    project 'MontageCam/MontageCam.xcodeproj'
+    common_ui_pods
 end
 
 target 'MontageMirror' do
-project 'MontageMirror/MontageMirror.xcodeproj'
-common_ui_pods
+    project 'MontageMirror/MontageMirror.xcodeproj'
+    common_ui_pods
 end

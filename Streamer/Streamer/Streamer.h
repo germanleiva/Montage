@@ -15,5 +15,3 @@ FOUNDATION_EXPORT double StreamerVersionNumber;
 FOUNDATION_EXPORT const unsigned char StreamerVersionString[];
 
 // In this header, you should import all the public headers of your framework using statements like #import <Streamer/PublicHeader.h>
-
-

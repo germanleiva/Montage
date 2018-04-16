@@ -7,9 +7,30 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		1C82766395646B2DB0E55724 /* Pods_Streamer.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0BAB2D7BDE9AD8A45AC3EA66 /* Pods_Streamer.framework */; };
 		A470BD0C2084C4F400A48E14 /* Streamer.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A470BD022084C4F400A48E14 /* Streamer.framework */; };
 		A470BD112084C4F400A48E14 /* StreamerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A470BD102084C4F400A48E14 /* StreamerTests.swift */; };
 		A470BD132084C4F400A48E14 /* Streamer.h in Headers */ = {isa = PBXBuildFile; fileRef = A470BD052084C4F400A48E14 /* Streamer.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		A4F50DD42084F2EE00E2E200 /* H264Decoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4F50DD12084F2EE00E2E200 /* H264Decoder.swift */; };
+		A4F50DD52084F2EE00E2E200 /* H264Encoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4F50DD22084F2EE00E2E200 /* H264Encoder.swift */; };
+		A4F50DD72084F30700E2E200 /* OutputStreamer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4F50DD62084F30700E2E200 /* OutputStreamer.swift */; };
+		A4F50DD92084F31D00E2E200 /* InputStreamer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4F50DD82084F31D00E2E200 /* InputStreamer.swift */; };
+		A4F50DEB2084F51100E2E200 /* CMFormatDescription+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4F50DDF2084F51000E2E200 /* CMFormatDescription+Extension.swift */; };
+		A4F50DEC2084F51100E2E200 /* CMAudioFormatDescription+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4F50DE02084F51000E2E200 /* CMAudioFormatDescription+Extension.swift */; };
+		A4F50DED2084F51100E2E200 /* CMVideoFormatDescription+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4F50DE12084F51000E2E200 /* CMVideoFormatDescription+Extension.swift */; };
+		A4F50DEE2084F51100E2E200 /* CMBlockBuffer+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4F50DE22084F51000E2E200 /* CMBlockBuffer+Extension.swift */; };
+		A4F50DEF2084F51100E2E200 /* Data+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4F50DE32084F51000E2E200 /* Data+Extension.swift */; };
+		A4F50DF02084F51100E2E200 /* URL+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4F50DE42084F51000E2E200 /* URL+Extension.swift */; };
+		A4F50DF12084F51100E2E200 /* Mirror+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4F50DE52084F51000E2E200 /* Mirror+Extension.swift */; };
+		A4F50DF22084F51100E2E200 /* CMSampleTimingInfo+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4F50DE62084F51000E2E200 /* CMSampleTimingInfo+Extension.swift */; };
+		A4F50DF32084F51100E2E200 /* VTSession+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4F50DE72084F51000E2E200 /* VTSession+Extension.swift */; };
+		A4F50DF42084F51100E2E200 /* ExpressibleByIntegerLiteral+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4F50DE82084F51100E2E200 /* ExpressibleByIntegerLiteral+Extension.swift */; };
+		A4F50DF52084F51100E2E200 /* CVPixelBuffer+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4F50DE92084F51100E2E200 /* CVPixelBuffer+Extension.swift */; };
+		A4F50DF62084F51100E2E200 /* CMSampleBuffer+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4F50DEA2084F51100E2E200 /* CMSampleBuffer+Extension.swift */; };
+		A4F50DF92084F59B00E2E200 /* H264+AVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4F50DF82084F59B00E2E200 /* H264+AVC.swift */; };
+		A4F50DFE2084F5C700E2E200 /* Constant.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4F50DFC2084F5C700E2E200 /* Constant.swift */; };
+		A4F50DFF2084F5C700E2E200 /* Protocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4F50DFD2084F5C700E2E200 /* Protocol.swift */; };
+		A4F50E012084F5CE00E2E200 /* ByteArray.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4F50E002084F5CE00E2E200 /* ByteArray.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -23,12 +44,35 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		0BAB2D7BDE9AD8A45AC3EA66 /* Pods_Streamer.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Streamer.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		450649DB501B17164417E2C6 /* Pods-Streamer.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Streamer.release.xcconfig"; path = "../Pods/Target Support Files/Pods-Streamer/Pods-Streamer.release.xcconfig"; sourceTree = "<group>"; };
+		511813A6022E2C8797EFD10A /* Pods-Streamer.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Streamer.debug.xcconfig"; path = "../Pods/Target Support Files/Pods-Streamer/Pods-Streamer.debug.xcconfig"; sourceTree = "<group>"; };
 		A470BD022084C4F400A48E14 /* Streamer.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Streamer.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		A470BD052084C4F400A48E14 /* Streamer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Streamer.h; sourceTree = "<group>"; };
 		A470BD062084C4F400A48E14 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A470BD0B2084C4F400A48E14 /* StreamerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = StreamerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A470BD102084C4F400A48E14 /* StreamerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StreamerTests.swift; sourceTree = "<group>"; };
 		A470BD122084C4F400A48E14 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		A4F50DD12084F2EE00E2E200 /* H264Decoder.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = H264Decoder.swift; sourceTree = "<group>"; };
+		A4F50DD22084F2EE00E2E200 /* H264Encoder.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = H264Encoder.swift; sourceTree = "<group>"; };
+		A4F50DD62084F30700E2E200 /* OutputStreamer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = OutputStreamer.swift; sourceTree = "<group>"; };
+		A4F50DD82084F31D00E2E200 /* InputStreamer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = InputStreamer.swift; sourceTree = "<group>"; };
+		A4F50DDF2084F51000E2E200 /* CMFormatDescription+Extension.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "CMFormatDescription+Extension.swift"; sourceTree = "<group>"; };
+		A4F50DE02084F51000E2E200 /* CMAudioFormatDescription+Extension.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "CMAudioFormatDescription+Extension.swift"; sourceTree = "<group>"; };
+		A4F50DE12084F51000E2E200 /* CMVideoFormatDescription+Extension.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "CMVideoFormatDescription+Extension.swift"; sourceTree = "<group>"; };
+		A4F50DE22084F51000E2E200 /* CMBlockBuffer+Extension.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "CMBlockBuffer+Extension.swift"; sourceTree = "<group>"; };
+		A4F50DE32084F51000E2E200 /* Data+Extension.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "Data+Extension.swift"; sourceTree = "<group>"; };
+		A4F50DE42084F51000E2E200 /* URL+Extension.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "URL+Extension.swift"; sourceTree = "<group>"; };
+		A4F50DE52084F51000E2E200 /* Mirror+Extension.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "Mirror+Extension.swift"; sourceTree = "<group>"; };
+		A4F50DE62084F51000E2E200 /* CMSampleTimingInfo+Extension.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "CMSampleTimingInfo+Extension.swift"; sourceTree = "<group>"; };
+		A4F50DE72084F51000E2E200 /* VTSession+Extension.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "VTSession+Extension.swift"; sourceTree = "<group>"; };
+		A4F50DE82084F51100E2E200 /* ExpressibleByIntegerLiteral+Extension.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "ExpressibleByIntegerLiteral+Extension.swift"; sourceTree = "<group>"; };
+		A4F50DE92084F51100E2E200 /* CVPixelBuffer+Extension.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "CVPixelBuffer+Extension.swift"; sourceTree = "<group>"; };
+		A4F50DEA2084F51100E2E200 /* CMSampleBuffer+Extension.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "CMSampleBuffer+Extension.swift"; sourceTree = "<group>"; };
+		A4F50DF82084F59B00E2E200 /* H264+AVC.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "H264+AVC.swift"; sourceTree = "<group>"; };
+		A4F50DFC2084F5C700E2E200 /* Constant.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Constant.swift; sourceTree = "<group>"; };
+		A4F50DFD2084F5C700E2E200 /* Protocol.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Protocol.swift; sourceTree = "<group>"; };
+		A4F50E002084F5CE00E2E200 /* ByteArray.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ByteArray.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -36,6 +80,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				1C82766395646B2DB0E55724 /* Pods_Streamer.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -50,12 +95,31 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		0E4C4C824A2D3A96FC7252EB /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				0BAB2D7BDE9AD8A45AC3EA66 /* Pods_Streamer.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		7C940B09E9E4E79DD1EEC866 /* Pods */ = {
+			isa = PBXGroup;
+			children = (
+				511813A6022E2C8797EFD10A /* Pods-Streamer.debug.xcconfig */,
+				450649DB501B17164417E2C6 /* Pods-Streamer.release.xcconfig */,
+			);
+			name = Pods;
+			sourceTree = "<group>";
+		};
 		A470BCF82084C4F300A48E14 = {
 			isa = PBXGroup;
 			children = (
 				A470BD042084C4F400A48E14 /* Streamer */,
 				A470BD0F2084C4F400A48E14 /* StreamerTests */,
 				A470BD032084C4F400A48E14 /* Products */,
+				7C940B09E9E4E79DD1EEC866 /* Pods */,
+				0E4C4C824A2D3A96FC7252EB /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -72,6 +136,14 @@
 			isa = PBXGroup;
 			children = (
 				A470BD052084C4F400A48E14 /* Streamer.h */,
+				A4F50DFB2084F5BC00E2E200 /* Core */,
+				A4F50DFA2084F5B400E2E200 /* Util */,
+				A4F50DF72084F59000E2E200 /* ISO */,
+				A4F50DDE2084F50500E2E200 /* Extension */,
+				A4F50DD12084F2EE00E2E200 /* H264Decoder.swift */,
+				A4F50DD22084F2EE00E2E200 /* H264Encoder.swift */,
+				A4F50DD62084F30700E2E200 /* OutputStreamer.swift */,
+				A4F50DD82084F31D00E2E200 /* InputStreamer.swift */,
 				A470BD062084C4F400A48E14 /* Info.plist */,
 			);
 			path = Streamer;
@@ -84,6 +156,50 @@
 				A470BD122084C4F400A48E14 /* Info.plist */,
 			);
 			path = StreamerTests;
+			sourceTree = "<group>";
+		};
+		A4F50DDE2084F50500E2E200 /* Extension */ = {
+			isa = PBXGroup;
+			children = (
+				A4F50DE02084F51000E2E200 /* CMAudioFormatDescription+Extension.swift */,
+				A4F50DE22084F51000E2E200 /* CMBlockBuffer+Extension.swift */,
+				A4F50DDF2084F51000E2E200 /* CMFormatDescription+Extension.swift */,
+				A4F50DEA2084F51100E2E200 /* CMSampleBuffer+Extension.swift */,
+				A4F50DE62084F51000E2E200 /* CMSampleTimingInfo+Extension.swift */,
+				A4F50DE12084F51000E2E200 /* CMVideoFormatDescription+Extension.swift */,
+				A4F50DE92084F51100E2E200 /* CVPixelBuffer+Extension.swift */,
+				A4F50DE32084F51000E2E200 /* Data+Extension.swift */,
+				A4F50DE82084F51100E2E200 /* ExpressibleByIntegerLiteral+Extension.swift */,
+				A4F50DE52084F51000E2E200 /* Mirror+Extension.swift */,
+				A4F50DE42084F51000E2E200 /* URL+Extension.swift */,
+				A4F50DE72084F51000E2E200 /* VTSession+Extension.swift */,
+			);
+			path = Extension;
+			sourceTree = "<group>";
+		};
+		A4F50DF72084F59000E2E200 /* ISO */ = {
+			isa = PBXGroup;
+			children = (
+				A4F50DF82084F59B00E2E200 /* H264+AVC.swift */,
+			);
+			path = ISO;
+			sourceTree = "<group>";
+		};
+		A4F50DFA2084F5B400E2E200 /* Util */ = {
+			isa = PBXGroup;
+			children = (
+				A4F50E002084F5CE00E2E200 /* ByteArray.swift */,
+			);
+			path = Util;
+			sourceTree = "<group>";
+		};
+		A4F50DFB2084F5BC00E2E200 /* Core */ = {
+			isa = PBXGroup;
+			children = (
+				A4F50DFC2084F5C700E2E200 /* Constant.swift */,
+				A4F50DFD2084F5C700E2E200 /* Protocol.swift */,
+			);
+			path = Core;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -104,6 +220,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = A470BD162084C4F400A48E14 /* Build configuration list for PBXNativeTarget "Streamer" */;
 			buildPhases = (
+				B8A557FE6C28C28EE572DA63 /* [CP] Check Pods Manifest.lock */,
 				A470BCFD2084C4F400A48E14 /* Sources */,
 				A470BCFE2084C4F400A48E14 /* Frameworks */,
 				A470BCFF2084C4F400A48E14 /* Headers */,
@@ -148,6 +265,7 @@
 				TargetAttributes = {
 					A470BD012084C4F400A48E14 = {
 						CreatedOnToolsVersion = 9.3;
+						LastSwiftMigration = 0930;
 					};
 					A470BD0A2084C4F400A48E14 = {
 						CreatedOnToolsVersion = 9.3;
@@ -189,11 +307,52 @@
 		};
 /* End PBXResourcesBuildPhase section */
 
+/* Begin PBXShellScriptBuildPhase section */
+		B8A557FE6C28C28EE572DA63 /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
+				"${PODS_ROOT}/Manifest.lock",
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/Pods-Streamer-checkManifestLockResult.txt",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			showEnvVarsInLog = 0;
+		};
+/* End PBXShellScriptBuildPhase section */
+
 /* Begin PBXSourcesBuildPhase section */
 		A470BCFD2084C4F400A48E14 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A4F50DD52084F2EE00E2E200 /* H264Encoder.swift in Sources */,
+				A4F50DF22084F51100E2E200 /* CMSampleTimingInfo+Extension.swift in Sources */,
+				A4F50DEB2084F51100E2E200 /* CMFormatDescription+Extension.swift in Sources */,
+				A4F50DF52084F51100E2E200 /* CVPixelBuffer+Extension.swift in Sources */,
+				A4F50DF12084F51100E2E200 /* Mirror+Extension.swift in Sources */,
+				A4F50DEC2084F51100E2E200 /* CMAudioFormatDescription+Extension.swift in Sources */,
+				A4F50DD72084F30700E2E200 /* OutputStreamer.swift in Sources */,
+				A4F50DD92084F31D00E2E200 /* InputStreamer.swift in Sources */,
+				A4F50DF02084F51100E2E200 /* URL+Extension.swift in Sources */,
+				A4F50DFF2084F5C700E2E200 /* Protocol.swift in Sources */,
+				A4F50DEE2084F51100E2E200 /* CMBlockBuffer+Extension.swift in Sources */,
+				A4F50DF92084F59B00E2E200 /* H264+AVC.swift in Sources */,
+				A4F50DFE2084F5C700E2E200 /* Constant.swift in Sources */,
+				A4F50DF32084F51100E2E200 /* VTSession+Extension.swift in Sources */,
+				A4F50DF42084F51100E2E200 /* ExpressibleByIntegerLiteral+Extension.swift in Sources */,
+				A4F50DD42084F2EE00E2E200 /* H264Decoder.swift in Sources */,
+				A4F50DEF2084F51100E2E200 /* Data+Extension.swift in Sources */,
+				A4F50E012084F5CE00E2E200 /* ByteArray.swift in Sources */,
+				A4F50DED2084F51100E2E200 /* CMVideoFormatDescription+Extension.swift in Sources */,
+				A4F50DF62084F51100E2E200 /* CMSampleBuffer+Extension.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -338,7 +497,9 @@
 		};
 		A470BD172084C4F400A48E14 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 511813A6022E2C8797EFD10A /* Pods-Streamer.debug.xcconfig */;
 			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_IDENTITY = "";
 				CODE_SIGN_STYLE = Automatic;
 				DEFINES_MODULE = YES;
@@ -356,6 +517,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = "ex-situ.lri.fr.Streamer";
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				SKIP_INSTALL = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 4.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -363,7 +525,9 @@
 		};
 		A470BD182084C4F400A48E14 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 450649DB501B17164417E2C6 /* Pods-Streamer.release.xcconfig */;
 			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_IDENTITY = "";
 				CODE_SIGN_STYLE = Automatic;
 				DEFINES_MODULE = YES;
@@ -389,6 +553,7 @@
 		A470BD1A2084C4F400A48E14 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 7HVPEZWBRD;
 				INFOPLIST_FILE = StreamerTests/Info.plist;
@@ -407,6 +572,7 @@
 		A470BD1B2084C4F400A48E14 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 7HVPEZWBRD;
 				INFOPLIST_FILE = StreamerTests/Info.plist;

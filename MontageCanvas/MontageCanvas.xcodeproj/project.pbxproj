@@ -20,10 +20,8 @@
 		A4F50D2F2084C9F400E2E200 /* VideoTrack+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4F50D292084C9F400E2E200 /* VideoTrack+CoreDataClass.swift */; };
 		A4F50D462084CA2400E2E200 /* CircleButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4F50D302084CA2100E2E200 /* CircleButton.swift */; };
 		A4F50D472084CA2400E2E200 /* DetailLineController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4F50D312084CA2100E2E200 /* DetailLineController.swift */; };
-		A4F50D482084CA2400E2E200 /* InputStreamHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4F50D322084CA2100E2E200 /* InputStreamHandler.swift */; };
 		A4F50D492084CA2400E2E200 /* TierCollectionViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4F50D332084CA2100E2E200 /* TierCollectionViewCell.swift */; };
 		A4F50D4A2084CA2400E2E200 /* Util.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4F50D342084CA2100E2E200 /* Util.swift */; };
-		A4F50D4B2084CA2400E2E200 /* OutputStreamHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4F50D352084CA2100E2E200 /* OutputStreamHandler.swift */; };
 		A4F50D4C2084CA2400E2E200 /* VideoCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4F50D362084CA2100E2E200 /* VideoCell.swift */; };
 		A4F50D4D2084CA2400E2E200 /* SessionsTableController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4F50D372084CA2100E2E200 /* SessionsTableController.swift */; };
 		A4F50D4E2084CA2400E2E200 /* CameraController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4F50D382084CA2200E2E200 /* CameraController.swift */; };
@@ -41,6 +39,8 @@
 		A4F50D5A2084CA2400E2E200 /* TierTableCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4F50D442084CA2400E2E200 /* TierTableCell.swift */; };
 		A4F50D5B2084CA2400E2E200 /* TimelineLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4F50D452084CA2400E2E200 /* TimelineLayout.swift */; };
 		A4F50D5E2084CA9500E2E200 /* CloudKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A4F50D5D2084CA9500E2E200 /* CloudKit.framework */; };
+		A4F50E082084F7B400E2E200 /* Streamer.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A4F50E072084F7B400E2E200 /* Streamer.framework */; };
+		A4F50E092084F7B400E2E200 /* Streamer.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = A4F50E072084F7B400E2E200 /* Streamer.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		B090AA669A87A6197C5C9E47 /* Pods_MontageCanvas.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 80DFB655FFF91A45A1D3CE6B /* Pods_MontageCanvas.framework */; };
 /* End PBXBuildFile section */
 
@@ -60,6 +60,20 @@
 			remoteInfo = MontageCanvas;
 		};
 /* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		A4F50E052084F79500E2E200 /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				A4F50E092084F7B400E2E200 /* Streamer.framework in Embed Frameworks */,
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		80DFB655FFF91A45A1D3CE6B /* Pods_MontageCanvas.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_MontageCanvas.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -83,10 +97,8 @@
 		A4F50D292084C9F400E2E200 /* VideoTrack+CoreDataClass.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "VideoTrack+CoreDataClass.swift"; sourceTree = "<group>"; };
 		A4F50D302084CA2100E2E200 /* CircleButton.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CircleButton.swift; sourceTree = "<group>"; };
 		A4F50D312084CA2100E2E200 /* DetailLineController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DetailLineController.swift; sourceTree = "<group>"; };
-		A4F50D322084CA2100E2E200 /* InputStreamHandler.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = InputStreamHandler.swift; sourceTree = "<group>"; };
 		A4F50D332084CA2100E2E200 /* TierCollectionViewCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TierCollectionViewCell.swift; sourceTree = "<group>"; };
 		A4F50D342084CA2100E2E200 /* Util.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Util.swift; sourceTree = "<group>"; };
-		A4F50D352084CA2100E2E200 /* OutputStreamHandler.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = OutputStreamHandler.swift; sourceTree = "<group>"; };
 		A4F50D362084CA2100E2E200 /* VideoCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = VideoCell.swift; sourceTree = "<group>"; };
 		A4F50D372084CA2100E2E200 /* SessionsTableController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SessionsTableController.swift; sourceTree = "<group>"; };
 		A4F50D382084CA2200E2E200 /* CameraController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CameraController.swift; sourceTree = "<group>"; };
@@ -106,6 +118,7 @@
 		A4F50D5C2084CA9100E2E200 /* MontageCanvas.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MontageCanvas.entitlements; sourceTree = "<group>"; };
 		A4F50D5D2084CA9500E2E200 /* CloudKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CloudKit.framework; path = System/Library/Frameworks/CloudKit.framework; sourceTree = SDKROOT; };
 		A4F50D5F2084CC2900E2E200 /* MontageCanvas-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "MontageCanvas-Bridging-Header.h"; sourceTree = "<group>"; };
+		A4F50E072084F7B400E2E200 /* Streamer.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = Streamer.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		BC3403DFCAA331C791290F82 /* Pods-MontageCanvas.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-MontageCanvas.debug.xcconfig"; path = "../Pods/Target Support Files/Pods-MontageCanvas/Pods-MontageCanvas.debug.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -114,6 +127,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A4F50E082084F7B400E2E200 /* Streamer.framework in Frameworks */,
 				B090AA669A87A6197C5C9E47 /* Pods_MontageCanvas.framework in Frameworks */,
 				A4F50D5E2084CA9500E2E200 /* CloudKit.framework in Frameworks */,
 			);
@@ -148,6 +162,7 @@
 		A4D59B292084C436002350B5 = {
 			isa = PBXGroup;
 			children = (
+				A4F50E072084F7B400E2E200 /* Streamer.framework */,
 				A4D59B342084C436002350B5 /* MontageCanvas */,
 				A4D59B4C2084C438002350B5 /* MontageCanvasTests */,
 				A4D59B572084C438002350B5 /* MontageCanvasUITests */,
@@ -179,10 +194,8 @@
 				A4F50D302084CA2100E2E200 /* CircleButton.swift */,
 				A4F50D312084CA2100E2E200 /* DetailLineController.swift */,
 				A4F50D392084CA2200E2E200 /* GSChromaKeyFilter.cikernel */,
-				A4F50D322084CA2100E2E200 /* InputStreamHandler.swift */,
 				A4F50D422084CA2300E2E200 /* MasterBoardController.swift */,
 				A4F50D432084CA2400E2E200 /* MovieWriter.swift */,
-				A4F50D352084CA2100E2E200 /* OutputStreamHandler.swift */,
 				A4F50D3E2084CA2300E2E200 /* Palette.swift */,
 				A4F50D372084CA2100E2E200 /* SessionsTableController.swift */,
 				A4F50D332084CA2100E2E200 /* TierCollectionViewCell.swift */,
@@ -255,6 +268,7 @@
 				A4D59B2F2084C436002350B5 /* Frameworks */,
 				A4D59B302084C436002350B5 /* Resources */,
 				0746832AEDC2E636DE193872 /* [CP] Embed Pods Frameworks */,
+				A4F50E052084F79500E2E200 /* Embed Frameworks */,
 			);
 			buildRules = (
 			);
@@ -433,10 +447,8 @@
 				A4F50D552084CA2400E2E200 /* TimelineViewController.swift in Sources */,
 				A4F50D2D2084C9F400E2E200 /* Tier+CoreDataClass.swift in Sources */,
 				A4F50D5B2084CA2400E2E200 /* TimelineLayout.swift in Sources */,
-				A4F50D482084CA2400E2E200 /* InputStreamHandler.swift in Sources */,
 				A4F50D492084CA2400E2E200 /* TierCollectionViewCell.swift in Sources */,
 				A4F50D592084CA2400E2E200 /* MovieWriter.swift in Sources */,
-				A4F50D4B2084CA2400E2E200 /* OutputStreamHandler.swift in Sources */,
 				A4F50D2F2084C9F400E2E200 /* VideoTrack+CoreDataClass.swift in Sources */,
 				A4F50D542084CA2400E2E200 /* Palette.swift in Sources */,
 				A4F50D4C2084CA2400E2E200 /* VideoCell.swift in Sources */,

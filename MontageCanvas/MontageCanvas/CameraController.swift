@@ -13,6 +13,7 @@ import MultipeerConnectivity
 import CloudKit
 //import TCCore
 //import TCMask
+import Streamer
 
 let STATUS_KEYPATH  = "status"
 let REFRESH_INTERVAL = Float64(0.5)
@@ -26,27 +27,7 @@ let mirrorQueue = DispatchQueue(label: "fr.lri.ex-situ.Montage.serial_mirror_que
 let mirrorQueue2 = DispatchQueue(label: "fr.lri.ex-situ.Montage.serial_mirror_queue_2", qos: DispatchQoS.userInteractive)
 let fps = 24.0
 
-class InputStreamHandlerOwner:NSObject, InputStreamOwnerDelegate {
-    //    var _dcache = NSMutableDictionary(capacity: 30)
-    var inputStreamHandlers = Set<InputStreamHandler>()
-    
-    // MARK: InputStreamOwner
-    func addInputStreamHandler(_ inputStreamHandler:InputStreamHandler) {
-        inputStreamHandlers.insert(inputStreamHandler)
-    }
-    
-    func removeInputStreamHandler(_ inputStreamHandler:InputStreamHandler) {
-        inputStreamHandlers.remove(inputStreamHandler)
-    }
-    
-    func free() {
-        for anInputStreamHandler in inputStreamHandlers {
-            anInputStreamHandler.close()
-        }
-    }
-}
-
-class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDelegate, MCNearbyServiceBrowserDelegate, MCSessionDelegate, StreamDelegate, OutputStreamOwner {
+class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDelegate, MCNearbyServiceBrowserDelegate, MCSessionDelegate, InputStreamerDelegate, OutputStreamerDelegate {
 //    let dataSource = TierCollectionDataSource()
 //    @IBOutlet weak var tiersCollectionView:UICollectionView! {
 //        didSet {
@@ -66,19 +47,119 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
     var lastTimeSent = Date()
     // MARK: Streaming Multipeer
     
-    var outputStreamHandlers = Set<OutputStreamHandler>()
-    
-    // MARK: OutputStreamOwner
-    func addOutputStreamHandler(_ outputStreamHandler:OutputStreamHandler) {
-        outputStreamHandlers.insert(outputStreamHandler)
+    // MARK: InputStreamerDelegate
+    func didClose(streamer: OutputStreamer) {
+        print("didClose OutputStreamer")
     }
     
-    func removeOutputStreamHandler(_ outputStreamHandler:OutputStreamHandler) {
-        outputStreamHandlers.remove(outputStreamHandler)
-    }
+    var outputStreamers = [OutputStreamer]()
     
-    var ownerStream1 = InputStreamHandlerOwner()
-    var ownerStream2 = InputStreamHandlerOwner()
+    // MARK: InputStreamerDelegate
+    var inputStreamer1:InputStreamer?
+    var inputStreamer2:InputStreamer?
+    
+    func inputStreamer(_ streamer: InputStreamer, decodedImage ciImage: CIImage) {
+        print("decodedImage")
+        if let myInputStreamer1 = inputStreamer1, myInputStreamer1 == streamer {
+            backgroundCameraFrame = ciImage
+        }
+        if let myInputStreamer2 = inputStreamer2, myInputStreamer2 == streamer {
+            let weakSelf = self
+            weakSelf.prototypeCameraFrame = ciImage
+            if weakSelf.camBackgroundPeer == nil {
+                let source = ciImage
+                DispatchQueue.main.async {
+                    weakSelf.prototypeFrameImageView.image = UIImage(ciImage:source)
+                }
+                /* TODO: MIRROR DISABLED */
+                /*
+                if let connectedMirrorPeer = weakSelf.mirrorPeer {
+                    let isPhoneMirror:Bool
+                    
+                    if let mirrorRole = weakSelf.peersRoles[connectedMirrorPeer.displayName], mirrorRole == MontageRole.iphoneCam {
+                        isPhoneMirror = true
+                    } else {
+                        isPhoneMirror = false
+                    }
+                    
+                    if Date().timeIntervalSince(weakSelf.lastTimeSent) >= (1 / fps) {
+                        mirrorQueue.async {[unowned self] in
+                            if self.sketchOverlay == nil {
+                                return
+                            }
+                            
+                            var overlay = self.sketchOverlay!
+                            
+                            
+                            if isPhoneMirror {
+                                //Reduce the overlay drastically
+                                guard let scaleFilter = CIFilter(name: "CILanczosScaleTransform") else {
+                                    return
+                                }
+                                scaleFilter.setValue(overlay, forKey: "inputImage")
+                                let scaleFactor = 0.25
+                                scaleFilter.setValue(scaleFactor, forKey: "inputScale")
+                                scaleFilter.setValue(1.0, forKey: "inputAspectRatio")
+                                
+                                guard let scaledFinalImage = scaleFilter.outputImage else {
+                                    return
+                                }
+                                overlay = scaledFinalImage
+                            }
+                            
+                            guard let image = self.cgImageBackedImage(withCIImage: overlay) else {
+                                print("Could not build overly image to mirror")
+                                return
+                            }
+                            let currentDate = Date()
+                            //                                    let streamName = "\(currentDate.description(with: Locale.current)) \(currentDate.timeIntervalSince1970)"
+                            let streamName = "\(currentDate.timeIntervalSince1970)"
+                            
+                            DispatchQueue.main.async {[unowned self] in
+                                
+                                let outputStream:OutputStream
+                                
+                                do {
+                                    outputStream = try self.multipeerSession.startStream(withName: streamName, toPeer: connectedMirrorPeer)
+                                } catch let error as NSError {
+                                    print("Couldn't crete output stream: \(error.localizedDescription)")
+                                    return
+                                }
+                                
+                                guard let data = UIImagePNGRepresentation(image) else {
+                                    //                                        guard let UIImageJPEGRepresentation(image, 0.25) else {
+                                    print("Could not build data to mirror")
+                                    return
+                                }
+                                
+                                let outputStreamHandler = OutputStreamHandler(outputStream,owner:self,data: data as NSData,queue:mirrorQueue2)
+                                
+                                outputStream.delegate = outputStreamHandler
+                                outputStream.schedule(in: RunLoop.main, forMode: RunLoopMode.defaultRunLoopMode)
+                                outputStream.open()
+                                weakSelf.lastTimeSent = Date()
+                            }
+                        }
+                    }
+                }*/
+            }
+        }
+
+    }
+    func didClose(_ streamer: InputStreamer) {
+        print("didClose InputStreamer")
+//        if let index = inputStreamers.index(of: streamer) {
+//            inputStreamers.remove(at: index)
+//        }
+        if let myStreamer1 = inputStreamer1, myStreamer1 == streamer {
+            myStreamer1.close()
+            inputStreamer1 = nil
+        }
+        if let myStreamer2 = inputStreamer2, myStreamer2 == streamer {
+            myStreamer2.close()
+            inputStreamer2 = nil
+        }
+    }
     
     let coreDataContext = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
     var videoModel:Video!
@@ -387,12 +468,7 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
     }
     
     deinit {
-        ownerStream1.free()
-        ownerStream2.free()
-        
-        for anOutputStreamHandler in outputStreamHandlers {
-            anOutputStreamHandler.close()
-        }
+        NotificationCenter.default.removeObserver(self)
         
         //TODO: revise
         /*
@@ -1904,10 +1980,8 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
 //                let elapsedTimeSinceCreation = Date().timeIntervalSince1970 - createAt
 //                print("connectedCamBackgroundPeer elapsedTimeSinceCreation: \(elapsedTimeSinceCreation * 1000)ms")
 //            }
-            
-            readDataToInputStream(stream, owner:ownerStream1, queue: streamingQueue1) { ciImage in
-                weakSelf.backgroundCameraFrame = ciImage
-            }
+            inputStreamer1 = InputStreamer(peerID,stream:stream)
+            inputStreamer1?.delegate = self
         }
         if let connectedCamPrototypePeer = camPrototypePeer, peerID.displayName.isEqual(connectedCamPrototypePeer.displayName) {
 //            if let createAt = Double(streamName) {
@@ -1915,102 +1989,14 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
 //                print("connectedCamPrototypePeer elapsedTimeSinceCreation: \(elapsedTimeSinceCreation * 1000)ms")
 //            }
             
-            readDataToInputStream(stream, owner:ownerStream2, queue: streamingQueue2) { ciImage in
-                weakSelf.prototypeCameraFrame = ciImage
-                if weakSelf.camBackgroundPeer == nil {
-                    if let source = ciImage {
-                        DispatchQueue.main.async {
-                            weakSelf.prototypeFrameImageView.image = UIImage(ciImage:source)
-                        }
-                        if let connectedMirrorPeer = weakSelf.mirrorPeer {
-                            let isPhoneMirror:Bool
-                            
-                            if let mirrorRole = weakSelf.peersRoles[connectedMirrorPeer.displayName], mirrorRole == MontageRole.iphoneCam {
-                                isPhoneMirror = true
-                            } else {
-                                isPhoneMirror = false
-                            }
-                            
-                            if Date().timeIntervalSince(weakSelf.lastTimeSent) >= (1 / fps) {
-                                mirrorQueue.async {[unowned self] in
-                                    if self.sketchOverlay == nil {
-                                        return
-                                    }
-
-                                    var overlay = self.sketchOverlay!
-                                    
-                                    
-                                    if isPhoneMirror {
-                                        //Reduce the overlay drastically
-                                        guard let scaleFilter = CIFilter(name: "CILanczosScaleTransform") else {
-                                            return
-                                        }
-                                        scaleFilter.setValue(overlay, forKey: "inputImage")
-                                        let scaleFactor = 0.25
-                                        scaleFilter.setValue(scaleFactor, forKey: "inputScale")
-                                        scaleFilter.setValue(1.0, forKey: "inputAspectRatio")
-                                        
-                                        guard let scaledFinalImage = scaleFilter.outputImage else {
-                                            return
-                                        }
-                                        overlay = scaledFinalImage
-                                    }
-                                    
-                                    guard let image = self.cgImageBackedImage(withCIImage: overlay) else {
-                                        print("Could not build overly image to mirror")
-                                        return
-                                    }
-                                    let currentDate = Date()
-//                                    let streamName = "\(currentDate.description(with: Locale.current)) \(currentDate.timeIntervalSince1970)"
-                                    let streamName = "\(currentDate.timeIntervalSince1970)"
-
-                                    DispatchQueue.main.async {[unowned self] in
-                                        
-                                        let outputStream:OutputStream
-                                        
-                                        do {
-                                            outputStream = try self.multipeerSession.startStream(withName: streamName, toPeer: connectedMirrorPeer)
-                                        } catch let error as NSError {
-                                            print("Couldn't crete output stream: \(error.localizedDescription)")
-                                            return
-                                        }
-                                        
-                                        guard let data = UIImagePNGRepresentation(image) else {
-//                                        guard let UIImageJPEGRepresentation(image, 0.25) else {
-                                            print("Could not build data to mirror")
-                                            return
-                                        }
-                                        
-                                        let outputStreamHandler = OutputStreamHandler(outputStream,owner:self,data: data as NSData,queue:mirrorQueue2)
-                                        
-                                        outputStream.delegate = outputStreamHandler
-                                        outputStream.schedule(in: RunLoop.main, forMode: RunLoopMode.defaultRunLoopMode)
-                                        outputStream.open()
-                                        weakSelf.lastTimeSent = Date()
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    
-                    
-                    return
-                }
-            }
+            inputStreamer2 = InputStreamer(peerID,stream:stream)
+            inputStreamer2?.delegate = self
         }
         sampleBufferQueue.async {
             if let receivedCIImage = weakSelf.prototypeCameraFrame {
                 weakSelf.applyFilterFromPrototypeToBackground(source: receivedCIImage)
             }
         }
-    }
-    
-    func readDataToInputStream(_ iStream:InputStream,owner:InputStreamOwnerDelegate,queue:DispatchQueue,completion:((CIImage?)->())?) {
-        let inputStreamHandler = InputStreamHandler(iStream,owner:owner,queue: queue)
-        
-        inputStreamHandler.completionBlock = completion
-        
-        iStream.open()
     }
     
     var prototypeReceptionProgress:Progress?
@@ -2335,6 +2321,55 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
                 weakSelf.playBackComplete()
             })
         })
+    }
+    
+    // MARK: Deinitialization of Streamers
+    
+    @objc func appWillWillEnterForeground(_ notification:Notification) {
+        print("appWillWillEnterForeground")
+        browser.startBrowsingForPeers()
+        print("startBrowsingForPeers")
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        print("viewWillAppear")
+        browser.startBrowsingForPeers()
+        print("initial start browsing for peers")
+    }
+    
+    @objc func appWillResignActive(_ notification:Notification) {
+        print("appWillResignActive")
+//        for streamer in inputStreamers {
+//            streamer.close()
+//        }
+        inputStreamer1?.close()
+        inputStreamer2?.close()
+        browser.stopBrowsingForPeers()
+        print("stop browsing for peers")
+    }
+    
+    @objc func appWillTerminate(_ notification:Notification) {
+        print("appWillTerminate") //I think appWillResignActive is called before
+        //        for streamer in inputStreamers {
+        //            streamer.close()
+        //        }
+        inputStreamer1?.close()
+        inputStreamer2?.close()
+        browser.stopBrowsingForPeers()
+        print("stop browsing for peers")
+    }
+    
+    override func viewWillDisappear(_ animated: Bool) {
+        print("viewWillDisappear")
+        super.viewWillDisappear(animated)
+        //        for streamer in inputStreamers {
+        //            streamer.close()
+        //        }
+        inputStreamer1?.close()
+        inputStreamer2?.close()
+        browser.stopBrowsingForPeers()
+        print("stop browsing for peers")
     }
 }
 
