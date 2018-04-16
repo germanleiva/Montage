@@ -5,9 +5,9 @@ use_frameworks!
 
 workspace 'Montage'
 
-xcodeproj 'MontageCanvas/MontageCanvas.xcodeproj'
-xcodeproj 'MontageCam/MontageCam.xcodeproj'
-xcodeproj 'MontageMirror/MontageMirror.xcodeproj'
+project 'MontageCanvas/MontageCanvas.xcodeproj'
+project 'MontageCam/MontageCam.xcodeproj'
+project 'MontageMirror/MontageMirror.xcodeproj'
 
 def common_ui_pods
 pod 'MBProgressHUD'
@@ -18,16 +18,16 @@ pod 'Reachability'
 end
 
 target 'MontageCanvas' do
-xcodeproj 'MontageCanvas/MontageCanvas.xcodeproj'
+project 'MontageCanvas/MontageCanvas.xcodeproj'
 common_ui_pods
 end
 
 target 'MontageCam' do
-xcodeproj 'MontageCam/MontageCam.xcodeproj'
+project 'MontageCam/MontageCam.xcodeproj'
 common_ui_pods
 end
 
 target 'MontageMirror' do
-xcodeproj 'MontageMirror/MontageMirror.xcodeproj'
+project 'MontageMirror/MontageMirror.xcodeproj'
 common_ui_pods
 end

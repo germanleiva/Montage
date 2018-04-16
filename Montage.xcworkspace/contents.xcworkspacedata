@@ -5,12 +5,15 @@
       location = "group:Streamer/Streamer.xcodeproj">
    </FileRef>
    <FileRef
-      location = "group:MontageMirror/MontageMirror.xcodeproj">
-   </FileRef>
-   <FileRef
       location = "group:MontageCanvas/MontageCanvas.xcodeproj">
    </FileRef>
    <FileRef
       location = "group:MontageCam/MontageCam.xcodeproj">
+   </FileRef>
+   <FileRef
+      location = "group:MontageMirror/MontageMirror.xcodeproj">
+   </FileRef>
+   <FileRef
+      location = "group:Pods/Pods.xcodeproj">
    </FileRef>
 </Workspace>

@@ -15,6 +15,7 @@
 		A4D59BBD2084C47F002350B5 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = A4D59BBB2084C47F002350B5 /* LaunchScreen.storyboard */; };
 		A4D59BC82084C47F002350B5 /* MontageMirrorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4D59BC72084C47F002350B5 /* MontageMirrorTests.swift */; };
 		A4D59BD32084C47F002350B5 /* MontageMirrorUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4D59BD22084C47F002350B5 /* MontageMirrorUITests.swift */; };
+		ED5AD3FA9A8B85D845A25CD6 /* Pods_MontageMirror.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6E74C24329C1047DD8834665 /* Pods_MontageMirror.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -35,6 +36,8 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		14D38043F4A6AF533CD86BE4 /* Pods-MontageMirror.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-MontageMirror.debug.xcconfig"; path = "../Pods/Target Support Files/Pods-MontageMirror/Pods-MontageMirror.debug.xcconfig"; sourceTree = "<group>"; };
+		6E74C24329C1047DD8834665 /* Pods_MontageMirror.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_MontageMirror.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		A4D59BAC2084C47E002350B5 /* MontageMirror.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MontageMirror.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A4D59BAF2084C47E002350B5 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		A4D59BB12084C47E002350B5 /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
@@ -49,6 +52,7 @@
 		A4D59BCE2084C47F002350B5 /* MontageMirrorUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MontageMirrorUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A4D59BD22084C47F002350B5 /* MontageMirrorUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MontageMirrorUITests.swift; sourceTree = "<group>"; };
 		A4D59BD42084C47F002350B5 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		B90757BB4B7959F479BF34A0 /* Pods-MontageMirror.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-MontageMirror.release.xcconfig"; path = "../Pods/Target Support Files/Pods-MontageMirror/Pods-MontageMirror.release.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -56,6 +60,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				ED5AD3FA9A8B85D845A25CD6 /* Pods_MontageMirror.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -76,6 +81,23 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		39647FC4D8E3118CE04F0F58 /* Pods */ = {
+			isa = PBXGroup;
+			children = (
+				14D38043F4A6AF533CD86BE4 /* Pods-MontageMirror.debug.xcconfig */,
+				B90757BB4B7959F479BF34A0 /* Pods-MontageMirror.release.xcconfig */,
+			);
+			name = Pods;
+			sourceTree = "<group>";
+		};
+		3BA495B667AC871F9FB23A39 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				6E74C24329C1047DD8834665 /* Pods_MontageMirror.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		A4D59BA32084C47E002350B5 = {
 			isa = PBXGroup;
 			children = (
@@ -83,6 +105,8 @@
 				A4D59BC62084C47F002350B5 /* MontageMirrorTests */,
 				A4D59BD12084C47F002350B5 /* MontageMirrorUITests */,
 				A4D59BAD2084C47E002350B5 /* Products */,
+				39647FC4D8E3118CE04F0F58 /* Pods */,
+				3BA495B667AC871F9FB23A39 /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -135,9 +159,11 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = A4D59BD72084C47F002350B5 /* Build configuration list for PBXNativeTarget "MontageMirror" */;
 			buildPhases = (
+				8CC237052EBC4CE57BFFD22C /* [CP] Check Pods Manifest.lock */,
 				A4D59BA82084C47E002350B5 /* Sources */,
 				A4D59BA92084C47E002350B5 /* Frameworks */,
 				A4D59BAA2084C47E002350B5 /* Resources */,
+				53061BD6EBE803678E1CB012 /* [CP] Embed Pods Frameworks */,
 			);
 			buildRules = (
 			);
@@ -253,6 +279,45 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		53061BD6EBE803678E1CB012 /* [CP] Embed Pods Frameworks */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+				"${SRCROOT}/../Pods/Target Support Files/Pods-MontageMirror/Pods-MontageMirror-frameworks.sh",
+				"${BUILT_PRODUCTS_DIR}/MBProgressHUD/MBProgressHUD.framework",
+			);
+			name = "[CP] Embed Pods Frameworks";
+			outputPaths = (
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/MBProgressHUD.framework",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${SRCROOT}/../Pods/Target Support Files/Pods-MontageMirror/Pods-MontageMirror-frameworks.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
+		8CC237052EBC4CE57BFFD22C /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
+				"${PODS_ROOT}/Manifest.lock",
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/Pods-MontageMirror-checkManifestLockResult.txt",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			showEnvVarsInLog = 0;
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		A4D59BA82084C47E002350B5 /* Sources */ = {
@@ -432,15 +497,13 @@
 		};
 		A4D59BD82084C47F002350B5 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 14D38043F4A6AF533CD86BE4 /* Pods-MontageMirror.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 7HVPEZWBRD;
 				INFOPLIST_FILE = MontageMirror/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-				);
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = "ex-situ.lri.fr.MontageMirror";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 4.0;
@@ -450,15 +513,13 @@
 		};
 		A4D59BD92084C47F002350B5 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = B90757BB4B7959F479BF34A0 /* Pods-MontageMirror.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 7HVPEZWBRD;
 				INFOPLIST_FILE = MontageMirror/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-				);
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = "ex-situ.lri.fr.MontageMirror";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 4.0;
@@ -474,11 +535,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 7HVPEZWBRD;
 				INFOPLIST_FILE = MontageMirrorTests/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-					"@loader_path/Frameworks",
-				);
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = "ex-situ.lri.fr.MontageMirrorTests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 4.0;
@@ -495,11 +552,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 7HVPEZWBRD;
 				INFOPLIST_FILE = MontageMirrorTests/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-					"@loader_path/Frameworks",
-				);
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = "ex-situ.lri.fr.MontageMirrorTests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 4.0;
@@ -515,11 +568,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 7HVPEZWBRD;
 				INFOPLIST_FILE = MontageMirrorUITests/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-					"@loader_path/Frameworks",
-				);
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = "ex-situ.lri.fr.MontageMirrorUITests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 4.0;
@@ -535,11 +584,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 7HVPEZWBRD;
 				INFOPLIST_FILE = MontageMirrorUITests/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-					"@loader_path/Frameworks",
-				);
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = "ex-situ.lri.fr.MontageMirrorUITests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 4.0;
