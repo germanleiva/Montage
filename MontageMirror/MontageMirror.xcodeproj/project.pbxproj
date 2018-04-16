@@ -9,12 +9,13 @@
 /* Begin PBXBuildFile section */
 		A4D59BB02084C47E002350B5 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4D59BAF2084C47E002350B5 /* AppDelegate.swift */; };
 		A4D59BB22084C47E002350B5 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4D59BB12084C47E002350B5 /* ViewController.swift */; };
-		A4D59BB52084C47E002350B5 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = A4D59BB32084C47E002350B5 /* Main.storyboard */; };
 		A4D59BB82084C47E002350B5 /* MontageMirror.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = A4D59BB62084C47E002350B5 /* MontageMirror.xcdatamodeld */; };
 		A4D59BBA2084C47F002350B5 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A4D59BB92084C47F002350B5 /* Assets.xcassets */; };
 		A4D59BBD2084C47F002350B5 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = A4D59BBB2084C47F002350B5 /* LaunchScreen.storyboard */; };
 		A4D59BC82084C47F002350B5 /* MontageMirrorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4D59BC72084C47F002350B5 /* MontageMirrorTests.swift */; };
 		A4D59BD32084C47F002350B5 /* MontageMirrorUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4D59BD22084C47F002350B5 /* MontageMirrorUITests.swift */; };
+		A4F50D6B2084D91400E2E200 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = A4F50D6A2084D91400E2E200 /* Main.storyboard */; };
+		A4F50D6D2084D92300E2E200 /* InputStreamHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4F50D6C2084D92200E2E200 /* InputStreamHandler.swift */; };
 		ED5AD3FA9A8B85D845A25CD6 /* Pods_MontageMirror.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6E74C24329C1047DD8834665 /* Pods_MontageMirror.framework */; };
 /* End PBXBuildFile section */
 
@@ -41,7 +42,6 @@
 		A4D59BAC2084C47E002350B5 /* MontageMirror.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MontageMirror.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A4D59BAF2084C47E002350B5 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		A4D59BB12084C47E002350B5 /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
-		A4D59BB42084C47E002350B5 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		A4D59BB72084C47E002350B5 /* MontageMirror.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = MontageMirror.xcdatamodel; sourceTree = "<group>"; };
 		A4D59BB92084C47F002350B5 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A4D59BBC2084C47F002350B5 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
@@ -52,6 +52,8 @@
 		A4D59BCE2084C47F002350B5 /* MontageMirrorUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MontageMirrorUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A4D59BD22084C47F002350B5 /* MontageMirrorUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MontageMirrorUITests.swift; sourceTree = "<group>"; };
 		A4D59BD42084C47F002350B5 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		A4F50D6A2084D91400E2E200 /* Main.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; path = Main.storyboard; sourceTree = "<group>"; };
+		A4F50D6C2084D92200E2E200 /* InputStreamHandler.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = InputStreamHandler.swift; sourceTree = "<group>"; };
 		B90757BB4B7959F479BF34A0 /* Pods-MontageMirror.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-MontageMirror.release.xcconfig"; path = "../Pods/Target Support Files/Pods-MontageMirror/Pods-MontageMirror.release.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -123,9 +125,10 @@
 		A4D59BAE2084C47E002350B5 /* MontageMirror */ = {
 			isa = PBXGroup;
 			children = (
+				A4F50D6C2084D92200E2E200 /* InputStreamHandler.swift */,
 				A4D59BAF2084C47E002350B5 /* AppDelegate.swift */,
 				A4D59BB12084C47E002350B5 /* ViewController.swift */,
-				A4D59BB32084C47E002350B5 /* Main.storyboard */,
+				A4F50D6A2084D91400E2E200 /* Main.storyboard */,
 				A4D59BB92084C47F002350B5 /* Assets.xcassets */,
 				A4D59BBB2084C47F002350B5 /* LaunchScreen.storyboard */,
 				A4D59BBE2084C47F002350B5 /* Info.plist */,
@@ -258,9 +261,9 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A4F50D6B2084D91400E2E200 /* Main.storyboard in Resources */,
 				A4D59BBD2084C47F002350B5 /* LaunchScreen.storyboard in Resources */,
 				A4D59BBA2084C47F002350B5 /* Assets.xcassets in Resources */,
-				A4D59BB52084C47E002350B5 /* Main.storyboard in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -325,6 +328,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				A4D59BB22084C47E002350B5 /* ViewController.swift in Sources */,
+				A4F50D6D2084D92300E2E200 /* InputStreamHandler.swift in Sources */,
 				A4D59BB82084C47E002350B5 /* MontageMirror.xcdatamodeld in Sources */,
 				A4D59BB02084C47E002350B5 /* AppDelegate.swift in Sources */,
 			);
@@ -362,14 +366,6 @@
 /* End PBXTargetDependency section */
 
 /* Begin PBXVariantGroup section */
-		A4D59BB32084C47E002350B5 /* Main.storyboard */ = {
-			isa = PBXVariantGroup;
-			children = (
-				A4D59BB42084C47E002350B5 /* Base */,
-			);
-			name = Main.storyboard;
-			sourceTree = "<group>";
-		};
 		A4D59BBB2084C47F002350B5 /* LaunchScreen.storyboard */ = {
 			isa = PBXVariantGroup;
 			children = (
@@ -503,7 +499,10 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 7HVPEZWBRD;
 				INFOPLIST_FILE = MontageMirror/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = "ex-situ.lri.fr.MontageMirror";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 4.0;
@@ -519,7 +518,10 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 7HVPEZWBRD;
 				INFOPLIST_FILE = MontageMirror/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = "ex-situ.lri.fr.MontageMirror";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 4.0;
@@ -535,7 +537,11 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 7HVPEZWBRD;
 				INFOPLIST_FILE = MontageMirrorTests/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = "ex-situ.lri.fr.MontageMirrorTests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 4.0;
@@ -552,7 +558,11 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 7HVPEZWBRD;
 				INFOPLIST_FILE = MontageMirrorTests/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = "ex-situ.lri.fr.MontageMirrorTests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 4.0;
@@ -568,7 +578,11 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 7HVPEZWBRD;
 				INFOPLIST_FILE = MontageMirrorUITests/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = "ex-situ.lri.fr.MontageMirrorUITests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 4.0;
@@ -584,7 +598,11 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 7HVPEZWBRD;
 				INFOPLIST_FILE = MontageMirrorUITests/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = "ex-situ.lri.fr.MontageMirrorUITests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 4.0;
