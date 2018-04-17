@@ -9,15 +9,6 @@
 import Cocoa
 import MultipeerConnectivity
 
-enum MontageRole:Int {
-    case undefined = 0
-    case iphoneCam
-    case iPadCam
-    case mirror
-    case watchMirror
-    case canvas
-}
-
 let streamingQueue1 = DispatchQueue(label: "fr.lri.ex-situ.Montage.serial_streaming_queue_1", qos: DispatchQoS.userInteractive)
 let streamingQueue2 = DispatchQueue(label: "fr.lri.ex-situ.Montage.serial_streaming_queue_2", qos: DispatchQoS.userInteractive)
 

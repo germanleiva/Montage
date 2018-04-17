@@ -58,22 +58,32 @@ enum NaluType:UInt8 {
     case SEI = 6
 }
 
+let sepdata = Data([0x0,0x0,0x0,0x1])
+
 public class InputStreamer: NSObject, VideoDecoderDelegate, StreamDelegate {
+    public private(set) var peerID: MCPeerID
     public weak var delegate:InputStreamerDelegate?
-    var savedDataSampleBuffer = Data()
-    let sepdata = Data([0x0,0x0,0x0,0x1])
-    var decoder: H264Decoder?
     var stream:InputStream
-    var peerID: MCPeerID
+    var readingQueue:DispatchQueue
+    var savedDataSampleBuffer = Data()
+    var decoder: H264Decoder?
+    var isRunning = false {
+        didSet {
+            print("Running changed \(peerID.description) isRunning \(isRunning)")
+        }
+    }
     
     public init(_ peerID:MCPeerID, stream:InputStream) {
         self.peerID = peerID
         self.stream = stream
+        self.readingQueue = DispatchQueue(label: "readingQueue-\(peerID.description) \(Date())")
         super.init()
         
         self.stream.delegate = self
         self.stream.schedule(in: RunLoop.main, forMode: RunLoopMode.defaultRunLoopMode)
         self.stream.open()
+        
+        self.isRunning = true 
     }
     
     // -MARK: VideoDecoderDelegate
@@ -84,8 +94,13 @@ public class InputStreamer: NSObject, VideoDecoderDelegate, StreamDelegate {
             return
         }
         let finalImage = CIImage(cvImageBuffer: cvImageBuffer)
-        DispatchQueue.main.async { [unowned self] in
-            self.delegate?.inputStreamer(self, decodedImage:finalImage)
+        
+        guard let aDelegate = self.delegate else {
+            return
+        }
+        
+        DispatchQueue.main.async {
+            aDelegate.inputStreamer(self, decodedImage:finalImage)
         }
     }
     
@@ -102,129 +117,136 @@ public class InputStreamer: NSObject, VideoDecoderDelegate, StreamDelegate {
             print("Stream.Event.hasSpaceAvailable \(iStream.streamStatus)")
         case .hasBytesAvailable:
 //            print("Stream.Event.hasBytesAvailable \(iStream.description)")
-            let bufferSize = 8 * 1024
-            
-            let readingSampleBuffer = UnsafeMutablePointer<UInt8>.allocate(capacity: bufferSize)
-            
-            defer {
-                readingSampleBuffer.deallocate()
-            }
-            
-            let readResult = iStream.read(readingSampleBuffer, maxLength: bufferSize)
-            
-            if readResult < 0 {
-                print("error readResult < 0: \(readResult)")
-                print("error in InputStreamHandler: \(iStream.streamError?.localizedDescription ?? "no error description")")
-                return
-            }
-            
-            if readResult > 0 {
-//                print("readResult > 0: \(readResult)")
-                savedDataSampleBuffer.append(readingSampleBuffer,count:readResult)
-                
-                let readingDataSampleBuffer = savedDataSampleBuffer
-                guard readingDataSampleBuffer.count > 4 else {
-                    print("not enough data")
+            let weakSelf = self
+            readingQueue.async {[unowned self] in
+                if !weakSelf.isRunning {
                     return
                 }
                 
-                let searchRange:Range<Data.Index> = sepdata.count ..< readingDataSampleBuffer.count
-                var nextRange = readingDataSampleBuffer.range(of: sepdata, options: [], in: searchRange)
+                let bufferSize = 8 * 1024
                 
-                if nextRange == nil {
-                    //There are no chunks
+                let readingSampleBuffer = UnsafeMutablePointer<UInt8>.allocate(capacity: bufferSize)
+                
+                defer {
+                    readingSampleBuffer.deallocate()
+                }
+                
+                let readResult = iStream.read(readingSampleBuffer, maxLength: bufferSize)
+                
+                if readResult < 0 {
+                    print("error readResult < 0: \(readResult)")
+                    print("error in InputStreamHandler: \(iStream.streamError?.localizedDescription ?? "no error description")")
                     return
                 }
                 
-                let firstChunk = readingDataSampleBuffer.subdata(in: 0..<nextRange!.lowerBound)
-                
-                if NaluType.sps.rawValue == firstChunk.bytes[4] & 0x1F {
-//                    print("The first chunk is a SPS NALU")
-                    //We need 2 more chunks, PPS and (IDR or SEI)
-                    //                    guard chunks.count >= 3 else {
-                    //                        print("We wait for PPS and IDR or SEI")
-                    //                        return
-                    //                    }
+                if readResult > 0 {
+                    //                print("readResult > 0: \(readResult)")
+                    self.savedDataSampleBuffer.append(readingSampleBuffer,count:readResult)
                     
-                    let dataWithoutFirstChunk = readingDataSampleBuffer.advanced(by: firstChunk.count)
-                    nextRange = dataWithoutFirstChunk.range(of: sepdata, options: [], in: sepdata.count..<dataWithoutFirstChunk.count)
+                    let readingDataSampleBuffer = self.savedDataSampleBuffer
+                    guard readingDataSampleBuffer.count > 4 else {
+                        print("not enough data")
+                        return
+                    }
+                    
+                    let searchRange:Range<Data.Index> = sepdata.count ..< readingDataSampleBuffer.count
+                    var nextRange = readingDataSampleBuffer.range(of: sepdata, options: [], in: searchRange)
                     
                     if nextRange == nil {
-                        print("There is no second chunk and it is needed")
+                        //There are no chunks
                         return
                     }
                     
-                    let secondChunk = dataWithoutFirstChunk.subdata(in: 0..<nextRange!.lowerBound)
+                    let firstChunk = readingDataSampleBuffer.subdata(in: 0..<nextRange!.lowerBound)
                     
-                    guard NaluType.pps.rawValue == secondChunk.bytes[4] & 0x1F else {
-                        print("Second chunk was expected to be PPS")
-                        return
-                    }
-                    
-                    let dataWithoutSecondChunk = dataWithoutFirstChunk.advanced(by: secondChunk.count)
-                    nextRange = dataWithoutSecondChunk.range(of: sepdata, options: [], in: sepdata.count..<dataWithoutSecondChunk.count)
-                    
-                    if nextRange == nil {
-                        print("There is no third chunk and it is needed")
-                        return
-                    }
-                    
-                    let thirdChunk = dataWithoutSecondChunk.subdata(in: 0..<nextRange!.lowerBound)
-                    
-                    let thirdNaluType = thirdChunk.bytes[4] & 0x1F
-                    guard NaluType.nonIDR.rawValue == thirdNaluType || NaluType.IDR.rawValue == thirdNaluType || NaluType.SEI.rawValue == thirdNaluType else {
-                        print("Third chunk was expected to be Non-IDR or IDR or SEI: \(thirdNaluType) \(thirdChunk.bytes[4])")
-                        return
-                    }
-                    
-                    var newFirst = Data()
-                    newFirst.append(firstChunk)
-                    newFirst.append(secondChunk)
-                    newFirst.append(thirdChunk)
-                    
-                    interpretRawFrameData(newFirst.bytes)
-                    
-                    savedDataSampleBuffer = savedDataSampleBuffer.subdata(in: newFirst.count ..< savedDataSampleBuffer.count)
-                    
-                    return
-                } else {
-//                    print("first chunk is not SPS, it has type \(firstChunk.bytes[4] & 0x1F)")
-                    
-                    //This last nextRange has the last delimiter range
-                    nextRange = readingDataSampleBuffer.range(of: sepdata, options: Data.SearchOptions.backwards, in: sepdata.count..<readingDataSampleBuffer.count)
-                    
-                    if nextRange == nil {
-                        return
-                    }
-                    
-                    var bigChunk = readingDataSampleBuffer.subdata(in: 0..<nextRange!.lowerBound)
-                    
-                    var i = sepdata.count
-                    var chunkInit = 0
-                    let lastIndexToCheck = bigChunk.count - sepdata.count
-                    while i <= lastIndexToCheck {
-                        if [bigChunk[i],bigChunk[i+1],bigChunk[i+2],bigChunk[i+3]] == sepdata.bytes {
-                            let nextChunk = bigChunk.subdata(in: chunkInit..<i)
-                            interpretRawFrameData(nextChunk.bytes)
-                            chunkInit = i
-                            i += sepdata.count
-                        } else {
-                            i += 1
+                    if NaluType.sps.rawValue == firstChunk.bytes[4] & 0x1F {
+                        //                    print("The first chunk is a SPS NALU")
+                        //We need 2 more chunks, PPS and (IDR or SEI)
+                        //                    guard chunks.count >= 3 else {
+                        //                        print("We wait for PPS and IDR or SEI")
+                        //                        return
+                        //                    }
+                        
+                        let dataWithoutFirstChunk = readingDataSampleBuffer.advanced(by: firstChunk.count)
+                        nextRange = dataWithoutFirstChunk.range(of: sepdata, options: [], in: sepdata.count..<dataWithoutFirstChunk.count)
+                        
+                        if nextRange == nil {
+                            print("There is no second chunk and it is needed")
+                            return
                         }
+                        
+                        let secondChunk = dataWithoutFirstChunk.subdata(in: 0..<nextRange!.lowerBound)
+                        
+                        guard NaluType.pps.rawValue == secondChunk.bytes[4] & 0x1F else {
+                            print("Second chunk was expected to be PPS")
+                            return
+                        }
+                        
+                        let dataWithoutSecondChunk = dataWithoutFirstChunk.advanced(by: secondChunk.count)
+                        nextRange = dataWithoutSecondChunk.range(of: sepdata, options: [], in: sepdata.count..<dataWithoutSecondChunk.count)
+                        
+                        if nextRange == nil {
+                            print("There is no third chunk and it is needed")
+                            return
+                        }
+                        
+                        let thirdChunk = dataWithoutSecondChunk.subdata(in: 0..<nextRange!.lowerBound)
+                        
+                        let thirdNaluType = thirdChunk.bytes[4] & 0x1F
+                        guard NaluType.nonIDR.rawValue == thirdNaluType || NaluType.IDR.rawValue == thirdNaluType || NaluType.SEI.rawValue == thirdNaluType else {
+                            print("Third chunk was expected to be Non-IDR or IDR or SEI: \(thirdNaluType) \(thirdChunk.bytes[4])")
+                            return
+                        }
+                        
+                        var newFirst = Data()
+                        newFirst.append(firstChunk)
+                        newFirst.append(secondChunk)
+                        newFirst.append(thirdChunk)
+                        
+                        self.interpretRawFrameData(newFirst.bytes)
+                        
+                        self.savedDataSampleBuffer = self.savedDataSampleBuffer.subdata(in: newFirst.count ..< self.savedDataSampleBuffer.count)
+                        
+                        return
+                    } else {
+                        //                    print("first chunk is not SPS, it has type \(firstChunk.bytes[4] & 0x1F)")
+                        
+                        //This last nextRange has the last delimiter range
+                        nextRange = readingDataSampleBuffer.range(of: sepdata, options: Data.SearchOptions.backwards, in: sepdata.count..<readingDataSampleBuffer.count)
+                        
+                        if nextRange == nil {
+                            return
+                        }
+                        
+                        var bigChunk = readingDataSampleBuffer.subdata(in: 0..<nextRange!.lowerBound)
+                        
+                        var i = sepdata.count
+                        var chunkInit = 0
+                        let lastIndexToCheck = bigChunk.count - sepdata.count
+                        while i <= lastIndexToCheck {
+                            if [bigChunk[i],bigChunk[i+1],bigChunk[i+2],bigChunk[i+3]] == sepdata.bytes {
+                                let nextChunk = bigChunk.subdata(in: chunkInit..<i)
+                                self.interpretRawFrameData(nextChunk.bytes)
+                                chunkInit = i
+                                i += sepdata.count
+                            } else {
+                                i += 1
+                            }
+                        }
+                        
+                        bigChunk.removeFirst(chunkInit)
+                        
+                        if bigChunk.count > 0 {
+                            self.interpretRawFrameData(bigChunk.bytes)
+                        }
+                        
+                        //This last nextRange has the last delimiter range
+                        self.savedDataSampleBuffer = self.savedDataSampleBuffer.subdata(in: nextRange!.lowerBound ..< self.savedDataSampleBuffer.count)
                     }
                     
-                    bigChunk.removeFirst(chunkInit)
-                    
-                    if bigChunk.count > 0 {
-                        interpretRawFrameData(bigChunk.bytes)
-                    }
-                    
-                    //This last nextRange has the last delimiter range
-                    savedDataSampleBuffer = savedDataSampleBuffer.subdata(in: nextRange!.lowerBound ..< savedDataSampleBuffer.count)
+                } else {
+                    print("readResult == 0")
                 }
-                
-            } else {
-                print("readResult == 0")
             }
             
         case .endEncountered:
@@ -241,11 +263,25 @@ public class InputStreamer: NSObject, VideoDecoderDelegate, StreamDelegate {
     }
     
     public func close() {
-        stream.delegate = nil
-        stream.remove(from: RunLoop.main, forMode: RunLoopMode.defaultRunLoopMode)
-        stream.close()
-        savedDataSampleBuffer.removeAll()
-        delegate?.didClose(self)
+        let weakSelf = self
+        
+        weakSelf.readingQueue.async {
+            
+            guard weakSelf.isRunning else {
+                return
+            }
+            
+            weakSelf.stream.delegate = nil
+            weakSelf.stream.remove(from: RunLoop.main, forMode: RunLoopMode.defaultRunLoopMode)
+            weakSelf.stream.close()
+            
+            weakSelf.savedDataSampleBuffer.removeAll()
+            
+            DispatchQueue.main.async {
+                weakSelf.delegate?.didClose(weakSelf)
+            }
+        }
+        
     }
     
     private var formatDesc: CMVideoFormatDescription?

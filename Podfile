@@ -14,7 +14,6 @@ def common_ui_pods
 end
 
 def other_pods
-    pod 'Logboard'
 end
 
 target 'Streamer' do

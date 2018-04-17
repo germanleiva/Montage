@@ -12,15 +12,8 @@ import MultipeerConnectivity
 import Vision
 import CloudKit
 import WatchConnectivity
-
-enum MontageRole:Int {
-    case undefined = 0
-    case iphoneCam
-    case iPadCam
-    case mirror
-    case watchMirror
-    case canvas
-}
+import Streamer
+import VideoToolbox
 
 //    dispatch_queue_create("cachequeue", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL)
 let visionQueue = DispatchQueue.global(qos: .userInteractive)
@@ -31,16 +24,50 @@ let watchQueue = DispatchQueue(label: "fr.lri.ex-situ.Montage.serial_watch_queue
 
 let fps = 24.0
 
-class ViewController: UIViewController, MovieWriterDelegate, OutputStreamOwner, InputStreamOwnerDelegate, AVCaptureVideoDataOutputSampleBufferDelegate, MCSessionDelegate, MCNearbyServiceAdvertiserDelegate, StreamDelegate, WCSessionDelegate {
+class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataOutputSampleBufferDelegate, MCSessionDelegate, MCNearbyServiceAdvertiserDelegate, StreamDelegate, WCSessionDelegate, VideoEncoderDelegate, OutputStreamerDelegate {
     
-    var myRole:String?
+    var initialChunkSPS_PPS:Data? {
+        didSet {
+            if let firstChunk = initialChunkSPS_PPS {
+                for streamer in outputStreamers {
+                    streamer.initialChunk = Data(firstChunk)
+                }
+            }
+        }
+    }
+    
+    var formatDescription:CMFormatDescription? = nil {
+        didSet {
+            guard !CMFormatDescriptionEqual(formatDescription, oldValue) else {
+                return
+            }
+            
+            didSetFormatDescriptionDo(video: formatDescription)
+        }
+    }
+    
+    lazy var encoder: H264Encoder = {
+        let encoder = H264Encoder()
+        encoder.expectedFPS = 30
+        encoder.width = 480
+        encoder.height = 272
+        encoder.bitrate = 160 * 1024
+        encoder.scalingMode = kVTScalingMode_Trim as String
+        encoder.maxKeyFrameIntervalDuration = 1.0 //in seconds <--- change this for better performance, e.g., 0.2 (200ms) between each KeyFrame
+        encoder.maxKeyFrameInterval = 15//in amount of frames, after X frames we should generate a KeyFrame
+        encoder.profileLevel = kVTProfileLevel_H264_Baseline_3_1 as String
+        encoder.delegate = self
+        return encoder
+    }()
+    
+    var myRole:MontageRole?
     
     var recordStartedAt:TimeInterval?
     var currentDetectedRectangle:VNRectangleObservation?
     var firstCaptureFrameTimeStamp:CMTime?
     
     var savedBoxes = [NSDictionary:VNRectangleObservation]()
-    var isMirrorMode = false
+    var mirrorPeer:MCPeerID? = nil
     var isStreaming:Bool = false {
         didSet {
             if isStreaming {
@@ -50,11 +77,15 @@ class ViewController: UIViewController, MovieWriterDelegate, OutputStreamOwner, 
             } else {
                 if captureSession.isRunning {
                     captureSession.stopRunning()
-                    for outputStreamHandler in outputStreamHandlers {
-                        outputStreamHandler.close()
-                    }
+                    stopOutputStreamers()
                 }
             }
+        }
+    }
+    
+    func stopOutputStreamers() {
+        for streamer in outputStreamers {
+            streamer.close()
         }
     }
     
@@ -88,7 +119,7 @@ class ViewController: UIViewController, MovieWriterDelegate, OutputStreamOwner, 
     
     // MARK: CloutKit
     
-    let myContainer = CKContainer(identifier: "iCloud.fr.lri.ex-situ.Montage")
+    let myContainer = CKContainer(identifier: "iCloud.fr.lri.ex-situ.MontageCanvas")
     lazy var publicDatabase = {
         return myContainer.publicCloudDatabase
     }()
@@ -106,24 +137,8 @@ class ViewController: UIViewController, MovieWriterDelegate, OutputStreamOwner, 
     }()
     
     // MARK: AV
-    var outputStreamHandlers = Set<OutputStreamHandler>()
-    
-    func addOutputStreamHandler(_ outputStreamHandler:OutputStreamHandler) {
-        outputStreamHandlers.insert(outputStreamHandler)
-    }
-    
-    func removeOutputStreamHandler(_ outputStreamHandler:OutputStreamHandler) {
-        outputStreamHandlers.remove(outputStreamHandler)
-    }
-    var inputStreamHandlers = Set<InputStreamHandler>()
-    
-    func addInputStreamHandler(_ inputStreamHandler:InputStreamHandler) {
-        inputStreamHandlers.insert(inputStreamHandler)
-    }
-    
-    func removeInputStreamHandler(_ inputStreamHandler:InputStreamHandler) {
-        inputStreamHandlers.remove(inputStreamHandler)
-    }
+    var outputStreamers = [OutputStreamer]()
+    var inputStreamers = [InputStreamer]()
     
     lazy var captureSession = {
         return AVCaptureSession()
@@ -149,11 +164,9 @@ class ViewController: UIViewController, MovieWriterDelegate, OutputStreamOwner, 
         let role:MontageRole
         switch UIDevice.current.userInterfaceIdiom {
         case .phone:
-            role = .iphoneCam
-            break
+            role = .phoneCam
         case .pad:
-            role = .iPadCam
-            break
+            role = .padCam
         default:
             role = .undefined
         }
@@ -165,12 +178,7 @@ class ViewController: UIViewController, MovieWriterDelegate, OutputStreamOwner, 
     }()
     
     deinit {
-        for anInputStreamHandler in inputStreamHandlers {
-            anInputStreamHandler.close()
-        }
-        for anOutputStreamHandler in outputStreamHandlers {
-            anOutputStreamHandler.close()
-        }
+
     }
     
     override func viewDidLoad() {
@@ -180,15 +188,20 @@ class ViewController: UIViewController, MovieWriterDelegate, OutputStreamOwner, 
         
         if self.setupCamera() {
             isStreaming = true //This starts the captureSession
-            if captureSession.isRunning {
-                print("initial startAdvertisingPeer")
-                serviceAdvertiser.startAdvertisingPeer()
-            }
         }
         
         //        setupWatchSession()
         
         //        setupVisionDetection()
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        print("viewWillAppear")
+        if captureSession.isRunning {
+            serviceAdvertiser.startAdvertisingPeer()
+            print("initial startAdvertisingPeer")
+        }
     }
     
     //Watch related code
@@ -314,7 +327,7 @@ class ViewController: UIViewController, MovieWriterDelegate, OutputStreamOwner, 
                 }
                 weakSelf.currentDetectedRectangle = detectedRectangle
                 
-                if weakSelf.myRole?.isEqual("background") ?? false {
+                if let aRole = weakSelf.myRole, aRole == .userCam {
                     if let connectedServerPeer = weakSelf.connectedServer {
                         let dict = ["detectedRectangle":detectedRectangle]
                         let data = NSKeyedArchiver.archivedData(withRootObject: dict)
@@ -550,62 +563,10 @@ class ViewController: UIViewController, MovieWriterDelegate, OutputStreamOwner, 
             return
         }
         
-        //There are two options to obtain the data of the image from the CMSampleBuffer
-        
-        // (Disabled) Option One, we create our own CGContext and create a CGImage -> UIImage
-        //        CVPixelBufferLockBaseAddress(imageBuffer, CVPixelBufferLockFlags.readOnly)
-        //
-        //        let baseAddress = CVPixelBufferGetBaseAddress(imageBuffer)
-        //        let bitsPerComponent = 8
-        //        let bytesPerRow = CVPixelBufferGetBytesPerRow(imageBuffer)
-        //        let width = CVPixelBufferGetWidth(imageBuffer)
-        //        let height = CVPixelBufferGetHeight(imageBuffer)
-        //        let colorSpace = CGColorSpaceCreateDeviceRGB()
-        //
-        //        guard let newContext = CGContext(data: baseAddress, width: width, height: height, bitsPerComponent: bitsPerComponent, bytesPerRow: bytesPerRow, space: colorSpace, bitmapInfo: UInt32(UInt8(CGBitmapInfo.byteOrder32Little.rawValue) |  UInt8(CGImageAlphaInfo.premultipliedFirst.rawValue))) else {
-        //            return
-        //        }
-        //
-        //        guard let newImage = newContext.makeImage() else {
-        //            return
-        //        }
-        //
-        //        let image = UIImage(cgImage: newImage, scale: 1, orientation: UIImageOrientation.upMirrored)
-        //
-        //        CVPixelBufferUnlockBaseAddress(imageBuffer,CVPixelBufferLockFlags.readOnly)
-        // Option One (End)
-        
-        // (Enabled) Option Two, we create a CIImage from the CMSampleBuffer and from there the UIImage
-        
-        //        let cropRect = AVMakeRect(aspectRatio: CGSize(width:320, height:320), insideRect: CGRect(x:0, y:0, width:CVPixelBufferGetWidth(imageBuffer), height:CVPixelBufferGetHeight(imageBuffer)))
-        //
-        let ciImage = CIImage(cvImageBuffer: imageBuffer)
-        
-        //        let croppedImage = ciImage.cropped(to: cropRect)
-        let croppedImage = ciImage
-        
-        guard let scaleFilter = CIFilter(name: "CILanczosScaleTransform") else {
-            return
-        }
-        scaleFilter.setValue(croppedImage, forKey: "inputImage")
-        let reduceFactor = 0.25
-        scaleFilter.setValue(reduceFactor, forKey: "inputScale")
-        scaleFilter.setValue(1.0, forKey: "inputAspectRatio")
-        
-        guard let finalImage = scaleFilter.outputImage else {
-            return
-        }
-        
-        //Can I just use finalImage.cgImage?
-        guard let image = self.cgImageBackedImage(withCIImage:finalImage) else {
-            print("cgImageBackedImage failed")
-            return
-        }
-        // Option Two (End)
-        
         /*Vision*/
         if !rectangleLocked {
             visionQueue.async {[unowned self] in
+                let ciImage = CIImage(cvImageBuffer: imageBuffer)
                 let colorMatrixEffect = CIFilter(name:"CIColorMatrix")!
                 
                 colorMatrixEffect.setDefaults()
@@ -624,13 +585,14 @@ class ViewController: UIViewController, MovieWriterDelegate, OutputStreamOwner, 
         }
         /*Vision*/
         
-        guard let data = UIImageJPEGRepresentation(image, 0.25) else {
-            print("UIImageJPEGRepresentation failed")
-            return
-        }
+        encoder.encodeImageBuffer(
+            imageBuffer,
+            presentationTimeStamp: sampleBuffer.presentationTimeStamp,
+            duration: sampleBuffer.duration
+        )
         
-        self.writeData(data as NSData)
-        
+        //TODO: WATCH
+        /*
         if self.watchConnectivitySession?.isReachable ?? false {
             watchQueue.async {[unowned self] in
                 guard let scaleFilter = CIFilter(name: "CILanczosScaleTransform") else {
@@ -676,6 +638,7 @@ class ViewController: UIViewController, MovieWriterDelegate, OutputStreamOwner, 
                 }
             }
         }
+ */
         //    CGContextRelease(newContext);
         //    CGColorSpaceRelease(colorSpace);
         //    UIImage *image = [[UIImage alloc] initWithCGImage:newImage scale:1 orientation:UIImageOrientationUpMirrored];
@@ -693,46 +656,11 @@ class ViewController: UIViewController, MovieWriterDelegate, OutputStreamOwner, 
     }
     
     // MARK: Multipeer Streaming
-    var serverName:String?
-    var peersNamesToStream = Set<String>()
-    var peersToStream:[MCPeerID] {
-        return self.multipeerSession.connectedPeers.filter { (peer) -> Bool in
-            return peersNamesToStream.contains(peer.displayName)
-        }
-    }
+    var serverPeer:MCPeerID?
+
     var connectedServer:MCPeerID? {
         return self.multipeerSession.connectedPeers.first { (peer) -> Bool in
-            return serverName?.isEqual(peer.displayName) ?? false
-        }
-    }
-    
-    func writeData(_ data:NSData) {
-        if isMirrorMode && peersToStream.count < 2 {
-            return
-        }
-        
-        for (peer,queue) in zip(self.peersToStream,[streamingQueue1,streamingQueue2]) {
-            queue.async {[unowned self] in
-                let currentDate = Date()
-                //                let streamName = "\(currentDate.description(with: Locale.current)) \(currentDate.timeIntervalSince1970)"
-                let streamName = "\(currentDate.timeIntervalSince1970)"
-                
-                let outputStream:OutputStream
-                
-                do {
-                    outputStream = try self.multipeerSession.startStream(withName: streamName, toPeer: peer)
-                } catch let error as NSError {
-                    print("Couldn't crete output stream: \(error.localizedDescription)")
-                    return
-                }
-                let outputStreamHandler = OutputStreamHandler(outputStream,owner:self,data: data, queue:queue)
-                
-                DispatchQueue.main.async {
-                    outputStream.delegate = outputStreamHandler
-                    outputStream.schedule(in: RunLoop.main, forMode: RunLoopMode.defaultRunLoopMode)
-                    outputStream.open()
-                }
-            }
+            return peer.isEqual(serverPeer)
         }
     }
     
@@ -743,38 +671,67 @@ class ViewController: UIViewController, MovieWriterDelegate, OutputStreamOwner, 
         switch state {
         case MCSessionState.connecting:
             print("connecting with peerID \(peerID)")
-            break
         case MCSessionState.connected:
             print("connected with peerID \(peerID)")
-            let currentPeersToStreamCount = peersToStream.count
-            if (!isMirrorMode && currentPeersToStreamCount > 0) || (isMirrorMode && currentPeersToStreamCount >= 2) {
+            var shouldStartEncoder = false
+            
+            if outputStreamers.isEmpty {
+                shouldStartEncoder = true
+            }
+            
+            if peerID.isEqual(serverPeer) || peerID.isEqual(mirrorPeer) {
+                let id = outputStreamers.count + 1
+                do {
+                    let outputStream = try multipeerSession.startStream(withName: "videoStreamPruebita \(id) \(Date())", toPeer: peerID)
+                    let newOutputStreamer = OutputStreamer(peerID,outputStream:outputStream,initialChunk:initialChunkSPS_PPS)
+                    newOutputStreamer.delegate = self
+                    outputStreamers.append(newOutputStreamer)
+                    
+                    if shouldStartEncoder {
+                        encoder.startRunning()
+                    }
+                } catch let error as NSError {
+                    print("Couldn't create output stream \(id): \(error.localizedDescription)")
+                }
+            }
+            
+            if peerID.isEqual(serverPeer) {
                 print("stopAdvertisingPeer")
                 serviceAdvertiser.stopAdvertisingPeer()
             }
-            break
+            
         case MCSessionState.notConnected:
             print("notConnected with peerID \(peerID)")
-            if let peerNameIndex = peersNamesToStream.index(of: peerID.displayName) {
-                peersNamesToStream.remove(at: peerNameIndex)
-            }
-            if serverName?.isEqual(peerID.displayName) ?? false {
-                serverName = nil
-                myRole = nil
-                if peersToStream.isEmpty {
-                    //If there is no server and peers, let's clean
-                    movieWriter.stopWriting()
-                    isStreaming = true
-                    
-                    for outputStreamHandler in outputStreamHandlers {
-                        outputStreamHandler.close()
-                    }
-                }
-            }
-            if peersToStream.isEmpty || serverName == nil {
+
+            if peerID.isEqual(serverPeer) {
+                serverPeer = nil
                 print("startAdvertisingPeer")
                 serviceAdvertiser.startAdvertisingPeer()
             }
-            break
+            
+            if peerID.isEqual(mirrorPeer) {
+                mirrorPeer = nil
+            }
+            
+            if let destinationIndex = outputStreamers.index(where: { $0.peerID == peerID} ) {
+                let unproperlyDisconnectedDestination = outputStreamers[destinationIndex]
+                unproperlyDisconnectedDestination.close()
+            }
+            
+            if outputStreamers.isEmpty {
+                encoder.stopRunning()
+            }
+            
+        }
+    }
+    
+    func sendMessage(peerID:MCPeerID,dict:[String:Any?]) {
+        let data = NSKeyedArchiver.archivedData(withRootObject: dict)
+        
+        do {
+            try multipeerSession.send(data, toPeers: [peerID], with: .reliable)
+        } catch let error as NSError {
+            print("Could not send dict message: \(error.localizedDescription)")
         }
     }
     
@@ -784,8 +741,7 @@ class ViewController: UIViewController, MovieWriterDelegate, OutputStreamOwner, 
             for (messageType, value) in receivedDict {
                 switch messageType {
                 case "role":
-                    myRole = value as? String
-                    break
+                    myRole = MontageRole(rawValue:value as! Int)
                 case "startRecordingDate":
                     if let startRecordingDate = value as? Date {
                         recordStartedAt = startRecordingDate.timeIntervalSince1970
@@ -798,34 +754,17 @@ class ViewController: UIViewController, MovieWriterDelegate, OutputStreamOwner, 
                         })
                         RunLoop.main.add(timer, forMode: RunLoopMode.commonModes)
                     }
-                    break
                 case "stopRecording":
                     self.movieWriter.stopWriting()
-                    if self.myRole?.isEqual("background") ?? false {
+                    if let aRole = self.myRole, aRole == .userCam {
                         if let connectedServerPeer = connectedServer {
-                            let dict = ["savedBoxes":savedBoxes]
-                            let data = NSKeyedArchiver.archivedData(withRootObject: dict)
-                            
-                            do {
-                                try self.multipeerSession.send(data, toPeers: [connectedServerPeer], with: MCSessionSendDataMode.reliable)
-                            } catch let error as NSError {
-                                print("Error in sending savedBoxes: \(error.localizedDescription)")
-                            }
+                            sendMessage(peerID: connectedServerPeer, dict: ["savedBoxes":savedBoxes])
                         }
                     }
-                    
-                    break
                 case "mirrorMode":
-                    isMirrorMode = value as! Bool
-                    
-                    if isMirrorMode {
-                        print("startAdvertisingPeer because isMirrorMode")
-                        serviceAdvertiser.startAdvertisingPeer()
-                    }
-                    break
+                    mirrorPeer = value as? MCPeerID
                 case "streaming":
                     isStreaming = value as! Bool
-                    break
                 default:
                     print("Unrecognized message in receivedDict \(receivedDict)")
                 }
@@ -838,22 +777,9 @@ class ViewController: UIViewController, MovieWriterDelegate, OutputStreamOwner, 
     
     // Received a byte stream from remote peer.
     public func session(_ session: MCSession, didReceive stream: InputStream, withName streamName: String, fromPeer peerID: MCPeerID) {
-        let weakSelf = self
-        
-        mirrorQueue.async {
-            weakSelf.readDataToInputStream(stream, owner:self, queue: mirrorQueue) { ciImage in
-                weakSelf.overlayImage = ciImage
-            }
-        }
+        print("didReceive stream - nothing to be done")
     }
-    
-    func readDataToInputStream(_ iStream:InputStream,owner:InputStreamOwnerDelegate,queue:DispatchQueue,completion:((CIImage?)->())?) {
-        let inputStreamHandler = InputStreamHandler(iStream,owner:owner,queue: queue)
-        
-        inputStreamHandler.completionBlock = completion
-        
-        iStream.open()
-    }
+
     
     // Start receiving a resource from remote peer.
     public func session(_ session: MCSession, didStartReceivingResourceWithName resourceName: String, fromPeer peerID: MCPeerID, with progress: Progress) {
@@ -877,19 +803,9 @@ class ViewController: UIViewController, MovieWriterDelegate, OutputStreamOwner, 
     // MARK: MCNearbyServiceAdvertiserDelegate
     func advertiser(_ advertiser: MCNearbyServiceAdvertiser, didReceiveInvitationFromPeer peerID: MCPeerID, withContext context: Data?, invitationHandler: @escaping (Bool, MCSession?) -> Void) {
         
-        if let data = context, let stringData = String(data: data, encoding: .utf8), ["MONTAGE_CANVAS","MONTAGE_MIRROR"].contains(stringData) {
-            if stringData == "MONTAGE_CANVAS" {
-                //                if serverName?.isEqual(peerID.displayName) ?? false {
-                //                    return
-                //                }
-                serverName = peerID.displayName
-            } else {
-                //                if peersNamesToStream.contains(peerID.displayName) {
-                //                    return
-                //                }
-                print("MONTAGE_MIRROR \(peerID.displayName)")
-            }
-            peersNamesToStream.insert(peerID.displayName)
+        if let data = context, let stringData = String(data: data, encoding: .utf8), "MONTAGE_CANVAS" == stringData {
+            serverPeer = peerID
+            
             print("invitationHandler true \(peerID.displayName)")
             invitationHandler(true,multipeerSession)
         } else {
@@ -948,6 +864,195 @@ class ViewController: UIViewController, MovieWriterDelegate, OutputStreamOwner, 
         //                // Insert successfully saved record code
         //            }
         //        }
+    }
+    
+    // MARK: Deinitialization of Streamers
+    
+    @objc func appWillWillEnterForeground(_ notification:Notification) {
+        print("appWillWillEnterForeground")
+        serviceAdvertiser.startAdvertisingPeer()
+        print("startAdvertisingPeer")
+    }
+    
+    @objc func appWillResignActive(_ notification:Notification) {
+        print("appWillResignActive")
+        
+        for streamer in inputStreamers {
+            streamer.close()
+        }
+        for streamer in outputStreamers {
+            streamer.close()
+        }
+        
+        serviceAdvertiser.stopAdvertisingPeer()
+        print("stopAdvertisingPeer")
+    }
+    
+    @objc func appWillTerminate(_ notification:Notification) {
+        print("appWillTerminate") //I think appWillResignActive is called before
+        
+        for streamer in inputStreamers {
+            streamer.close()
+        }
+        for streamer in outputStreamers {
+            streamer.close()
+        }
+        
+        serviceAdvertiser.stopAdvertisingPeer()
+        print("stopAdvertisingPeer")
+    }
+    
+    override func viewWillDisappear(_ animated: Bool) {
+        print("viewWillDisappear")
+        super.viewWillDisappear(animated)
+        
+        for streamer in inputStreamers {
+            streamer.close()
+        }
+        for streamer in outputStreamers {
+            streamer.close()
+        }
+        
+        serviceAdvertiser.stopAdvertisingPeer()
+        print("stopAdvertisingPeer")
+    }
+    
+    // VideoEncoderDelegate
+    
+    func didSetFormatDescription(video formatDescription: CMFormatDescription?) {
+        //        print("**** didSetFormatDescription \(Date().timeIntervalSinceReferenceDate)")
+        
+        self.formatDescription = formatDescription
+    }
+    
+    func sampleOutput(video sampleBuffer: CMSampleBuffer) {
+        //        guard let videoData = sampleBuffer.dataBuffer?.data else {
+        //            return
+        //        }
+        
+        /*var outputBuffer: Data = Data([0x0,0x0,0x0,0x1])
+         var headerInfo:Int = videoData.count
+         print("headerInfo length \(headerInfo)")
+         //        var lengthHeaderSize = MemoryLayout<Int>.size
+         
+         withUnsafeBytes(of: &headerInfo) { bytes in
+         for byte in bytes {
+         print("byte \(byte)")
+         
+         outputBuffer.append(byte)
+         }
+         }
+         
+         outputBuffer.append(videoData)
+         
+         accumulatedBuffers.append(outputBuffer)*/
+        
+        //        print("**** sampleOutput \(Date().timeIntervalSinceReferenceDate)")
+        sampleOutputDo(video: sampleBuffer)
+    }
+    
+    private func didSetFormatDescriptionDo(video formatDescription:CMFormatDescription?) {
+        
+        var sampleData = Data()
+        //         let formatDesrciption :CMFormatDescriptionRef = CMSampleBufferGetFormatDescription(sampleBuffer!)!
+        //        let sps:UnsafeMutablePointer<UnsafePointer<UInt8>?>? = UnsafeMutablePointer<UnsafePointer<UInt8>?>.allocate(capacity: 1)
+        var sps: UnsafePointer<UInt8>? = nil
+        var pps: UnsafePointer<UInt8>? = nil
+        
+        var spsLength:Int = 0
+        var ppsLength:Int = 0
+        var spsCount:Int = 0
+        var ppsCount:Int = 0
+        
+        var err : OSStatus
+        err = CMVideoFormatDescriptionGetH264ParameterSetAtIndex(formatDescription!, 0, &sps, &spsLength, &spsCount, nil )
+        if (err != noErr) {
+            NSLog("An Error occured while getting h264 parameter 0")
+        }
+        err = CMVideoFormatDescriptionGetH264ParameterSetAtIndex(formatDescription!, 1, &pps, &ppsLength, &ppsCount, nil )
+        if (err != noErr) {
+            NSLog("An Error occured while getting h264 parameter 1")
+        }
+        
+        let naluStart:[UInt8] = [0x00, 0x00, 0x00, 0x01]
+        sampleData.append(naluStart, count: naluStart.count)
+        if let sps = sps {
+            //            print("SPS? appended buffer for nalu type \(sps.pointee & 0x1F)")
+            
+            sampleData.append(sps, count: spsLength)
+        }
+        sampleData.append(naluStart, count: naluStart.count)
+        if let pps = pps {
+            //            print("PPS? appended buffer for nalu type \(pps.pointee & 0x1F)")
+            
+            sampleData.append(pps, count: ppsLength)
+        }
+        
+        //        lockQueue.async { [unowned self] in
+        self.initialChunkSPS_PPS = sampleData
+        //        }
+    }
+    
+    //
+    private func sampleOutputDo(video sampleBuffer: CMSampleBuffer) {
+        //        print("get slice data! \(Date())") // \(sampleBuffer)")
+        // todo : write to h264 file
+        
+        guard let blockBuffer = CMSampleBufferGetDataBuffer(sampleBuffer) else {
+            print("Could not create blockBuffer from sampleBuffer")
+            return
+        }
+        
+        var totalLength:Int = 0
+        var lengthAtOffset:Int = 0
+        var unwrappedDataPointer: UnsafeMutablePointer<Int8>? = nil
+        
+        let status = CMBlockBufferGetDataPointer(blockBuffer, 0, &lengthAtOffset, &totalLength, &unwrappedDataPointer)
+        
+        guard status == noErr else {
+            let errorMessage = SecCopyErrorMessageString(status, nil) as String?
+            print("Error in CMBlockBufferGetDataPointer: \(errorMessage ?? "no description")")
+            return
+        }
+        
+        guard let dataPointer = unwrappedDataPointer else {
+            print("Error in CMBlockBufferGetDataPointer, unwrappedDataPointer is nil")
+            return
+        }
+        
+        var bufferOffset = 0
+        let AVCCHeaderLength = 4
+        
+        var chunk = Data()
+        
+        while bufferOffset < totalLength - AVCCHeaderLength {
+            var NALUnitLength:UInt32 = 0
+            memcpy(&NALUnitLength, dataPointer + bufferOffset, AVCCHeaderLength)
+            
+            NALUnitLength = CFSwapInt32BigToHost(NALUnitLength)
+            
+            var naluStart:[UInt8] = [0x00,0x00,0x00,0x01]
+            let buffer = NSMutableData()
+            buffer.append(&naluStart, length: naluStart.count)
+            buffer.append(dataPointer + bufferOffset + AVCCHeaderLength, length: Int(NALUnitLength))
+            //            let naluType = dataPointer.advanced(by: bufferOffset + AVCCHeaderLength).pointee & 0x1F
+            //            print("offset \(bufferOffset) for nalu type \(naluType)")
+            chunk.append(buffer as Data)
+            
+            bufferOffset += AVCCHeaderLength + Int(NALUnitLength)
+        }
+        
+        for outputStreamer in outputStreamers {
+            outputStreamer.sendData(chunk)
+        }
+        
+    }
+    
+    //WriteDestinationDelegate
+    func didClose(streamer: OutputStreamer) {
+        if let disconnectedStreamerIndex = outputStreamers.index(of:streamer) {
+            outputStreamers.remove(at: disconnectedStreamerIndex)
+        }
     }
     
 }

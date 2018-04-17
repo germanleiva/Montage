@@ -20,15 +20,6 @@ extension UITouch {
     }
 }
 
-enum MontageRole:Int {
-    case undefined = 0
-    case iphoneCam
-    case iPadCam
-    case mirror
-    case watchMirror
-    case canvas
-}
-
 struct Globals {
     static var initialStrokeColor = UIColor(red: 0.8, green: 0.2, blue: 0.2, alpha: 1.0)
     static var initialFillColor = UIColor.clear

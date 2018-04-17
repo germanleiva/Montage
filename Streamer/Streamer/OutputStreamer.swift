@@ -15,10 +15,10 @@ public protocol OutputStreamerDelegate:class {
 
 public class OutputStreamer: NSObject, StreamDelegate {
     public weak var delegate:OutputStreamerDelegate?
-    var peerID:MCPeerID
+    public private(set) var peerID:MCPeerID
     var outputStream:OutputStream
     var isInitialized = false
-    var initialChunk:Data? {
+    public var initialChunk:Data? {
         didSet {
             if initialChunk != oldValue {
                 isInitialized = false
@@ -30,7 +30,7 @@ public class OutputStreamer: NSObject, StreamDelegate {
     let writingQueue:DispatchQueue
     var isRunning = false {
         didSet {
-            print("\(peerID.description) isRunning \(isRunning)")
+            print("Running changed \(peerID.description) isRunning \(isRunning)")
         }
     }
     
@@ -47,12 +47,6 @@ public class OutputStreamer: NSObject, StreamDelegate {
         outputStream.open()
         
         self.isRunning = true //I couldn't put this on openCompleted because there was a bug on iPhone, and hasSpaceAvailable was called before
-    }
-    
-    deinit {
-        print("deiniting write destination for \(peerID.description)")
-        pendingData.removeAll()
-        initialChunk = nil
     }
     
     public func stream(_ aStream: Stream, handle eventCode: Stream.Event) {
@@ -84,7 +78,7 @@ public class OutputStreamer: NSObject, StreamDelegate {
         }
     }
     
-    func sendData(_ chunk:Data) {
+    public func sendData(_ chunk:Data) {
         let weakSelf = self
         writingQueue.async {
             if !weakSelf.isRunning {
@@ -161,6 +155,9 @@ public class OutputStreamer: NSObject, StreamDelegate {
             weakSelf.outputStream.delegate = nil
             weakSelf.outputStream.remove(from: RunLoop.main, forMode: RunLoopMode.defaultRunLoopMode)
             weakSelf.outputStream.close()
+            
+            weakSelf.pendingData.removeAll()
+            
             DispatchQueue.main.async {
                 weakSelf.delegate?.didClose(streamer: weakSelf)
             }

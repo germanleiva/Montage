@@ -25,7 +25,7 @@ extension CMSampleBuffer {
     var numSamples: CMItemCount {
         return CMSampleBufferGetNumSamples(self)
     }
-    var duration: CMTime {
+    public var duration: CMTime {
         return CMSampleBufferGetDuration(self)
     }
     var formatDescription: CMFormatDescription? {
@@ -34,7 +34,7 @@ extension CMSampleBuffer {
     var decodeTimeStamp: CMTime {
         return CMSampleBufferGetDecodeTimeStamp(self)
     }
-    var presentationTimeStamp: CMTime {
+    public var presentationTimeStamp: CMTime {
         return CMSampleBufferGetPresentationTimeStamp(self)
     }
 }

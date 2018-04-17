@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A4A049FA20850EA3003FDC6A /* Streamer.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A4A049F920850EA3003FDC6A /* Streamer.framework */; };
+		A4A049FB20850EA3003FDC6A /* Streamer.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = A4A049F920850EA3003FDC6A /* Streamer.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		A4D59B3E2084C436002350B5 /* MontageCanvas.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = A4D59B3C2084C436002350B5 /* MontageCanvas.xcdatamodeld */; };
 		A4D59B402084C438002350B5 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A4D59B3F2084C438002350B5 /* Assets.xcassets */; };
 		A4D59B432084C438002350B5 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = A4D59B412084C438002350B5 /* LaunchScreen.storyboard */; };
@@ -39,8 +41,6 @@
 		A4F50D5A2084CA2400E2E200 /* TierTableCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4F50D442084CA2400E2E200 /* TierTableCell.swift */; };
 		A4F50D5B2084CA2400E2E200 /* TimelineLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4F50D452084CA2400E2E200 /* TimelineLayout.swift */; };
 		A4F50D5E2084CA9500E2E200 /* CloudKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A4F50D5D2084CA9500E2E200 /* CloudKit.framework */; };
-		A4F50E082084F7B400E2E200 /* Streamer.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A4F50E072084F7B400E2E200 /* Streamer.framework */; };
-		A4F50E092084F7B400E2E200 /* Streamer.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = A4F50E072084F7B400E2E200 /* Streamer.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		B090AA669A87A6197C5C9E47 /* Pods_MontageCanvas.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 80DFB655FFF91A45A1D3CE6B /* Pods_MontageCanvas.framework */; };
 /* End PBXBuildFile section */
 
@@ -68,7 +68,7 @@
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
-				A4F50E092084F7B400E2E200 /* Streamer.framework in Embed Frameworks */,
+				A4A049FB20850EA3003FDC6A /* Streamer.framework in Embed Frameworks */,
 			);
 			name = "Embed Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -78,6 +78,7 @@
 /* Begin PBXFileReference section */
 		80DFB655FFF91A45A1D3CE6B /* Pods_MontageCanvas.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_MontageCanvas.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		83981C27285E080024844C3A /* Pods-MontageCanvas.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-MontageCanvas.release.xcconfig"; path = "../Pods/Target Support Files/Pods-MontageCanvas/Pods-MontageCanvas.release.xcconfig"; sourceTree = "<group>"; };
+		A4A049F920850EA3003FDC6A /* Streamer.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = Streamer.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		A4D59B322084C436002350B5 /* MontageCanvas.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MontageCanvas.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A4D59B3D2084C436002350B5 /* MontageCanvas.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = MontageCanvas.xcdatamodel; sourceTree = "<group>"; };
 		A4D59B3F2084C438002350B5 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -118,7 +119,6 @@
 		A4F50D5C2084CA9100E2E200 /* MontageCanvas.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MontageCanvas.entitlements; sourceTree = "<group>"; };
 		A4F50D5D2084CA9500E2E200 /* CloudKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CloudKit.framework; path = System/Library/Frameworks/CloudKit.framework; sourceTree = SDKROOT; };
 		A4F50D5F2084CC2900E2E200 /* MontageCanvas-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "MontageCanvas-Bridging-Header.h"; sourceTree = "<group>"; };
-		A4F50E072084F7B400E2E200 /* Streamer.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = Streamer.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		BC3403DFCAA331C791290F82 /* Pods-MontageCanvas.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-MontageCanvas.debug.xcconfig"; path = "../Pods/Target Support Files/Pods-MontageCanvas/Pods-MontageCanvas.debug.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -127,7 +127,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A4F50E082084F7B400E2E200 /* Streamer.framework in Frameworks */,
+				A4A049FA20850EA3003FDC6A /* Streamer.framework in Frameworks */,
 				B090AA669A87A6197C5C9E47 /* Pods_MontageCanvas.framework in Frameworks */,
 				A4F50D5E2084CA9500E2E200 /* CloudKit.framework in Frameworks */,
 			);
@@ -162,7 +162,7 @@
 		A4D59B292084C436002350B5 = {
 			isa = PBXGroup;
 			children = (
-				A4F50E072084F7B400E2E200 /* Streamer.framework */,
+				A4A049F920850EA3003FDC6A /* Streamer.framework */,
 				A4D59B342084C436002350B5 /* MontageCanvas */,
 				A4D59B4C2084C438002350B5 /* MontageCanvasTests */,
 				A4D59B572084C438002350B5 /* MontageCanvasUITests */,

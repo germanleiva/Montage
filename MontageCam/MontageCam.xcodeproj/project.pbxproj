@@ -15,10 +15,10 @@
 		A4D59B8B2084C46F002350B5 /* MontageCamTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4D59B8A2084C46F002350B5 /* MontageCamTests.swift */; };
 		A4D59B962084C46F002350B5 /* MontageCamUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4D59B952084C46F002350B5 /* MontageCamUITests.swift */; };
 		A4F50D652084CD8C00E2E200 /* MovieWriter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4F50D622084CD8C00E2E200 /* MovieWriter.swift */; };
-		A4F50D662084CD8C00E2E200 /* InputStreamHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4F50D632084CD8C00E2E200 /* InputStreamHandler.swift */; };
-		A4F50D672084CD8C00E2E200 /* OutputStreamHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4F50D642084CD8C00E2E200 /* OutputStreamHandler.swift */; };
 		A4F50D692084CDA900E2E200 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = A4F50D682084CDA900E2E200 /* Main.storyboard */; };
 		A4F50DCF2084E13200E2E200 /* CloudKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A4F50DCE2084E13200E2E200 /* CloudKit.framework */; };
+		A4F50E0B208501F100E2E200 /* Streamer.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A4F50E0A208501F100E2E200 /* Streamer.framework */; };
+		A4F50E0C208501F100E2E200 /* Streamer.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = A4F50E0A208501F100E2E200 /* Streamer.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		CC53BE52368293126CA95C88 /* Pods_MontageCam.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E1F73B1586E63B36B7EE356A /* Pods_MontageCam.framework */; };
 /* End PBXBuildFile section */
 
@@ -39,6 +39,20 @@
 		};
 /* End PBXContainerItemProxy section */
 
+/* Begin PBXCopyFilesBuildPhase section */
+		A4F50E0D208501F100E2E200 /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				A4F50E0C208501F100E2E200 /* Streamer.framework in Embed Frameworks */,
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
 		20A170AC2B0DB3509BBBC846 /* Pods-MontageCam.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-MontageCam.release.xcconfig"; path = "../Pods/Target Support Files/Pods-MontageCam/Pods-MontageCam.release.xcconfig"; sourceTree = "<group>"; };
 		61E7D079743F2B483A1E2822 /* Pods-MontageCam.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-MontageCam.debug.xcconfig"; path = "../Pods/Target Support Files/Pods-MontageCam/Pods-MontageCam.debug.xcconfig"; sourceTree = "<group>"; };
@@ -56,11 +70,10 @@
 		A4D59B952084C46F002350B5 /* MontageCamUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MontageCamUITests.swift; sourceTree = "<group>"; };
 		A4D59B972084C46F002350B5 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A4F50D622084CD8C00E2E200 /* MovieWriter.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MovieWriter.swift; sourceTree = "<group>"; };
-		A4F50D632084CD8C00E2E200 /* InputStreamHandler.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = InputStreamHandler.swift; sourceTree = "<group>"; };
-		A4F50D642084CD8C00E2E200 /* OutputStreamHandler.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = OutputStreamHandler.swift; sourceTree = "<group>"; };
 		A4F50D682084CDA900E2E200 /* Main.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; path = Main.storyboard; sourceTree = "<group>"; };
 		A4F50DCD2084E11900E2E200 /* MontageCam.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MontageCam.entitlements; sourceTree = "<group>"; };
 		A4F50DCE2084E13200E2E200 /* CloudKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CloudKit.framework; path = System/Library/Frameworks/CloudKit.framework; sourceTree = SDKROOT; };
+		A4F50E0A208501F100E2E200 /* Streamer.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = Streamer.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		E1F73B1586E63B36B7EE356A /* Pods_MontageCam.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_MontageCam.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -69,6 +82,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A4F50E0B208501F100E2E200 /* Streamer.framework in Frameworks */,
 				CC53BE52368293126CA95C88 /* Pods_MontageCam.framework in Frameworks */,
 				A4F50DCF2084E13200E2E200 /* CloudKit.framework in Frameworks */,
 			);
@@ -103,6 +117,7 @@
 		A4D59B662084C46E002350B5 = {
 			isa = PBXGroup;
 			children = (
+				A4F50E0A208501F100E2E200 /* Streamer.framework */,
 				A4D59B712084C46E002350B5 /* MontageCam */,
 				A4D59B892084C46F002350B5 /* MontageCamTests */,
 				A4D59B942084C46F002350B5 /* MontageCamUITests */,
@@ -128,9 +143,7 @@
 				A4F50DCD2084E11900E2E200 /* MontageCam.entitlements */,
 				A4D59B722084C46E002350B5 /* AppDelegate.swift */,
 				A4D59B742084C46E002350B5 /* ViewController.swift */,
-				A4F50D632084CD8C00E2E200 /* InputStreamHandler.swift */,
 				A4F50D622084CD8C00E2E200 /* MovieWriter.swift */,
-				A4F50D642084CD8C00E2E200 /* OutputStreamHandler.swift */,
 				A4F50D682084CDA900E2E200 /* Main.storyboard */,
 				A4D59B7C2084C46F002350B5 /* Assets.xcassets */,
 				A4D59B7E2084C46F002350B5 /* LaunchScreen.storyboard */,
@@ -179,6 +192,7 @@
 				A4D59B6C2084C46E002350B5 /* Frameworks */,
 				A4D59B6D2084C46E002350B5 /* Resources */,
 				2C0638CFCEDDCA2CF7DD82AC /* [CP] Embed Pods Frameworks */,
+				A4F50E0D208501F100E2E200 /* Embed Frameworks */,
 			);
 			buildRules = (
 			);
@@ -348,9 +362,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				A4D59B752084C46E002350B5 /* ViewController.swift in Sources */,
-				A4F50D672084CD8C00E2E200 /* OutputStreamHandler.swift in Sources */,
 				A4F50D652084CD8C00E2E200 /* MovieWriter.swift in Sources */,
-				A4F50D662084CD8C00E2E200 /* InputStreamHandler.swift in Sources */,
 				A4D59B7B2084C46E002350B5 /* MontageCam.xcdatamodeld in Sources */,
 				A4D59B732084C46E002350B5 /* AppDelegate.swift in Sources */,
 			);

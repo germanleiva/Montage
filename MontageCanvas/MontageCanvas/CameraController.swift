@@ -59,13 +59,32 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
     var inputStreamer2:InputStreamer?
     
     func inputStreamer(_ streamer: InputStreamer, decodedImage ciImage: CIImage) {
-        print("decodedImage")
+        let weakSelf = self
+        
         if let myInputStreamer1 = inputStreamer1, myInputStreamer1 == streamer {
-            backgroundCameraFrame = ciImage
+            print("inputStreamer1")
+            sampleBufferQueue.async {
+                weakSelf.backgroundCameraFrame = ciImage
+            }
+            return
         }
         if let myInputStreamer2 = inputStreamer2, myInputStreamer2 == streamer {
-            let weakSelf = self
-            weakSelf.prototypeCameraFrame = ciImage
+            print("inputStreamer2")
+            
+            DispatchQueue.main.async {
+                weakSelf.snapshotSketchOverlay(layers: [weakSelf.prototypeCanvasView.canvasLayer],size: weakSelf.prototypeCanvasView.frame.size)
+            }
+    
+            sampleBufferQueue.async {
+                weakSelf.prototypeCameraFrame = ciImage
+
+                if let receivedCIImage = weakSelf.prototypeCameraFrame {
+    
+                    weakSelf.applyFilterFromPrototypeToBackground(source: receivedCIImage)
+                }
+            }
+
+            /*
             if weakSelf.camBackgroundPeer == nil {
                 let source = ciImage
                 DispatchQueue.main.async {
@@ -142,7 +161,7 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
                         }
                     }
                 }*/
-            }
+            }*/
         }
 
     }
@@ -292,6 +311,7 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
     @IBOutlet weak var prototypeFrameImageView: UIImageView!
     
     // MARK: Multipeer
+//    let localPeerID = MCPeerID.reusableInstance(withDisplayName: UIDevice.current.name)
     let localPeerID = MCPeerID(displayName: UIDevice.current.name)
     lazy var multipeerSession:MCSession = {
         let _session = MCSession(peer: localPeerID, securityIdentity: nil, encryptionPreference: MCEncryptionPreference.optional)
@@ -305,14 +325,26 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
         return _browser
     }()
     
-    var peersRoles = [String:MontageRole]()
+    var _peersRoles = [MCPeerID:MontageRole]()
+    
+    func update(role:MontageRole,forPeer peerID:MCPeerID) {
+        _peersRoles.updateValue(role,forKey:peerID)
+    }
+    
+    func role(forPeer peerID:MCPeerID) -> MontageRole? {
+        return _peersRoles[peerID]
+    }
+    
+    func removeRole(forPeer peerID:MCPeerID) {
+        _peersRoles.removeValue(forKey: peerID)
+    }
 
     var cams:[MCPeerID] {
         return multipeerSession.connectedPeers.filter {
-            guard let role = peersRoles[$0.displayName] else {
+            guard let role = role(forPeer: $0) else {
                 return false
             }
-            return role == .iphoneCam || role == .iPadCam
+            return role == .phoneCam || role == .padCam
         }
     }
     
@@ -324,10 +356,10 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
             return nil
         }
         let result = connectedCams.first {
-            guard let role = peersRoles[$0.displayName] else {
+            guard let role = role(forPeer: $0) else {
                 return false
             }
-            return role == .iphoneCam
+            return role == .phoneCam
         }
         if result == nil && connectedCams.count >= 2, let otherCam = camPrototypePeer {
             return connectedCams.first {!$0.isEqual(otherCam)}
@@ -338,16 +370,16 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
     var camPrototypePeer:MCPeerID? {
         let connectedPeers = multipeerSession.connectedPeers
         let padCams = connectedPeers.filter {
-            guard let role = peersRoles[$0.displayName] else {
+            guard let role = role(forPeer: $0) else {
                 return false
             }
-            return role == .iPadCam
+            return role == .padCam
         }
         let phoneCams = connectedPeers.filter {
-            guard let role = peersRoles[$0.displayName] else {
+            guard let role = role(forPeer: $0) else {
                 return false
             }
-            return role == .iphoneCam
+            return role == .phoneCam
         }
         if padCams.isEmpty && !phoneCams.isEmpty {
             return phoneCams.first
@@ -358,10 +390,10 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
     
     var mirrorPeer:MCPeerID? {
         return multipeerSession.connectedPeers.first {
-            guard let role = peersRoles[$0.displayName] else {
+            guard let role = role(forPeer: $0) else {
                 return false
             }
-            return role == .mirror //|| role == .iphoneCam TODO for the AppleWatch
+            return role == .mirror
         }
     }
     
@@ -498,11 +530,15 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
         
         initializeCaptureSession()
         
-        //Multipeer connectivity
-        browser.startBrowsingForPeers()
-        
 //        let displayLink = CADisplayLink(target: self, selector: #selector(snapshotSketchOverlay))
 //        displayLink.add(to: RunLoop.current, forMode: RunLoopMode.defaultRunLoopMode)
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        print("viewWillAppear")
+        browser.startBrowsingForPeers()
+        print("initial start browsing for peers")
     }
     
     func cloudKitInitialize() {
@@ -918,7 +954,7 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
         browser.startBrowsingForPeers()
     }
     
-    func sendMessage(peerID:MCPeerID,dict:[String:Any]) {
+    func sendMessage(peerID:MCPeerID,dict:[String:Any?]) {
         let data = NSKeyedArchiver.archivedData(withRootObject: dict)
 
         do {
@@ -1886,8 +1922,8 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
     //        previewView.layer.addSublayer(outline)
     //    }
     //MARK: MCSessionDelegate Methods
-    func setRole(peerID:MCPeerID,role:String) {
-        let dict = ["role":role]
+    func setRole(peerID:MCPeerID,role:MontageRole) {
+        let dict = ["role":role.rawValue]
         let data = NSKeyedArchiver.archivedData(withRootObject: dict)
         
         do {
@@ -1901,29 +1937,29 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
         case .connected:
             print("PEER CONNECTED: \(peerID.displayName)")
             
-            if let connectedMirrorPeer = mirrorPeer, connectedMirrorPeer.isEqual(peerID) {
+            if peerID.isEqual(mirrorPeer) {
                 //Let's notify the camPrototypePeer to connect to the mirror (if the mirror it's an actual mirror and not a .iphoneCam)
-                if peersRoles[connectedMirrorPeer.displayName] == .mirror, let connectedCamPrototypePeer = camPrototypePeer {
-                    sendMessage(peerID:connectedCamPrototypePeer,dict:["mirrorMode":true])
+                if let connectedCamPrototypePeer = camPrototypePeer {
+                    sendMessage(peerID:connectedCamPrototypePeer,dict:["mirrorMode":peerID])
                 }
             }
             
-            if peerID.isEqual(camPrototypePeer) && (!isMirrorMode || mirrorPeer != nil){
-                browser.stopBrowsingForPeers()
-            }
-            
             if peerID.isEqual(camPrototypePeer) {
-                setRole(peerID: peerID, role: "prototype")
+                setRole(peerID: peerID, role: .wizardCam)
                 if let connectedCamBackground = camBackgroundPeer {
-                    setRole(peerID: connectedCamBackground, role: "background")
+                    setRole(peerID: connectedCamBackground, role: .userCam)
                 }
             }
             
             if peerID.isEqual(camBackgroundPeer) {
                 if let connectedCamPrototype = camPrototypePeer {
-                    setRole(peerID: connectedCamPrototype, role: "prototype")
+                    setRole(peerID: connectedCamPrototype, role: .wizardCam)
                 }
-                setRole(peerID: peerID, role: "background")
+                setRole(peerID: peerID, role: .userCam)
+            }
+            
+            if peerID.isEqual(camBackgroundPeer) || peerID.isEqual(camPrototypePeer) || peerID.isEqual(mirrorPeer) {
+                browser.stopBrowsingForPeers()
             }
             
             break
@@ -1933,9 +1969,16 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
         case .notConnected:
             print("PEER NOT CONNECTED: \(peerID.displayName)")
         
-            if camPrototypePeer == nil {
+            if camBackgroundPeer == nil {
                 browser.startBrowsingForPeers()
             }
+            
+            if mirrorPeer == nil {
+                if let connectedCamPrototypePeer = camPrototypePeer {
+                    sendMessage(peerID:connectedCamPrototypePeer,dict:["mirrorMode":nil])
+                }
+            }
+            
             break
         }
     }
@@ -1971,11 +2014,7 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
     func session(_ session: MCSession, didReceive stream: InputStream, withName streamName: String, fromPeer peerID: MCPeerID) {
         let weakSelf = self
         
-        DispatchQueue.main.async {
-            weakSelf.snapshotSketchOverlay(layers: [weakSelf.prototypeCanvasView.canvasLayer],size: weakSelf.prototypeCanvasView.frame.size)
-        }
-        
-        if let connectedCamBackgroundPeer = camBackgroundPeer, peerID.displayName.isEqual(connectedCamBackgroundPeer.displayName) {
+        if peerID.isEqual(camBackgroundPeer) {
 //            if let createAt = Double(streamName) {
 //                let elapsedTimeSinceCreation = Date().timeIntervalSince1970 - createAt
 //                print("connectedCamBackgroundPeer elapsedTimeSinceCreation: \(elapsedTimeSinceCreation * 1000)ms")
@@ -1983,7 +2022,7 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
             inputStreamer1 = InputStreamer(peerID,stream:stream)
             inputStreamer1?.delegate = self
         }
-        if let connectedCamPrototypePeer = camPrototypePeer, peerID.displayName.isEqual(connectedCamPrototypePeer.displayName) {
+        if peerID.isEqual(camPrototypePeer) {
 //            if let createAt = Double(streamName) {
 //                let elapsedTimeSinceCreation = Date().timeIntervalSince1970 - createAt
 //                print("connectedCamPrototypePeer elapsedTimeSinceCreation: \(elapsedTimeSinceCreation * 1000)ms")
@@ -1992,11 +2031,7 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
             inputStreamer2 = InputStreamer(peerID,stream:stream)
             inputStreamer2?.delegate = self
         }
-        sampleBufferQueue.async {
-            if let receivedCIImage = weakSelf.prototypeCameraFrame {
-                weakSelf.applyFilterFromPrototypeToBackground(source: receivedCIImage)
-            }
-        }
+
     }
     
     var prototypeReceptionProgress:Progress?
@@ -2156,11 +2191,11 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
                 return
             }
             
-            if [MontageRole.undefined,MontageRole.canvas].contains(role) {
+            if [.undefined,.canvas].contains(role) {
                 return
             }
 
-            peersRoles.updateValue(role, forKey: peerID.displayName)
+            update(role: role, forPeer: peerID)
 
             let data = "MONTAGE_CANVAS".data(using: .utf8)
             if peerID.isEqual(camPrototypePeer) || peerID.isEqual(camBackgroundPeer) || peerID.isEqual(mirrorPeer) {
@@ -2329,13 +2364,6 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
         print("appWillWillEnterForeground")
         browser.startBrowsingForPeers()
         print("startBrowsingForPeers")
-    }
-    
-    override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
-        print("viewWillAppear")
-        browser.startBrowsingForPeers()
-        print("initial start browsing for peers")
     }
     
     @objc func appWillResignActive(_ notification:Notification) {
