@@ -14,6 +14,7 @@ import CloudKit
 //import TCCore
 //import TCMask
 import Streamer
+import GLKit
 
 let STATUS_KEYPATH  = "status"
 let REFRESH_INTERVAL = Float64(0.5)
@@ -26,6 +27,7 @@ let streamingQueue2 = DispatchQueue(label: "fr.lri.ex-situ.Montage.serial_stream
 let mirrorQueue = DispatchQueue(label: "fr.lri.ex-situ.Montage.serial_mirror_queue", qos: DispatchQoS.userInteractive)
 let mirrorQueue2 = DispatchQueue(label: "fr.lri.ex-situ.Montage.serial_mirror_queue_2", qos: DispatchQoS.userInteractive)
 let fps = 24.0
+let drawingQueue = DispatchQueue(label: "drawingQueue", qos: DispatchQoS.userInteractive)
 
 class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDelegate, MCNearbyServiceBrowserDelegate, MCSessionDelegate, InputStreamerDelegate, OutputStreamerDelegate {
 //    let dataSource = TierCollectionDataSource()
@@ -307,8 +309,16 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
     var box = VNRectangleObservation(boundingBox: CGRect.zero)
     
 //    @IBOutlet weak var playerView:UIView!
-    @IBOutlet weak var backgroundFrameImageView: UIImageView!
-    @IBOutlet weak var prototypeFrameImageView: UIImageView!
+    @IBOutlet weak var backgroundFrameImageView: GLKView! {
+        didSet {
+//            backgroundFrameImageView.context = openGLContext
+        }
+    }
+    @IBOutlet weak var prototypeFrameImageView: GLKView! {
+        didSet {
+            prototypeFrameImageView.context = openGLContext
+        }
+    }
     
     // MARK: Multipeer
 //    let localPeerID = MCPeerID.reusableInstance(withDisplayName: UIDevice.current.name)
@@ -404,7 +414,18 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
     
     //    var catImage = UIImage(named:"cat")!
 //    var catCIImage = CIImage(image: UIImage(named:"cat")!)
-    let context =  CIContext()
+    lazy var openGLContext:EAGLContext = {
+        guard let context = EAGLContext(api: EAGLRenderingAPI.openGLES2) else {
+            print("Fatal Error: could not create openGLContext")
+            abort()
+        }
+        return context
+    }()
+    
+    lazy var context:CIContext = {
+        return CIContext.init(eaglContext: openGLContext, options: [kCIContextWorkingColorSpace:NSNull.init()])
+
+    }()
     var backgroundCameraFrame:CIImage?
     var prototypeCameraFrame:CIImage?
 
@@ -1484,6 +1505,15 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
         applyFilterFromPrototypeToBackground(source:CIImage(cvPixelBuffer: pixelBuffer))
     }
     
+    func setImageOpenGL(view glkView:GLKView, image:CIImage) {
+        let weakSelf = self
+        drawingQueue.async {
+            glkView.bindDrawable()
+            weakSelf.context.draw(image, in: glkView.bounds.insetBy(dx: -glkView.bounds.width, dy: -glkView.bounds.height), from: image.extent)
+            glkView.display()
+        }
+    }
+    
     func applyFilterFromPrototypeToBackground(source:CIImage) {
 
         let currentPrototypeAndOverlayFrame:CIImage
@@ -1512,10 +1542,7 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
         //        let rectUIKIT = CGRectApplyAffineTransform(rectCI, t)
         
         guard let currentBrackgroundFrameImage = backgroundCameraFrame else {
-            let weakSelf = self
-            DispatchQueue.main.async {
-                weakSelf.prototypeFrameImageView.image = UIImage(ciImage:source)
-            }
+            setImageOpenGL(view: prototypeFrameImageView,image: source)
             return
         }
         
@@ -1622,26 +1649,15 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
 //                composite2.activeColor = CIColor(red: 0, green: 1, blue: 0)
                 
                 if let compositeImage2 = composite2.outputImage {
-                    let obtainedImage = UIImage(ciImage:compositeImage2)
-                    let weakSelf = self
-                    DispatchQueue.main.async {
-                        weakSelf.prototypeFrameImageView.image = obtainedImage
-                    }
+                    self.setImageOpenGL(view: self.prototypeFrameImageView,image: compositeImage2)
                 }
             } else {
                 //No isUserOverlayActive
-                let weakSelf = self
-                DispatchQueue.main.async {
-                    weakSelf.prototypeFrameImageView.image = UIImage(ciImage:source)
-                }
+                self.setImageOpenGL(view: self.prototypeFrameImageView,image: source)
             }
         
             if let compositeImage = composite.outputImage {
-                let obtainedImage = UIImage(ciImage:compositeImage)
-                let weakSelf = self
-                DispatchQueue.main.async {
-                    weakSelf.backgroundFrameImageView.image = obtainedImage
-                }
+                self.setImageOpenGL(view: self.backgroundFrameImageView,image: compositeImage)
             }
     }
     
@@ -2047,7 +2063,6 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
         
         DispatchQueue.main.async {[unowned self] in
             if peerID.isEqual(self.camPrototypePeer) {
-                self.prototypeFrameImageView.image = nil
                 self.prototypeCanvasView.isHidden = true
                 self.prototypeCanvasView.isUserInteractionEnabled = false
                 
@@ -2059,7 +2074,6 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
                 }
             }
             if peerID.isEqual(self.camBackgroundPeer) {
-                self.backgroundFrameImageView.image = nil
                 self.backgroundCanvasView.isHidden = true
                 self.backgroundCanvasView.isUserInteractionEnabled = false
                 
