@@ -80,7 +80,7 @@ public class InputStreamer: NSObject, VideoDecoderDelegate, StreamDelegate {
         super.init()
         
         self.stream.delegate = self
-        self.stream.schedule(in: RunLoop.main, forMode: RunLoopMode.defaultRunLoopMode)
+        self.stream.schedule(in: RunLoop.main, forMode: RunLoopMode.commonModes)
         self.stream.open()
         
         self.isRunning = true 
@@ -272,7 +272,7 @@ public class InputStreamer: NSObject, VideoDecoderDelegate, StreamDelegate {
             }
             
             weakSelf.stream.delegate = nil
-            weakSelf.stream.remove(from: RunLoop.main, forMode: RunLoopMode.defaultRunLoopMode)
+            weakSelf.stream.remove(from: RunLoop.main, forMode: RunLoopMode.commonModes)
             weakSelf.stream.close()
             
             weakSelf.savedDataSampleBuffer.removeAll()

@@ -43,7 +43,7 @@ public class OutputStreamer: NSObject, StreamDelegate {
         super.init()
         
         outputStream.delegate = self
-        outputStream.schedule(in: RunLoop.main, forMode: RunLoopMode.defaultRunLoopMode)
+        outputStream.schedule(in: RunLoop.main, forMode: RunLoopMode.commonModes)
         outputStream.open()
         
         self.isRunning = true //I couldn't put this on openCompleted because there was a bug on iPhone, and hasSpaceAvailable was called before
@@ -153,7 +153,7 @@ public class OutputStreamer: NSObject, StreamDelegate {
             weakSelf.isRunning = false
         
             weakSelf.outputStream.delegate = nil
-            weakSelf.outputStream.remove(from: RunLoop.main, forMode: RunLoopMode.defaultRunLoopMode)
+            weakSelf.outputStream.remove(from: RunLoop.main, forMode: RunLoopMode.commonModes)
             weakSelf.outputStream.close()
             
             weakSelf.pendingData.removeAll()

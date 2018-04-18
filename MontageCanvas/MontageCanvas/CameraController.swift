@@ -28,6 +28,7 @@ let mirrorQueue = DispatchQueue(label: "fr.lri.ex-situ.Montage.serial_mirror_que
 let mirrorQueue2 = DispatchQueue(label: "fr.lri.ex-situ.Montage.serial_mirror_queue_2", qos: DispatchQoS.userInteractive)
 let fps = 24.0
 let drawingQueue = DispatchQueue(label: "drawingQueue", qos: DispatchQoS.userInteractive)
+let deviceScale = UIScreen.main.scale
 
 class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDelegate, MCNearbyServiceBrowserDelegate, MCSessionDelegate, InputStreamerDelegate, OutputStreamerDelegate {
 //    let dataSource = TierCollectionDataSource()
@@ -1509,7 +1510,8 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
         let weakSelf = self
         drawingQueue.async {
             glkView.bindDrawable()
-            weakSelf.context.draw(image, in: glkView.bounds.insetBy(dx: -glkView.bounds.width, dy: -glkView.bounds.height), from: image.extent)
+            let containerBoundsInPixels = glkView.bounds.applying(CGAffineTransform(scaleX: deviceScale, y: deviceScale))
+            weakSelf.context.draw(image, in: containerBoundsInPixels, from: image.extent)
             glkView.display()
         }
     }
