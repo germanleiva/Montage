@@ -65,14 +65,14 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
         let weakSelf = self
         
         if let myInputStreamer1 = inputStreamer1, myInputStreamer1 == streamer {
-            print("inputStreamer1")
+//            print("inputStreamer1")
             sampleBufferQueue.async {
                 weakSelf.backgroundCameraFrame = ciImage
             }
             return
         }
         if let myInputStreamer2 = inputStreamer2, myInputStreamer2 == streamer {
-            print("inputStreamer2")
+//            print("inputStreamer2")
             
             DispatchQueue.main.async {
                 weakSelf.snapshotSketchOverlay(layers: [weakSelf.prototypeCanvasView.canvasLayer],size: weakSelf.prototypeCanvasView.frame.size)
@@ -312,12 +312,12 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
 //    @IBOutlet weak var playerView:UIView!
     @IBOutlet weak var backgroundFrameImageView: GLKView! {
         didSet {
-//            backgroundFrameImageView.context = openGLContext
+            backgroundFrameImageView.context = eaglContext
         }
     }
     @IBOutlet weak var prototypeFrameImageView: GLKView! {
         didSet {
-            prototypeFrameImageView.context = openGLContext
+            prototypeFrameImageView.context = eaglContext
         }
     }
     
@@ -415,7 +415,7 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
     
     //    var catImage = UIImage(named:"cat")!
 //    var catCIImage = CIImage(image: UIImage(named:"cat")!)
-    lazy var openGLContext:EAGLContext = {
+    lazy var eaglContext:EAGLContext = {
         guard let context = EAGLContext(api: EAGLRenderingAPI.openGLES2) else {
             print("Fatal Error: could not create openGLContext")
             abort()
@@ -424,7 +424,7 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
     }()
     
     lazy var context:CIContext = {
-        return CIContext.init(eaglContext: openGLContext, options: [kCIContextWorkingColorSpace:NSNull.init()])
+        return CIContext.init(eaglContext: eaglContext)//, options: [kCIContextWorkingColorSpace:NSNull.init()])
 
     }()
     var backgroundCameraFrame:CIImage?
@@ -1543,124 +1543,124 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
         //        let pointUIKit = CGPointApplyAffineTransform(pointCI, t)
         //        let rectUIKIT = CGRectApplyAffineTransform(rectCI, t)
         
-        guard let currentBrackgroundFrameImage = backgroundCameraFrame else {
+        guard let finalBackgroundFrameImage = backgroundCameraFrame else {
             setImageOpenGL(view: prototypeFrameImageView,image: source)
             return
         }
         
         //If we have
-            guard let scaleFilter = CIFilter(name: "CILanczosScaleTransform") else {
-                return
+//        guard let scaleFilter = CIFilter(name: "CILanczosScaleTransform") else {
+//            return
+//        }
+//        scaleFilter.setValue(currentBrackgroundFrameImage, forKey: "inputImage")
+//        let increaseFactor = 1/0.25
+//        scaleFilter.setValue(increaseFactor, forKey: "inputScale")
+//        scaleFilter.setValue(1.0, forKey: "inputAspectRatio")
+//
+//        guard let finalBackgroundFrameImage = scaleFilter.outputImage else {
+//            return
+//        }
+        
+        let perspectiveTransformFilter = CIFilter(name: "CIPerspectiveTransform")!
+        
+        let w = finalBackgroundFrameImage.extent.size.width
+        let h = finalBackgroundFrameImage.extent.size.height
+        
+        let currentBox = box
+        
+        perspectiveTransformFilter.setValue(CIVector(cgPoint:CGPoint(x: currentBox.topLeft.x * w, y: h * (1 - currentBox.topLeft.y))), forKey: "inputTopLeft")
+        perspectiveTransformFilter.setValue(CIVector(cgPoint:CGPoint(x: currentBox.topRight.x * w, y: h * (1 - currentBox.topRight.y))), forKey: "inputTopRight")
+        perspectiveTransformFilter.setValue(CIVector(cgPoint:CGPoint(x: currentBox.bottomRight.x * w, y: h * (1 - currentBox.bottomRight.y))), forKey: "inputBottomRight")
+        perspectiveTransformFilter.setValue(CIVector(cgPoint:CGPoint(x: currentBox.bottomLeft.x * w, y: h * (1 - currentBox.bottomLeft.y))), forKey: "inputBottomLeft")
+        //        perspectiveTransform.setValue(CIVector(cgPoint:currentBox.topLeft.scaled(to: ciSize)), forKey: "inputTopLeft")
+        //        perspectiveTransform.setValue(CIVector(cgPoint:currentBox.topRight.scaled(to: ciSize)), forKey: "inputTopRight")
+        //        perspectiveTransform.setValue(CIVector(cgPoint:currentBox.bottomRight.scaled(to: ciSize)), forKey: "inputBottomRight")
+        //        perspectiveTransform.setValue(CIVector(cgPoint:currentBox.bottomLeft.scaled(to: ciSize)), forKey: "inputBottomLeft")
+        perspectiveTransformFilter.setValue(currentPrototypeAndOverlayFrame.oriented(CGImagePropertyOrientation.downMirrored),
+                                            forKey: kCIInputImageKey)
+        
+        
+        let composite = ChromaKeyFilter()
+        composite.inputImage = finalBackgroundFrameImage
+        composite.backgroundImage = perspectiveTransformFilter.outputImage
+        composite.activeColor = CIColor(red: 0, green: 1, blue: 0)
+        
+        //Apple Chroma (not working)
+        //            let composite = CIFilter(name:"ChromaKey") as! ChromaKey
+        //
+        //            composite.setDefaults()
+        //            composite.setValue(perspectiveTransform.outputImage!, forKey: "inputBackgroundImage")
+        //            composite.setValue(currentFrame, forKey: "inputImage")
+        //
+        //            composite.inputCenterAngle = NSNumber(value:120 * Float.pi / 180)
+        //            composite.inputAngleWidth = NSNumber(value:45 * Float.pi / 180)
+        
+        //GHOST
+        
+        //We do a CIPerspectiveCorrection of the green area finalBackgroundFrameImage
+        
+        let perspectiveCorrection = CIFilter(name: "CIPerspectiveCorrection")!
+        
+        //            perspectiveCorrection.setValue(CIVector(cgPoint:CGPoint(x: currentBox.topLeft.x, y: currentBox.topLeft.y)), forKey: "inputTopLeft")
+        //            perspectiveCorrection.setValue(CIVector(cgPoint:CGPoint(x: currentBox.topRight.x, y: currentBox.topRight.y)), forKey: "inputTopRight")
+        //            perspectiveCorrection.setValue(CIVector(cgPoint:CGPoint(x: currentBox.bottomRight.x, y: currentBox.bottomRight.y)), forKey: "inputBottomRight")
+        //            perspectiveCorrection.setValue(CIVector(cgPoint:CGPoint(x: currentBox.bottomLeft.x, y: currentBox.bottomLeft.y)), forKey: "inputBottomLeft")
+        
+        perspectiveCorrection.setValue(perspectiveTransformFilter.value(forKey: "inputTopLeft"),
+                                       forKey: "inputTopLeft")
+        perspectiveCorrection.setValue(perspectiveTransformFilter.value(forKey: "inputTopRight"),
+                                       forKey: "inputTopRight")
+        perspectiveCorrection.setValue(perspectiveTransformFilter.value(forKey: "inputBottomRight"),
+                                       forKey: "inputBottomRight")
+        perspectiveCorrection.setValue(perspectiveTransformFilter.value(forKey: "inputBottomLeft"),
+                                       forKey: "inputBottomLeft")
+        
+        perspectiveCorrection.setValue(finalBackgroundFrameImage/*.oriented(CGImagePropertyOrientation.downMirrored)*/,
+            forKey: kCIInputImageKey)
+        
+        //            guard let scaleFilter2 = CIFilter(name: "CILanczosScaleTransform") else {
+        //                return
+        //            }
+        //            scaleFilter2.setValue(internalCameraFrame, forKey: "inputImage")
+        //            scaleFilter2.setValue(2.0, forKey: "inputScale")
+        //            scaleFilter2.setValue(1.0, forKey: "inputAspectRatio")
+        
+        //            let composite2 = ChromaKeyFilter()
+        
+        if isUserOverlayActive, let ghost = perspectiveCorrection.outputImage?.oriented(CGImagePropertyOrientation.downMirrored) {
+            let scaledGhost = ghost.transformed(by: CGAffineTransform.identity.scaledBy(x: source.extent.width / ghost.extent.width, y: source.extent.height / ghost.extent.height ))
+            
+            removeGreenFilter.setValue(scaledGhost, forKey: kCIInputImageKey)
+            
+            let transparencyMatrixEffect = CIFilter(name:"CIColorMatrix")!
+            
+            transparencyMatrixEffect.setDefaults()
+            transparencyMatrixEffect.setValue(removeGreenFilter.outputImage, forKey: kCIInputImageKey)
+            
+            transparencyMatrixEffect.setValue(CIVector(x: 1, y: 0, z: 0, w: 0), forKey: "inputRVector")
+            transparencyMatrixEffect.setValue(CIVector(x: 0, y: 1, z: 0, w: 0), forKey: "inputGVector")
+            transparencyMatrixEffect.setValue(CIVector(x: 0, y: 0, z: 1, w: 0), forKey: "inputBVector")
+            transparencyMatrixEffect.setValue(CIVector(x: 0, y: 0, z: 0, w: 0.8), forKey: "inputAVector")
+            
+            let composite2 = CIFilter(name: "CISourceOverCompositing")!
+            composite2.setValue(transparencyMatrixEffect.outputImage, forKey: kCIInputImageKey)
+            composite2.setValue(source, forKey: kCIInputBackgroundImageKey)
+            
+            //                composite2.inputImage = transparencyMatrixEffect.outputImage
+            //                composite2.backgroundImage = source
+            //                composite2.activeColor = CIColor(red: 0, green: 1, blue: 0)
+            
+            if let compositeImage2 = composite2.outputImage {
+                self.setImageOpenGL(view: self.prototypeFrameImageView,image: compositeImage2)
             }
-            scaleFilter.setValue(currentBrackgroundFrameImage, forKey: "inputImage")
-            let increaseFactor = 1/0.25
-            scaleFilter.setValue(increaseFactor, forKey: "inputScale")
-            scaleFilter.setValue(1.0, forKey: "inputAspectRatio")
-            
-            guard let finalBackgroundFrameImage = scaleFilter.outputImage else {
-                return
-            }
-            
-            let perspectiveTransformFilter = CIFilter(name: "CIPerspectiveTransform")!
-            
-            let w = finalBackgroundFrameImage.extent.size.width
-            let h = finalBackgroundFrameImage.extent.size.height
+        } else {
+            //No isUserOverlayActive
+            self.setImageOpenGL(view: self.prototypeFrameImageView,image: source)
+        }
         
-            let currentBox = box
-        
-            perspectiveTransformFilter.setValue(CIVector(cgPoint:CGPoint(x: currentBox.topLeft.x * w, y: h * (1 - currentBox.topLeft.y))), forKey: "inputTopLeft")
-            perspectiveTransformFilter.setValue(CIVector(cgPoint:CGPoint(x: currentBox.topRight.x * w, y: h * (1 - currentBox.topRight.y))), forKey: "inputTopRight")
-            perspectiveTransformFilter.setValue(CIVector(cgPoint:CGPoint(x: currentBox.bottomRight.x * w, y: h * (1 - currentBox.bottomRight.y))), forKey: "inputBottomRight")
-            perspectiveTransformFilter.setValue(CIVector(cgPoint:CGPoint(x: currentBox.bottomLeft.x * w, y: h * (1 - currentBox.bottomLeft.y))), forKey: "inputBottomLeft")
-            //        perspectiveTransform.setValue(CIVector(cgPoint:currentBox.topLeft.scaled(to: ciSize)), forKey: "inputTopLeft")
-            //        perspectiveTransform.setValue(CIVector(cgPoint:currentBox.topRight.scaled(to: ciSize)), forKey: "inputTopRight")
-            //        perspectiveTransform.setValue(CIVector(cgPoint:currentBox.bottomRight.scaled(to: ciSize)), forKey: "inputBottomRight")
-            //        perspectiveTransform.setValue(CIVector(cgPoint:currentBox.bottomLeft.scaled(to: ciSize)), forKey: "inputBottomLeft")
-            perspectiveTransformFilter.setValue(currentPrototypeAndOverlayFrame.oriented(CGImagePropertyOrientation.downMirrored),
-                                                forKey: kCIInputImageKey)
-            
-            
-            let composite = ChromaKeyFilter()
-            composite.inputImage = finalBackgroundFrameImage
-            composite.backgroundImage = perspectiveTransformFilter.outputImage
-            composite.activeColor = CIColor(red: 0, green: 1, blue: 0)
-            
-            //Apple Chroma (not working)
-            //            let composite = CIFilter(name:"ChromaKey") as! ChromaKey
-            //
-            //            composite.setDefaults()
-            //            composite.setValue(perspectiveTransform.outputImage!, forKey: "inputBackgroundImage")
-            //            composite.setValue(currentFrame, forKey: "inputImage")
-            //
-            //            composite.inputCenterAngle = NSNumber(value:120 * Float.pi / 180)
-            //            composite.inputAngleWidth = NSNumber(value:45 * Float.pi / 180)
-            
-            //GHOST
-        
-            //We do a CIPerspectiveCorrection of the green area finalBackgroundFrameImage
-            
-            let perspectiveCorrection = CIFilter(name: "CIPerspectiveCorrection")!
-        
-//            perspectiveCorrection.setValue(CIVector(cgPoint:CGPoint(x: currentBox.topLeft.x, y: currentBox.topLeft.y)), forKey: "inputTopLeft")
-//            perspectiveCorrection.setValue(CIVector(cgPoint:CGPoint(x: currentBox.topRight.x, y: currentBox.topRight.y)), forKey: "inputTopRight")
-//            perspectiveCorrection.setValue(CIVector(cgPoint:CGPoint(x: currentBox.bottomRight.x, y: currentBox.bottomRight.y)), forKey: "inputBottomRight")
-//            perspectiveCorrection.setValue(CIVector(cgPoint:CGPoint(x: currentBox.bottomLeft.x, y: currentBox.bottomLeft.y)), forKey: "inputBottomLeft")
-        
-            perspectiveCorrection.setValue(perspectiveTransformFilter.value(forKey: "inputTopLeft"),
-                                           forKey: "inputTopLeft")
-            perspectiveCorrection.setValue(perspectiveTransformFilter.value(forKey: "inputTopRight"),
-                                           forKey: "inputTopRight")
-            perspectiveCorrection.setValue(perspectiveTransformFilter.value(forKey: "inputBottomRight"),
-                                           forKey: "inputBottomRight")
-            perspectiveCorrection.setValue(perspectiveTransformFilter.value(forKey: "inputBottomLeft"),
-                                           forKey: "inputBottomLeft")
-        
-            perspectiveCorrection.setValue(finalBackgroundFrameImage/*.oriented(CGImagePropertyOrientation.downMirrored)*/,
-                                           forKey: kCIInputImageKey)
-            
-//            guard let scaleFilter2 = CIFilter(name: "CILanczosScaleTransform") else {
-//                return
-//            }
-//            scaleFilter2.setValue(internalCameraFrame, forKey: "inputImage")
-//            scaleFilter2.setValue(2.0, forKey: "inputScale")
-//            scaleFilter2.setValue(1.0, forKey: "inputAspectRatio")
-            
-//            let composite2 = ChromaKeyFilter()
-        
-            if isUserOverlayActive, let ghost = perspectiveCorrection.outputImage?.oriented(CGImagePropertyOrientation.downMirrored) {
-                let scaledGhost = ghost.transformed(by: CGAffineTransform.identity.scaledBy(x: source.extent.width / ghost.extent.width, y: source.extent.height / ghost.extent.height ))
-
-                removeGreenFilter.setValue(scaledGhost, forKey: kCIInputImageKey)
-                
-                let transparencyMatrixEffect = CIFilter(name:"CIColorMatrix")!
-            
-                transparencyMatrixEffect.setDefaults()
-                transparencyMatrixEffect.setValue(removeGreenFilter.outputImage, forKey: kCIInputImageKey)
-            
-                transparencyMatrixEffect.setValue(CIVector(x: 1, y: 0, z: 0, w: 0), forKey: "inputRVector")
-                transparencyMatrixEffect.setValue(CIVector(x: 0, y: 1, z: 0, w: 0), forKey: "inputGVector")
-                transparencyMatrixEffect.setValue(CIVector(x: 0, y: 0, z: 1, w: 0), forKey: "inputBVector")
-                transparencyMatrixEffect.setValue(CIVector(x: 0, y: 0, z: 0, w: 0.8), forKey: "inputAVector")
-                
-                let composite2 = CIFilter(name: "CISourceOverCompositing")!
-                composite2.setValue(transparencyMatrixEffect.outputImage, forKey: kCIInputImageKey)
-                composite2.setValue(source, forKey: kCIInputBackgroundImageKey)
-                
-//                composite2.inputImage = transparencyMatrixEffect.outputImage
-//                composite2.backgroundImage = source
-//                composite2.activeColor = CIColor(red: 0, green: 1, blue: 0)
-                
-                if let compositeImage2 = composite2.outputImage {
-                    self.setImageOpenGL(view: self.prototypeFrameImageView,image: compositeImage2)
-                }
-            } else {
-                //No isUserOverlayActive
-                self.setImageOpenGL(view: self.prototypeFrameImageView,image: source)
-            }
-        
-            if let compositeImage = composite.outputImage {
-                self.setImageOpenGL(view: self.backgroundFrameImageView,image: compositeImage)
-            }
+        if let compositeImage = composite.outputImage {
+            self.setImageOpenGL(view: self.backgroundFrameImageView,image: compositeImage)
+        }
     }
     
     func RGBtoHSV(r : Float, g : Float, b : Float) -> (h : Float, s : Float, v : Float) {
@@ -1703,12 +1703,11 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
                 }
             }
         }
-        let b = cubeData.withUnsafeBufferPointer { Data(buffer: $0) }
-        let data = b as NSData
+        let data = cubeData.withUnsafeBufferPointer { Data(buffer: $0) }
         
         let colorCube = CIFilter(name: "CIColorCube", withInputParameters: [
             "inputCubeDimension": size,
-            "inputCubeData": data
+            "inputCubeData": data as NSData
             ])
         return colorCube!
     }
@@ -2227,39 +2226,6 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
         //        browser.startBrowsingForPeers()
     }
     
-    // MARK: Stream Delegate
-    
-    /*
-    func stream(_ aStream: Stream, handle eventCode: Stream.Event) {
-        switch eventCode {
-        case Stream.Event.openCompleted:
-            break
-        case Stream.Event.hasBytesAvailable:
-//            print("\(aStream.description) Stream.Event.hasBytesAvailable \(_dcache.count)")
-            if let executable:ReadDataInputStream = _dcache.object(forKey: aStream.description) as? ReadDataInputStream {
-                streamingQueue.async {
-                    executable()
-                }
-            } else {
-                print("Something happened, right?")
-            }
-            break
-        case Stream.Event.endEncountered:
-            print("\(aStream.description) endEncountered")
-            aStream.close()
-            aStream.remove(from: RunLoop.main, forMode: RunLoopMode.defaultRunLoopMode)
-            aStream.delegate = nil
-            _dcache.removeObject(forKey: aStream.description)
-            print("_dcache count: \(_dcache.count)")
-            break
-        case Stream.Event.errorOccurred:
-            print("Stream status: \(aStream.streamStatus)")
-            break
-        default:
-            print("Not handling streaming event code \(eventCode)")
-        }
-    }
-    */
     //-MARK: VideoPlayerDelegate
     
     func play() {
