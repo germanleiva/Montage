@@ -15,22 +15,24 @@ import WatchConnectivity
 import Streamer
 import VideoToolbox
 
-//    dispatch_queue_create("cachequeue", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL)
 let visionQueue = DispatchQueue.global(qos: .userInteractive)
-let streamingQueue1 = DispatchQueue(label: "fr.lri.ex-situ.Montage.serial_streaming_queue_1", qos: DispatchQoS.userInteractive)
-let streamingQueue2 = DispatchQueue(label: "fr.lri.ex-situ.Montage.serial_streaming_queue_1", qos: DispatchQoS.userInteractive)
 let mirrorQueue = DispatchQueue(label: "fr.lri.ex-situ.Montage.serial_mirror_queue", qos: DispatchQoS.userInteractive)
-let watchQueue = DispatchQueue(label: "fr.lri.ex-situ.Montage.serial_watch_queue", qos: DispatchQoS.userInteractive)
+let streamerQueue = DispatchQueue(label: "fr.lri.ex-situ.Montage.serial_streamer_queue", qos: DispatchQoS.userInteractive)
+let senderQueue = DispatchQueue(label: "fr.lri.ex-situ.Montage.serial_sender_queue")
+let sampleBufferQueue = DispatchQueue(label: "fr.lri.ex-situ.Montage.serial_sample-buffer_queue")
 
 let fps = 24.0
 
-class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataOutputSampleBufferDelegate, MCSessionDelegate, MCNearbyServiceAdvertiserDelegate, StreamDelegate, WCSessionDelegate, VideoEncoderDelegate, OutputStreamerDelegate {
+class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataOutputSampleBufferDelegate, MCSessionDelegate, MCNearbyServiceAdvertiserDelegate, WCSessionDelegate, VideoEncoderDelegate, OutputStreamerDelegate {
     
     var initialChunkSPS_PPS:Data? {
         didSet {
             if let firstChunk = initialChunkSPS_PPS {
-                for streamer in outputStreamers {
-                    streamer.initialChunk = Data(firstChunk)
+                let weakSelf = self
+                streamerQueue.async {
+                    for streamer in weakSelf.outputStreamers {
+                        streamer.initialChunk = Data(firstChunk)
+                    }
                 }
             }
         }
@@ -38,11 +40,15 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
     
     var formatDescription:CMFormatDescription? = nil {
         didSet {
-            guard !CMFormatDescriptionEqual(formatDescription, oldValue) else {
+            guard let aFormatDescription = formatDescription else {
                 return
             }
             
-            didSetFormatDescriptionDo(video: formatDescription)
+            guard !CMFormatDescriptionEqual(aFormatDescription, oldValue) else {
+                return
+            }
+            
+            didSetFormatDescriptionDo(video: aFormatDescription)
         }
     }
     
@@ -84,8 +90,11 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
     }
     
     func stopOutputStreamers() {
-        for streamer in outputStreamers {
-            streamer.close()
+        let weakSelf = self
+        streamerQueue.async {
+            for streamer in weakSelf.outputStreamers {
+                streamer.close()
+            }
         }
     }
     
@@ -328,17 +337,7 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
                 weakSelf.currentDetectedRectangle = detectedRectangle
                 
                 if let aRole = weakSelf.myRole, aRole == .userCam {
-                    if let connectedServerPeer = weakSelf.connectedServer {
-                        let dict = ["detectedRectangle":detectedRectangle]
-                        let data = NSKeyedArchiver.archivedData(withRootObject: dict)
-                        
-                        do {
-                            try weakSelf.multipeerSession.send(data, toPeers: [connectedServerPeer], with: MCSessionSendDataMode.reliable)
-                        } catch let error as NSError {
-                            print("Error in sending detectedRectangle: \(error.localizedDescription)")
-                        }
-                    }
-                    
+                    weakSelf.sendMessageToServer(dict: ["detectedRectangle":detectedRectangle])
                     weakSelf.highlightRectangle(box:detectedRectangle)
                 }
                 
@@ -449,13 +448,11 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
             return false
         }
         
-        let sampleBufferSerialQueue = DispatchQueue(label: "My_Wizard_Sample_Buffer_Serial_Queue")
-        
         let dataOutput = AVCaptureVideoDataOutput()
         
         dataOutput.alwaysDiscardsLateVideoFrames = true
         dataOutput.videoSettings = [kCVPixelBufferPixelFormatTypeKey as String:kCVPixelFormatType_32BGRA]
-        dataOutput.setSampleBufferDelegate(self, queue: sampleBufferSerialQueue)
+        dataOutput.setSampleBufferDelegate(self, queue: sampleBufferQueue)
         
         if !captureSession.canAddOutput(dataOutput) {
             return false
@@ -467,7 +464,7 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
         
         
         if let videoSettings = dataOutput.recommendedVideoSettings(forVideoCodecType: AVVideoCodecType.h264, assetWriterOutputFileType: fileType) as? [String:Any] {
-            var extendedVideoSettings = videoSettings
+            let extendedVideoSettings = videoSettings
             //            extendedVideoSettings[AVVideoCompressionPropertiesKey] = [
             //                AVVideoAverageBitRateKey : ,
             //                AVVideoProfileLevelKey : AVVideoProfileLevelH264Main31, /* Or whatever profile & level you wish to use */
@@ -516,10 +513,11 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
     func configureCameraForHighestFrameRate(device:AVCaptureDevice) {
         var bestFormat:AVCaptureDevice.Format?
         var bestFrameRateRange:AVFrameRateRange?
+        let maxFPS = 30.0
         
         for format in device.formats {
             for range in format.videoSupportedFrameRateRanges {
-                if bestFrameRateRange == nil || (range.maxFrameRate > bestFrameRateRange!.maxFrameRate || range.maxFrameRate <= 60) {
+                if bestFrameRateRange == nil || (range.maxFrameRate > bestFrameRateRange!.maxFrameRate || range.maxFrameRate <= maxFPS) {
                     bestFormat = format
                     bestFrameRateRange = range
                 }
@@ -656,11 +654,13 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
     }
     
     // MARK: Multipeer Streaming
-    var serverPeer:MCPeerID?
-
-    var connectedServer:MCPeerID? {
-        return self.multipeerSession.connectedPeers.first { (peer) -> Bool in
-            return peer.isEqual(serverPeer)
+    private var _serverPeer:MCPeerID?
+    var serverPeer:MCPeerID? {
+        get {
+            return senderQueue.sync { _serverPeer }
+        }
+        set (newServerPeer) {
+            return senderQueue.sync { _serverPeer = newServerPeer }
         }
     }
     
@@ -673,55 +673,69 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
             print("connecting with peerID \(peerID)")
         case MCSessionState.connected:
             print("connected with peerID \(peerID)")
-            var shouldStartEncoder = false
             
-            if outputStreamers.isEmpty {
-                shouldStartEncoder = true
-            }
-            
-            if peerID.isEqual(serverPeer) || peerID.isEqual(mirrorPeer) {
-                let id = outputStreamers.count + 1
-                do {
-                    let outputStream = try multipeerSession.startStream(withName: "videoStreamPruebita \(id) \(Date())", toPeer: peerID)
-                    let newOutputStreamer = OutputStreamer(peerID,outputStream:outputStream,initialChunk:initialChunkSPS_PPS)
-                    newOutputStreamer.delegate = self
-                    outputStreamers.append(newOutputStreamer)
-                    
-                    if shouldStartEncoder {
-                        encoder.startRunning()
-                    }
-                } catch let error as NSError {
-                    print("Couldn't create output stream \(id): \(error.localizedDescription)")
+            let weakSelf = self
+            streamerQueue.async {
+                var shouldStartEncoder = false
+                
+                if weakSelf.outputStreamers.isEmpty {
+                    shouldStartEncoder = true
                 }
-            }
-            
-            if peerID.isEqual(serverPeer) {
-                print("stopAdvertisingPeer")
-                serviceAdvertiser.stopAdvertisingPeer()
+                
+                if peerID.isEqual(weakSelf.serverPeer) || peerID.isEqual(weakSelf.mirrorPeer) {
+                    let id = weakSelf.outputStreamers.count + 1
+                    do {
+                        let outputStream = try weakSelf.multipeerSession.startStream(withName: "videoStreamPruebita \(id) \(Date())", toPeer: peerID)
+                        let newOutputStreamer = OutputStreamer(peerID,outputStream:outputStream,initialChunk:weakSelf.initialChunkSPS_PPS)
+                        newOutputStreamer.delegate = weakSelf
+                        weakSelf.outputStreamers.append(newOutputStreamer)
+                        
+                        if shouldStartEncoder {
+                            weakSelf.encoder.startRunning()
+                        }
+                    } catch let error as NSError {
+                        print("Couldn't create output stream \(id): \(error.localizedDescription)")
+                    }
+                }
+                
+                if peerID.isEqual(weakSelf.serverPeer) {
+                    print("stopAdvertisingPeer")
+                    weakSelf.serviceAdvertiser.stopAdvertisingPeer()
+                }
             }
             
         case MCSessionState.notConnected:
             print("notConnected with peerID \(peerID)")
-
-            if peerID.isEqual(serverPeer) {
-                serverPeer = nil
-                print("startAdvertisingPeer")
-                serviceAdvertiser.startAdvertisingPeer()
+            let weakSelf = self
+            
+            streamerQueue.async {
+                print("HERE !!!!")
+                if let unproperlyDisconnectedDestination = weakSelf.outputStreamers.first(where: { $0.peerID == peerID} ) {
+                    unproperlyDisconnectedDestination.close()
+                }
+                
+                if peerID.isEqual(weakSelf.serverPeer) {
+                    weakSelf.serverPeer = nil
+                    print("startAdvertisingPeer")
+                    weakSelf.serviceAdvertiser.startAdvertisingPeer()
+                }
+                
+                if peerID.isEqual(weakSelf.mirrorPeer) {
+                    weakSelf.mirrorPeer = nil
+                }
             }
             
-            if peerID.isEqual(mirrorPeer) {
-                mirrorPeer = nil
-            }
             
-            if let destinationIndex = outputStreamers.index(where: { $0.peerID == peerID} ) {
-                let unproperlyDisconnectedDestination = outputStreamers[destinationIndex]
-                unproperlyDisconnectedDestination.close()
-            }
             
-            if outputStreamers.isEmpty {
-                encoder.stopRunning()
+        }
+    }
+    
+    func sendMessageToServer(dict:[String:Any?]) {
+        let weakSelf = self
+        senderQueue.async {
+            if let connectedServerPeer = weakSelf._serverPeer {
+                weakSelf.sendMessage(peerID: connectedServerPeer, dict: dict)
             }
-            
         }
     }
     
@@ -757,9 +771,7 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
                 case "stopRecording":
                     self.movieWriter.stopWriting()
                     if let aRole = self.myRole, aRole == .userCam {
-                        if let connectedServerPeer = connectedServer {
-                            sendMessage(peerID: connectedServerPeer, dict: ["savedBoxes":savedBoxes])
-                        }
+                        sendMessageToServer(dict: ["savedBoxes":savedBoxes])
                     }
                 case "mirrorMode":
                     mirrorPeer = value as? MCPeerID
@@ -826,17 +838,20 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
         print("didWriteMovie \(outputURL)")
         isStreaming = false
         
-        guard let serverPeer = connectedServer else {
-            print("Cannot send movie, there is no server connected")
-            return
-        }
-        multipeerSession.sendResource(at: outputURL, withName: "MONTAGE_CAM_MOVIE", toPeer: serverPeer) { (error) in
-            guard let error = error else {
-                print("Movie sent succesfully!")
+        let weakSelf = self
+        senderQueue.async {
+            guard let serverPeer = weakSelf._serverPeer else {
+                print("Cannot send movie, there is no server connected")
                 return
             }
-            print("Failed to send movie \(outputURL): \(error.localizedDescription)")
-            
+            weakSelf.multipeerSession.sendResource(at: outputURL, withName: "MONTAGE_CAM_MOVIE", toPeer: serverPeer) { (error) in
+                guard let error = error else {
+                    print("Movie sent succesfully!")
+                    return
+                }
+                print("Failed to send movie \(outputURL): \(error.localizedDescription)")
+                
+            }
         }
         //        let cloudKitAsset = CKAsset(fileURL: outputURL)
         //
@@ -877,9 +892,8 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
     @objc func appWillResignActive(_ notification:Notification) {
         print("appWillResignActive")
         
-        for streamer in inputStreamers {
-            streamer.close()
-        }
+        stopOutputStreamers()
+        
         for streamer in outputStreamers {
             streamer.close()
         }
@@ -891,10 +905,8 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
     @objc func appWillTerminate(_ notification:Notification) {
         print("appWillTerminate") //I think appWillResignActive is called before
         
+        stopOutputStreamers()
         for streamer in inputStreamers {
-            streamer.close()
-        }
-        for streamer in outputStreamers {
             streamer.close()
         }
         
@@ -906,13 +918,11 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
         print("viewWillDisappear")
         super.viewWillDisappear(animated)
         
+        stopOutputStreamers()
+        
         for streamer in inputStreamers {
             streamer.close()
         }
-        for streamer in outputStreamers {
-            streamer.close()
-        }
-        
         serviceAdvertiser.stopAdvertisingPeer()
         print("stopAdvertisingPeer")
     }
@@ -951,7 +961,7 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
         sampleOutputDo(video: sampleBuffer)
     }
     
-    private func didSetFormatDescriptionDo(video formatDescription:CMFormatDescription?) {
+    private func didSetFormatDescriptionDo(video formatDescription:CMFormatDescription) {
         
         var sampleData = Data()
         //         let formatDesrciption :CMFormatDescriptionRef = CMSampleBufferGetFormatDescription(sampleBuffer!)!
@@ -965,11 +975,11 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
         var ppsCount:Int = 0
         
         var err : OSStatus
-        err = CMVideoFormatDescriptionGetH264ParameterSetAtIndex(formatDescription!, 0, &sps, &spsLength, &spsCount, nil )
+        err = CMVideoFormatDescriptionGetH264ParameterSetAtIndex(formatDescription, 0, &sps, &spsLength, &spsCount, nil )
         if (err != noErr) {
             NSLog("An Error occured while getting h264 parameter 0")
         }
-        err = CMVideoFormatDescriptionGetH264ParameterSetAtIndex(formatDescription!, 1, &pps, &ppsLength, &ppsCount, nil )
+        err = CMVideoFormatDescriptionGetH264ParameterSetAtIndex(formatDescription, 1, &pps, &ppsLength, &ppsCount, nil )
         if (err != noErr) {
             NSLog("An Error occured while getting h264 parameter 1")
         }
@@ -1042,16 +1052,28 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
             bufferOffset += AVCCHeaderLength + Int(NALUnitLength)
         }
         
-        for outputStreamer in outputStreamers {
-            outputStreamer.sendData(chunk)
+        let weakSelf = self
+        streamerQueue.async {
+            for outputStreamer in weakSelf.outputStreamers {
+                outputStreamer.sendData(chunk)
+            }
         }
         
     }
     
     //WriteDestinationDelegate
     func didClose(streamer: OutputStreamer) {
-        if let disconnectedStreamerIndex = outputStreamers.index(of:streamer) {
-            outputStreamers.remove(at: disconnectedStreamerIndex)
+        let weakSelf = self
+        streamerQueue.async {
+            if let disconnectedStreamerIndex = weakSelf.outputStreamers.index(of:streamer) {
+                weakSelf.outputStreamers.remove(at: disconnectedStreamerIndex)
+                
+                if weakSelf.outputStreamers.isEmpty {
+                    sampleBufferQueue.async {
+                        weakSelf.encoder.stopRunning()
+                    }
+                }
+            }
         }
     }
     

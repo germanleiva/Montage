@@ -271,13 +271,12 @@ public class InputStreamer: NSObject, VideoDecoderDelegate, StreamDelegate {
                 return
             }
             
-            weakSelf.stream.delegate = nil
-            weakSelf.stream.remove(from: RunLoop.main, forMode: RunLoopMode.commonModes)
-            weakSelf.stream.close()
-            
-            weakSelf.savedDataSampleBuffer.removeAll()
+            weakSelf.isRunning = false
             
             DispatchQueue.main.async {
+                weakSelf.stream.delegate = nil
+                weakSelf.stream.remove(from: RunLoop.main, forMode: RunLoopMode.commonModes)
+                weakSelf.stream.close()
                 weakSelf.delegate?.didClose(weakSelf)
             }
         }

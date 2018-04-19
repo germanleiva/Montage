@@ -152,13 +152,10 @@ public class OutputStreamer: NSObject, StreamDelegate {
         
             weakSelf.isRunning = false
         
-            weakSelf.outputStream.delegate = nil
-            weakSelf.outputStream.remove(from: RunLoop.main, forMode: RunLoopMode.commonModes)
-            weakSelf.outputStream.close()
-            
-            weakSelf.pendingData.removeAll()
-            
             DispatchQueue.main.async {
+                weakSelf.outputStream.delegate = nil
+                weakSelf.outputStream.remove(from: RunLoop.main, forMode: RunLoopMode.commonModes)
+                weakSelf.outputStream.close()
                 weakSelf.delegate?.didClose(streamer: weakSelf)
             }
         }

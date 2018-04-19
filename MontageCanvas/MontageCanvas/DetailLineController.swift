@@ -206,9 +206,8 @@ class DetailLineController: UIViewController, UICollectionViewDelegate, UICollec
         
         do {
             try _fetchedResultsController!.performFetch()
-        } catch {
-            let nserror = error as NSError
-            fatalError("Unresolved error \(nserror)")
+        } catch {            
+            alert(error, title: "DB Error", message: "Could not performFetch in NSFetchedResultsController")
         }
         return _fetchedResultsController!
     }

@@ -52,7 +52,10 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
     
     // MARK: InputStreamerDelegate
     func didClose(streamer: OutputStreamer) {
-        print("didClose OutputStreamer")
+        if let outputStreamerIndex = outputStreamers.index(of: streamer) {
+            outputStreamers.remove(at: outputStreamerIndex)
+            print("didClose OutputStreamer")
+        }
     }
     
     var outputStreamers = [OutputStreamer]()
@@ -169,17 +172,18 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
 
     }
     func didClose(_ streamer: InputStreamer) {
-        print("didClose InputStreamer")
 //        if let index = inputStreamers.index(of: streamer) {
 //            inputStreamers.remove(at: index)
 //        }
-        if let myStreamer1 = inputStreamer1, myStreamer1 == streamer {
-            myStreamer1.close()
+        if streamer.isEqual(inputStreamer1) {
             inputStreamer1 = nil
+            print("didClose InputStreamer 1")
+
         }
-        if let myStreamer2 = inputStreamer2, myStreamer2 == streamer {
-            myStreamer2.close()
+        
+        if streamer.isEqual(inputStreamer2) {
             inputStreamer2 = nil
+            print("didClose InputStreamer 2")
         }
     }
     
