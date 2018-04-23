@@ -1,7 +1,6 @@
 public enum MontageRole:Int {
     case undefined = 0
-    case phoneCam
-    case padCam
+    case cam
     case userCam
     case wizardCam
     case mirror

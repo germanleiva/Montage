@@ -15,11 +15,11 @@ import WatchConnectivity
 import Streamer
 import VideoToolbox
 
-let visionQueue = DispatchQueue.global(qos: .userInteractive)
+let visionQueue = DispatchQueue.global(qos: .userInteractive) //concurrent
 let mirrorQueue = DispatchQueue(label: "fr.lri.ex-situ.Montage.serial_mirror_queue", qos: DispatchQoS.userInteractive)
 let streamerQueue = DispatchQueue(label: "fr.lri.ex-situ.Montage.serial_streamer_queue", qos: DispatchQoS.userInteractive)
 let senderQueue = DispatchQueue(label: "fr.lri.ex-situ.Montage.serial_sender_queue")
-let sampleBufferQueue = DispatchQueue(label: "fr.lri.ex-situ.Montage.serial_sample-buffer_queue")
+let captureOutputQueue = DispatchQueue(label: "fr.lri.ex-situ.Montage.serial_capture-output_queue")
 
 let fps = 24.0
 
@@ -173,9 +173,9 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
         let role:MontageRole
         switch UIDevice.current.userInterfaceIdiom {
         case .phone:
-            role = .phoneCam
+            role = .cam
         case .pad:
-            role = .padCam
+            role = .cam
         default:
             role = .undefined
         }
@@ -187,7 +187,7 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
     }()
     
     deinit {
-
+        NotificationCenter.default.removeObserver(self)
     }
     
     override func viewDidLoad() {
@@ -198,6 +198,10 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
         if self.setupCamera() {
             isStreaming = true //This starts the captureSession
         }
+        
+        NotificationCenter.default.addObserver(self, selector: #selector(appWillWillEnterForeground), name: NSNotification.Name.UIApplicationWillEnterForeground, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(appWillResignActive), name: NSNotification.Name.UIApplicationWillResignActive, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(appWillTerminate), name: NSNotification.Name.UIApplicationWillTerminate, object: nil)
         
         //        setupWatchSession()
         
@@ -452,7 +456,7 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
         
         dataOutput.alwaysDiscardsLateVideoFrames = true
         dataOutput.videoSettings = [kCVPixelBufferPixelFormatTypeKey as String:kCVPixelFormatType_32BGRA]
-        dataOutput.setSampleBufferDelegate(self, queue: sampleBufferQueue)
+        dataOutput.setSampleBufferDelegate(self, queue: captureOutputQueue)
         
         if !captureSession.canAddOutput(dataOutput) {
             return false
@@ -709,7 +713,6 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
             let weakSelf = self
             
             streamerQueue.async {
-                print("HERE !!!!")
                 if let unproperlyDisconnectedDestination = weakSelf.outputStreamers.first(where: { $0.peerID == peerID} ) {
                     unproperlyDisconnectedDestination.close()
                 }
@@ -1069,7 +1072,7 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
                 weakSelf.outputStreamers.remove(at: disconnectedStreamerIndex)
                 
                 if weakSelf.outputStreamers.isEmpty {
-                    sampleBufferQueue.async {
+                    captureOutputQueue.async {
                         weakSelf.encoder.stopRunning()
                     }
                 }
