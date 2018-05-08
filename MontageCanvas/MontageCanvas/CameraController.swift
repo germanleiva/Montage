@@ -26,7 +26,7 @@ let streamingQueue1 = DispatchQueue(label: "fr.lri.ex-situ.Montage.serial_stream
 let streamingQueue2 = DispatchQueue(label: "fr.lri.ex-situ.Montage.serial_streaming_queue2", qos: DispatchQoS.userInteractive)
 let mirrorQueue = DispatchQueue(label: "fr.lri.ex-situ.Montage.serial_mirror_queue", qos: DispatchQoS.userInteractive)
 let mirrorQueue2 = DispatchQueue(label: "fr.lri.ex-situ.Montage.serial_mirror_queue_2", qos: DispatchQoS.userInteractive)
-let fps = 24.0
+
 let drawingQueue = DispatchQueue(label: "drawingQueue", qos: DispatchQoS.userInteractive)
 let deviceScale = UIScreen.main.scale
 
@@ -69,17 +69,17 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
         
         if streamer.isEqual(inputStreamer1) {
 //            print("inputStreamer1")
-            let shouldDrawDirectly = inputStreamer2 == nil
+//            let shouldDrawDirectly = inputStreamer2 == nil
             sampleBufferQueue.async {
                 weakSelf.backgroundCameraFrame = ciImage
-                if shouldDrawDirectly {
-                    weakSelf.setImageOpenGL(view: weakSelf.backgroundFrameImageView, image: ciImage)
-                }
+//                if shouldDrawDirectly {
+//                    weakSelf.setImageOpenGL(view: weakSelf.backgroundFrameImageView, image: ciImage)
+//                }
             }
             
-            if inputStreamer2 == nil {
-                
-            }
+//            if inputStreamer2 == nil {
+//
+//            }
             
             return
         }
@@ -93,10 +93,10 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
             sampleBufferQueue.async {
                 weakSelf.prototypeCameraFrame = ciImage
 
-                if let receivedCIImage = weakSelf.prototypeCameraFrame {
-    
-                    weakSelf.applyFilterFromPrototypeToBackground(source: receivedCIImage)
-                }
+//                if let receivedCIImage = weakSelf.prototypeCameraFrame {
+//
+//                    weakSelf.applyFilterFromPrototypeToBackground(source: receivedCIImage)
+//                }
             }
 
             /*
@@ -246,7 +246,14 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
     var previousRate:Float?
 
     private static var observerContext = 0
-    var displayLink:CADisplayLink!
+    
+    lazy var displayLink:CADisplayLink = {
+        let displayLink = CADisplayLink(target: self, selector: #selector(self.displayLinkDidRefresh(displayLink:)))
+        displayLink.preferredFramesPerSecond = 30
+        displayLink.isPaused = true
+        displayLink.add(to: RunLoop.main, forMode: RunLoopMode.commonModes)
+        return displayLink
+    }()
     
     var isPlaying:Bool? {
         didSet {
@@ -524,6 +531,7 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
         
 //        let displayLink = CADisplayLink(target: self, selector: #selector(snapshotSketchOverlay))
 //        displayLink.add(to: RunLoop.current, forMode: RunLoopMode.defaultRunLoopMode)
+        displayLink.isPaused = false
         
         NotificationCenter.default.addObserver(self, selector: #selector(appWillWillEnterForeground), name: NSNotification.Name.UIApplicationWillEnterForeground, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(appWillResignActive), name: NSNotification.Name.UIApplicationWillResignActive, object: nil)
@@ -1265,11 +1273,6 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
             self.scrubberSlider.isEnabled = true
             self.scrubberButtonItem.isEnabled = true
             
-            self.displayLink = CADisplayLink(target: self, selector: #selector(self.displayLinkDidRefresh(displayLink:)))
-            self.displayLink.preferredFramesPerSecond = 30
-            self.displayLink.isPaused = true
-            self.displayLink.add(to: RunLoop.main, forMode: RunLoopMode.defaultRunLoopMode)
-            
             self.prototypePlayerItem.addObserver(self, forKeyPath: STATUS_KEYPATH, options: NSKeyValueObservingOptions(rawValue: 0), context: &CameraController.observerContext)
 //            self.prototypePlayer.addObserver(self, forKeyPath: "rate", options: NSKeyValueObservingOptions.initial, context: &CameraController.observerContext)
 
@@ -1293,7 +1296,7 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
                 let weakSelf = self
                 DispatchQueue.main.async(execute: { () -> Void in
                     weakSelf.setCurrentTime(CMTimeGetSeconds(kCMTimeZero),duration:CMTimeGetSeconds(duration))
-                    weakSelf.displayLink.isPaused = false
+//                    weakSelf.displayLink.isPaused = false
                     weakSelf.addPlayerItemPeriodicTimeObserver()
                     weakSelf.addDidPlayToEndItemEndObserverForPlayerItem()
                 })
@@ -1336,7 +1339,22 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
         backgroundItemTime = backgroundVideoOutput.itemTime(forHostTime: nextVSync)
 */
         
-        getFramesForPlayback()
+        if isLive || isRecording {
+
+            let weakSelf = self
+            
+            sampleBufferQueue.async {
+//                if let ciImage = weakSelf.backgroundCameraFrame {
+//                    weakSelf.setImageOpenGL(view: weakSelf.backgroundFrameImageView, image: ciImage)
+//                }
+                if let receivedCIImage = weakSelf.prototypeCameraFrame {
+                    weakSelf.applyFilterFromPrototypeToBackground(source: receivedCIImage)
+                }
+            }
+            
+        } else {
+            getFramesForPlayback()
+        }
     }
     
     func getFramesForPlayback() {

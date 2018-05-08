@@ -21,7 +21,7 @@ let streamerQueue = DispatchQueue(label: "fr.lri.ex-situ.Montage.serial_streamer
 let senderQueue = DispatchQueue(label: "fr.lri.ex-situ.Montage.serial_sender_queue")
 let captureOutputQueue = DispatchQueue(label: "fr.lri.ex-situ.Montage.serial_capture-output_queue")
 
-let fps = 24.0
+let fps = 30.0
 
 class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataOutputSampleBufferDelegate, MCSessionDelegate, MCNearbyServiceAdvertiserDelegate, WCSessionDelegate, VideoEncoderDelegate, OutputStreamerDelegate {
     
@@ -54,7 +54,7 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
     
     lazy var encoder: H264Encoder = {
         let encoder = H264Encoder()
-        encoder.expectedFPS = 30
+        encoder.expectedFPS = fps
         encoder.width = 480
         encoder.height = 272
         encoder.bitrate = 160 * 1024
