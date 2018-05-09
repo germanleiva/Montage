@@ -178,7 +178,7 @@ public class Tier: NSManagedObject {
         shapeLayer.didChangeValue(for: \CAShapeLayer.path)
         
         if isRecordingInputs {
-            recordedInputs.append((timestamp - videoTrack!.startedRecordingAt, Transformation.move(point: touchLocation)))
+            recordedInputs.append((timestamp - videoTrack!.startedRecordingAt, .move(point: touchLocation)))
         }
         
         appearedAt = NSNumber(value:timestamp - videoTrack!.startedRecordingAt)
@@ -192,7 +192,7 @@ public class Tier: NSManagedObject {
         shapeLayer.didChangeValue(for: \CAShapeLayer.path)
         
         if isRecordingInputs {
-            recordedInputs.append((timestamp - videoTrack!.startedRecordingAt, Transformation.addLine(point: touchLocation)))
+            recordedInputs.append((timestamp - videoTrack!.startedRecordingAt, .addLine(point: touchLocation)))
         }
     }
     
@@ -402,7 +402,7 @@ public class Tier: NSManagedObject {
 //        strokeAndMove.beginTime = AVCoreAnimationBeginTimeAtZero
 //        strokeAndMove.duration = endedRecordingAt - startedRecordingAt
 
-        print("-----> \(appearedAt)")
+//        print("-----> \(appearedAt)")
         
         return (appearAnimation,strokeEndAnimation,transformAnimation)
     }

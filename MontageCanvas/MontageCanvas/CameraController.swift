@@ -781,6 +781,16 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
             self.isUserOverlayActive = !self.isUserOverlayActive
         })
         
+        let swapCamsAction = UIAlertAction(title: "Swap Cams", style: .default, handler: { (alert: UIAlertAction!) -> Void in
+            if let userCam = self.userCamPeer, let wizardCam = self.wizardCamPeer {
+                swap(&self.userCamPeer, &self.wizardCamPeer)
+                self.setRole(peerID: userCam, role: .userCam)
+                self.setRole(peerID: wizardCam, role: .wizardCam)
+                swap(&self.inputStreamer1, &self.inputStreamer2)
+            }
+        })
+        
+        swapCamsAction.isEnabled = inputStreamer1 != nil && inputStreamer2 != nil
         maskAction.isEnabled = !isRecording
         
         alertController.addAction(goLiveAction)
@@ -790,6 +800,7 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
         alertController.addAction(maskAction)
         alertController.addAction(calibrateAction)
         alertController.addAction(userOverlayAction)
+        alertController.addAction(swapCamsAction)
         
         if let popoverController = alertController.popoverPresentationController {
             popoverController.barButtonItem = sender
