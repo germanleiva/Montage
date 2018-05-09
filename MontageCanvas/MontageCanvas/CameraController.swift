@@ -782,10 +782,10 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
         })
         
         let swapCamsAction = UIAlertAction(title: "Swap Cams", style: .default, handler: { (alert: UIAlertAction!) -> Void in
-            if let userCam = self.userCamPeer, let wizardCam = self.wizardCamPeer {
+            if let newUserCam = self.wizardCamPeer, let newWizardCam = self.userCamPeer {
                 swap(&self.userCamPeer, &self.wizardCamPeer)
-                self.setRole(peerID: userCam, role: .userCam)
-                self.setRole(peerID: wizardCam, role: .wizardCam)
+                self.setRole(peerID: newUserCam, role: .userCam)
+                self.setRole(peerID: newWizardCam, role: .wizardCam)
                 swap(&self.inputStreamer1, &self.inputStreamer2)
             }
         })
