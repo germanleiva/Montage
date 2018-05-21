@@ -10,12 +10,13 @@ import UIKit
 import AVFoundation
 import CoreData
 
-protocol CanvasViewDelegate:class {
+protocol CanvasViewDelegate:AnyObject {
     func canvasLongPressed(_ canvas:CanvasView,touchLocation:CGPoint)
 //    func canvasTouchBegan(_ canvas:CanvasView)
     func canvasTierAdded(_ canvas:CanvasView,tier:Tier)
     func canvasTierModified(_ canvas:CanvasView,tier:Tier)
     func playerItemOffset() -> TimeInterval
+    func normalizeTime1970(time:TimeInterval) -> TimeInterval?
 }
 
 class CanvasView: UIView, UIGestureRecognizerDelegate {
@@ -180,6 +181,10 @@ class CanvasView: UIView, UIGestureRecognizerDelegate {
 //        return videoLayer.captureDevicePointConverted(fromLayerPoint: point)
 //    }
     
+    func normalizeTime(_ aTime: TimeInterval? = nil) -> TimeInterval? {
+        return delegate?.normalizeTime1970(time: aTime == nil ? Date().timeIntervalSince1970 : aTime!)
+    }
+    
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
 //        delegate?.canvasTouchBegan(self)
         fastDrawingTimer?.invalidate()
@@ -215,7 +220,7 @@ class CanvasView: UIView, UIGestureRecognizerDelegate {
                     }
                 }
 
-                currentlyDrawnSketch?.addFirstPoint(touchLocation,timestamp: touch.timestamp1970)
+                currentlyDrawnSketch?.addFirstPoint(touchLocation,timestamp: normalizeTime(touch.timestamp1970))
                 
             }
         }
@@ -231,7 +236,7 @@ class CanvasView: UIView, UIGestureRecognizerDelegate {
                     if invisibleXSliderValue > 0 {
                         for selectedTier in selectedSketches {
                             let percentage = CGFloat(1) - invisibleXSliderValue / selectedTier.shapeLayer.path!.boundingBoxOfPath.width
-                            selectedTier.strokeEndChanged(percentage, timestamp: touch.timestamp1970)
+                            selectedTier.strokeEndChanged(percentage, timestamp: normalizeTime(touch.timestamp1970))
                             
                             CATransaction.begin()
                             CATransaction.setDisableActions(true)
@@ -240,7 +245,7 @@ class CanvasView: UIView, UIGestureRecognizerDelegate {
                         }
                     }
                 } else {
-                    currentlyDrawnSketch?.addPoint(touchLocation, timestamp: touch.timestamp1970)
+                    currentlyDrawnSketch?.addPoint(touchLocation, timestamp: normalizeTime(touch.timestamp1970))
                 }
             }
         }
@@ -291,7 +296,7 @@ class CanvasView: UIView, UIGestureRecognizerDelegate {
             recognizer.rotation = 0
 
             for aSelectedSketch in selectedSketches {
-                aSelectedSketch.rotationDelta(rotationAngle)
+                aSelectedSketch.rotationDelta(rotationAngle, timestamp: normalizeTime())
             }
             break
             
@@ -329,7 +334,7 @@ class CanvasView: UIView, UIGestureRecognizerDelegate {
             recognizer.scale = 1
 
             for aSelectedSketch in selectedSketches {
-                aSelectedSketch.scalingDelta(CGPoint(x: scale,y: scale))
+                aSelectedSketch.scalingDelta(CGPoint(x: scale,y: scale),timestamp: normalizeTime())
             }
             break
             
@@ -379,7 +384,7 @@ class CanvasView: UIView, UIGestureRecognizerDelegate {
             recognizer.setTranslation(CGPoint.zero, in: self)
             
             for aSelectedSketch in selectedSketches {
-                aSelectedSketch.translationDelta(delta)
+                aSelectedSketch.translationDelta(delta,timestamp: normalizeTime())
             }
             break
             

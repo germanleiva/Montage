@@ -40,21 +40,25 @@ public enum MutablePathAction:Int {
 public class PathAction: NSObject, NSCoding {
     var cgPoint:CGPoint
     var action:MutablePathAction
+    var relativeTimeStamp:TimeInterval
 
-    init(_ action:MutablePathAction,_ point:CGPoint) {
+    init(_ action:MutablePathAction,_ point:CGPoint,_ timestamp:TimeInterval) {
         self.action = action
         self.cgPoint = point
+        self.relativeTimeStamp = timestamp
     }
 
     public func encode(with aCoder: NSCoder) {
         aCoder.encode(action.rawValue, forKey: "action")
         aCoder.encode(cgPoint, forKey: "cgPoint")
+        aCoder.encode(relativeTimeStamp, forKey: "relativeTimeStamp")
     }
 
     public required init?(coder aDecoder: NSCoder) {
         action = MutablePathAction(rawValue: aDecoder.decodeInteger(forKey: "action"))!
         cgPoint = aDecoder.decodeCGPoint(forKey: "cgPoint")
-
+        relativeTimeStamp = aDecoder.decodeDouble(forKey: "relativeTimeStamp")
+        
         super.init()
     }
 }

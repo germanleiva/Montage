@@ -12,6 +12,8 @@ import CoreData
 
 @objc(Sketch)
 public class Sketch: NSManagedObject {
+    var firstPathActionTime = Date().timeIntervalSince1970
+    
     public override func awakeFromInsert() {
         super.awakeFromInsert()
         
@@ -24,12 +26,13 @@ public class Sketch: NSManagedObject {
     }
     
     func move(to point:CGPoint) {
-        pathActions?.append(PathAction(.move,point))
+        firstPathActionTime = Date().timeIntervalSince1970
+        pathActions?.append(PathAction(.move,point,0))
         _cachedMutablePath = nil
     }
     
     func addLine(to point:CGPoint) {
-        pathActions?.append(PathAction(.addLine,point))
+        pathActions?.append(PathAction(.addLine,point,Date().timeIntervalSince1970 - firstPathActionTime))
         _cachedMutablePath = nil
     }
     

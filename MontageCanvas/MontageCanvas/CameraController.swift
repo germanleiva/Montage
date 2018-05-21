@@ -19,15 +19,10 @@ import GLKit
 let STATUS_KEYPATH  = "status"
 let REFRESH_INTERVAL = Float64(0.5)
 
-let sampleBufferQueue = DispatchQueue.global(qos: DispatchQoS.QoSClass.default)
-
-//let streamingQueue = DispatchQueue(label: "fr.lri.ex-situ.Montage.serial_streaming_queue")
-let streamingQueue1 = DispatchQueue(label: "fr.lri.ex-situ.Montage.serial_streaming_queue1", qos: DispatchQoS.userInteractive)
-let streamingQueue2 = DispatchQueue(label: "fr.lri.ex-situ.Montage.serial_streaming_queue2", qos: DispatchQoS.userInteractive)
+let streamerQueue = DispatchQueue(label: "fr.lri.ex-situ.Montage.streamer_queue", qos: DispatchQoS.userInteractive)
 let mirrorQueue = DispatchQueue(label: "fr.lri.ex-situ.Montage.serial_mirror_queue", qos: DispatchQoS.userInteractive)
-let mirrorQueue2 = DispatchQueue(label: "fr.lri.ex-situ.Montage.serial_mirror_queue_2", qos: DispatchQoS.userInteractive)
+let drawingQueue = DispatchQueue(label: "fr.lri.ex-situ.Montage.drawing_queue", qos: DispatchQoS.userInteractive)
 
-let drawingQueue = DispatchQueue(label: "drawingQueue", qos: DispatchQoS.userInteractive)
 let deviceScale = UIScreen.main.scale
 
 class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDelegate, MCNearbyServiceBrowserDelegate, MCSessionDelegate, InputStreamerDelegate, OutputStreamerDelegate {
@@ -38,6 +33,8 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
 //            tiersCollectionView.dataSource = dataSource
 //        }
 //    }
+    var palettePopoverPresentationController:UIPopoverPresentationController?
+
     lazy var removeGreenFilter = {
         return colorCubeFilterForChromaKey(hueAngle: 120)
     }()
@@ -70,7 +67,7 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
         if streamer.isEqual(inputStreamer1) {
 //            print("inputStreamer1")
 //            let shouldDrawDirectly = inputStreamer2 == nil
-            sampleBufferQueue.async {
+            streamerQueue.async {
                 weakSelf.backgroundCameraFrame = ciImage
 //                if shouldDrawDirectly {
 //                    weakSelf.setImageOpenGL(view: weakSelf.backgroundFrameImageView, image: ciImage)
@@ -90,7 +87,7 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
                 weakSelf.snapshotSketchOverlay(layers: [weakSelf.prototypeCanvasView.canvasLayer],size: weakSelf.prototypeCanvasView.frame.size)
             }
     
-            sampleBufferQueue.async {
+            streamerQueue.async {
                 weakSelf.prototypeCameraFrame = ciImage
 
 //                if let receivedCIImage = weakSelf.prototypeCameraFrame {
@@ -255,23 +252,6 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
         return displayLink
     }()
     
-    var isPlaying:Bool? {
-        didSet {
-            guard let areWePlaying = isPlaying else {
-                return
-            }
-            if areWePlaying {
-                playButton.setImage(UIImage(named:"pause-icon"), for: UIControlState.normal)
-                videoModel.prototypeTrack?.startRecording(time: Date().timeIntervalSince1970 - self.prototypePlayerItem.currentTime().seconds)
-                videoModel.backgroundTrack?.startRecording(time: Date().timeIntervalSince1970 - self.backgroundPlayerItem.currentTime().seconds)
-            } else {
-                playButton.setImage(UIImage(named:"play-icon"), for: UIControlState.normal)
-                videoModel.backgroundTrack?.stopRecording(time: Date().timeIntervalSince1970)
-                videoModel.backgroundTrack?.stopRecording(time: Date().timeIntervalSince1970)
-                
-            }
-        }
-    }
     var prototypePlayerItem:AVPlayerItem!
     var prototypePlayer:AVPlayer!
     
@@ -293,36 +273,40 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
     
     var sketchOverlay:CIImage? = nil
     
-    lazy var recordingCanvasViewManager = {
-        return RecordingCanvasViewManager(controller: self)
-    }()
-    lazy var playbackCanvasViewManager = {
-        return PlaybackCanvasViewManager(controller: self)
+//    lazy var recordingCanvasViewManager = {
+//        return RecordingCanvasViewManager(controller: self)
+//    }()
+//    lazy var playbackCanvasViewManager = {
+//        return PlaybackCanvasViewManager(controller: self)
+//    }()
+    
+    lazy var canvasControllerMode:CanvasControllerMode = {
+        CanvasControllerLiveMode(controller: self)
     }()
     
     @IBOutlet weak var prototypeCanvasView:CanvasView! {
         didSet {
             prototypeCanvasView.videoTrack = videoModel.prototypeTrack!
-            prototypeCanvasView.delegate = recordingCanvasViewManager
+            prototypeCanvasView.delegate = self
         }
     }
     var prototypePlayerCanvasView:CanvasView? {
         didSet {
             prototypePlayerCanvasView?.videoTrack = videoModel.prototypeTrack!
-            prototypePlayerCanvasView?.delegate = playbackCanvasViewManager
+            prototypePlayerCanvasView?.delegate = self
         }
     }
     
     @IBOutlet weak var backgroundCanvasView:CanvasView! {
         didSet {
             backgroundCanvasView.videoTrack = videoModel.backgroundTrack!
-            backgroundCanvasView.delegate = recordingCanvasViewManager
+            backgroundCanvasView.delegate = self
         }
     }
     var backgroundPlayerCanvasView:CanvasView? {
         didSet {
             backgroundPlayerCanvasView?.videoTrack = videoModel.backgroundTrack!
-            backgroundPlayerCanvasView?.delegate = playbackCanvasViewManager
+            backgroundPlayerCanvasView?.delegate = self
         }
     }
     var backgroundPlayerSyncLayer:AVSynchronizedLayer?
@@ -431,52 +415,12 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
 //        return AVPlayerLayer(player: player)
 //    }()
     
-    var recordStartedAt:TimeInterval = -1
-    var recordingPauseStartedAt:TimeInterval = -1
-    var isRecording = false {
-        didSet {
-            if isRecording {
-                recordingIndicator.alpha = 0
-                
-                let options:UIViewAnimationOptions = [.allowUserInteraction,.autoreverse,.repeat]
-                UIView.animate(withDuration: 0.5, delay: 0, options: options, animations: { () -> Void in
-                    self.recordingIndicator.alpha = 1.0
-                }, completion: nil)
-                
-                isLive = false
-                saveButton.isEnabled = false
-            } else {
-                recordingIndicator.layer.removeAllAnimations()
-                recordingIndicator.isHidden = true
-                saveButton.isEnabled = true
-            }
-        }
-    }
     var isUserOverlayActive = false
-    var isLive = true
-    var isRecordingPaused = false {
-        didSet {
-            if isRecordingPaused {
-                recordingIndicator.layer.removeAllAnimations()
-                recordingIndicator.alpha = 1.0
-                recordingIndicator.textColor = UIColor.black
-            } else {
-                
-                recordingIndicator.textColor = UIColor.red
-                recordingIndicator.alpha = 0
-                
-                let options:UIViewAnimationOptions = [.allowUserInteraction,.autoreverse,.repeat]
-                UIView.animate(withDuration: 0.5, delay: 0, options: options, animations: { () -> Void in
-                    self.recordingIndicator.alpha = 1.0
-                }, completion: nil)
-            }
-        }
-    }
-    
+
     lazy var videoDataOutput:AVCaptureVideoDataOutput = {
         let deviceOutput = AVCaptureVideoDataOutput()
         deviceOutput.videoSettings = [kCVPixelBufferPixelFormatTypeKey as String: Int(kCVPixelFormatType_32BGRA)]
-        deviceOutput.setSampleBufferDelegate(self, queue: sampleBufferQueue)
+        deviceOutput.setSampleBufferDelegate(self, queue: streamerQueue)
         return deviceOutput
     }()
     
@@ -489,12 +433,12 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
     // MARK: Initializers
     
     required init?(coder aDecoder: NSCoder) {
-//        captureSession = AVCaptureSession()
+        //initialize something
         super.init(coder: aDecoder)
     }
     
     override init(nibName nibNameOrNil: String?, bundle nibBundleOrNil: Bundle?) {
-//        captureSession = AVCaptureSession()
+        //initialize something
         super.init(nibName:nibNameOrNil, bundle:nibBundleOrNil)
     }
     
@@ -520,6 +464,9 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        //Let's initialize the mode
+        assert(canvasControllerMode.isPaused == false)
         
         //Let's stretch the scrubber
         scrubberSlider.frame = CGRect(origin: scrubberSlider.frame.origin, size: CGSize(width:view!.frame.width - 165,height:scrubberSlider.frame.height))
@@ -667,10 +614,10 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
     
     
     @IBAction func playPressed(_ sender:AnyObject?) {
-        if isPlaying == nil || isPlaying == false {
-            play()
+        if canvasControllerMode.isPaused {
+            playPlayer()
         } else {
-            pause()
+            pausePlayer()
         }
     }
     
@@ -748,26 +695,26 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
             self.livePressed()
         })
         
-        goLiveAction.isEnabled = !isLive
+        goLiveAction.isEnabled = !canvasControllerMode.isLive
         
         let startRecordingAction = UIAlertAction(title: "Start Recording", style: .default, handler: { (alert: UIAlertAction!) -> Void in
             self.startRecordingPressed()
         })
         
-        startRecordingAction.isEnabled = !isRecording
+        startRecordingAction.isEnabled = !canvasControllerMode.isRecording
         
         let searchCamAction = UIAlertAction(title: "Connect Camera", style: .default, handler: { (alert: UIAlertAction!) -> Void in
             self.searchForCam()
         })
         
-        searchCamAction.isEnabled = !isRecording
+        searchCamAction.isEnabled = !canvasControllerMode.isRecording
 
         
         let searchMirrorAction = UIAlertAction(title: "Connect Mirror", style: .default, handler: { (alert: UIAlertAction!) -> Void in
             self.searchForMirror()
         })
         
-        searchMirrorAction.isEnabled = !isRecording
+        searchMirrorAction.isEnabled = !canvasControllerMode.isRecording
         
         let maskAction = UIAlertAction(title: "Extract Sketch", style: .default, handler: { (alert: UIAlertAction!) -> Void in
             self.maskPressed()
@@ -791,7 +738,7 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
         })
         
         swapCamsAction.isEnabled = inputStreamer1 != nil && inputStreamer2 != nil
-        maskAction.isEnabled = !isRecording
+        maskAction.isEnabled = !canvasControllerMode.isRecording
         
         alertController.addAction(goLiveAction)
         alertController.addAction(startRecordingAction)
@@ -810,9 +757,7 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
     }
     
     func livePressed() {
-        if !isRecording {
-            //We remove the displayLink used to compose the video players
-            displayLink.remove(from: RunLoop.main, forMode: RunLoopMode.defaultRunLoopMode)
+        if !canvasControllerMode.isRecording {
             prototypePlayerView.isHidden = true
             
             prototypePlayerCanvasView?.removeFromSuperview() //TODO discard properly?
@@ -843,7 +788,7 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
                 print("Could not send trigger to start streaming remote cams: \(error.localizedDescription)")
             }
             
-            isLive = true
+            canvasControllerMode = CanvasControllerLiveMode(controller:self)
         }
     }
     
@@ -851,7 +796,7 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
         let selectedSegment = sender.selectedSegmentIndex
         
         if (selectedSegment == 0) {
-            if isRecordingPaused {
+            if canvasControllerMode.isPaused {
                 sender.setTitle("Pause", forSegmentAt: selectedSegment)
                 resumeRecordingPressed()
             } else {
@@ -867,88 +812,41 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
     }
     
     func resumeRecordingPressed() {
-        if isRecording {
-            let startTime = CMTime(seconds: recordingPauseStartedAt - recordStartedAt, preferredTimescale: DEFAULT_TIMESCALE)
-            let durationInSeconds = Date().timeIntervalSince1970 - recordingPauseStartedAt
-            let pausedTimeRange = CMTimeRange(start: startTime, duration: CMTimeMakeWithSeconds(durationInSeconds, DEFAULT_TIMESCALE))
-            
-            videoModel.pausedTimeRanges?.append(pausedTimeRange)
-            
-            self.videoModel.prototypeTrack?.resumeRecording()
-            self.videoModel.backgroundTrack?.resumeRecording()
-            isRecordingPaused = false
-            
-        } else {
-            print("resumeRecordingPressed when isRecording == false?")
-        }
+        canvasControllerMode.resume(controller: self)
     }
     
     func pauseRecordingPressed() {
-        if isRecording {
-            recordingPauseStartedAt = Date().timeIntervalSince1970
-            
-            self.videoModel.prototypeTrack?.pauseRecording()
-            self.videoModel.backgroundTrack?.pauseRecording()
-            isRecordingPaused = true
-            
-        } else {
-            print("pauseRecordingPressed when isRecording == false?")
-        }
+        canvasControllerMode.pause(controller: self)
     }
     
     func stopRecordingPressed() {
-        if isRecording {
-            recordingControls.isHidden = true
-            isRecording = false
-            
-            self.videoModel.prototypeTrack?.stopRecording(time:Date().timeIntervalSince1970)
-            self.videoModel.backgroundTrack?.stopRecording(time:Date().timeIntervalSince1970)
-            
-            let dict = ["stopRecording":true]
-            let data = NSKeyedArchiver.archivedData(withRootObject: dict)
-            
-            do {
-                try multipeerSession.send(data, toPeers: cams, with: .reliable)
-            } catch let error as NSError {
-                print("Could not send trigger to stop recording remote cams: \(error.localizedDescription)")
-            }
-            
-        } else {
-            print("stopRecordingPressed when isRecording == false?")
-        }
+        canvasControllerMode.stopRecording(controller: self)
     }
     
     func startRecordingPressed() {
-        if !isRecording {
-            let startRecordingDate = Date().addingTimeInterval(3)
-            recordStartedAt = startRecordingDate.timeIntervalSince1970
+        let startRecordingDate = Date().addingTimeInterval(3)
+        
+        recordingControls.isHidden = false
+        
+        countDownMethod()
+        
+        let timer = Timer(fire: startRecordingDate, interval: 0, repeats: false, block: { (timer) in
+            self.recordingIndicator.isHidden = false
             
-            recordingControls.isHidden = false
-            
-            countDownMethod()
-            
-            let timer = Timer(fire: startRecordingDate, interval: 0, repeats: false, block: { (timer) in
-                self.isRecording = true
-                self.recordingIndicator.isHidden = false
-
-                self.videoModel.prototypeTrack?.startRecording(time:Date().timeIntervalSince1970)
-                self.videoModel.backgroundTrack?.startRecording(time:Date().timeIntervalSince1970)
-                print("START RECORDING!!!! NOW! \(Date().timeIntervalSince1970)")
-                timer.invalidate()
-            })
-            RunLoop.main.add(timer, forMode: RunLoopMode.commonModes)
-
-            let dict = ["startRecordingDate":startRecordingDate]
-            let data = NSKeyedArchiver.archivedData(withRootObject: dict)
-            
-            do {
-                try multipeerSession.send(data, toPeers: cams, with: .reliable)
-            } catch let error as NSError {
-                print("Could not send trigger to start recording the remote cams: \(error.localizedDescription)")
-            }
-            
-        } else {
-            print("startRecordingPressed when isRecording == true?")
+            self.videoModel.prototypeTrack?.startRecording(time:Date().timeIntervalSince1970)
+            self.videoModel.backgroundTrack?.startRecording(time:Date().timeIntervalSince1970)
+            print("START RECORDING!!!! NOW! \(Date().timeIntervalSince1970)")
+            timer.invalidate()
+        })
+        RunLoop.main.add(timer, forMode: RunLoopMode.commonModes)
+        
+        let dict = ["startRecordingDate":startRecordingDate]
+        let data = NSKeyedArchiver.archivedData(withRootObject: dict)
+        
+        do {
+            try multipeerSession.send(data, toPeers: cams, with: .reliable)
+        } catch let error as NSError {
+            print("Could not send trigger to start recording the remote cams: \(error.localizedDescription)")
         }
     }
     
@@ -993,6 +891,8 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
             self.perform(#selector(countDownMethod), with: nil, afterDelay: 1.0)
         } else if recordingLabel.text! == "1" {
             recordingLabel.text = "GO"
+            
+            canvasControllerMode.startRecording(controller: self)
             
             UIView.animate(withDuration: 0.5, animations: {[unowned self] in
                 self.recordingLabel.alpha = 0
@@ -1130,8 +1030,8 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
         }
         
         assetLoadingGroup.notify(queue: DispatchQueue.main) {[unowned self] in
-            print("Prototype duration \(prototypeAsset.duration)")
-            print("Background duration \(backgroundAsset.duration)")
+            print("Prototype duration \(prototypeAsset.duration.seconds)")
+            print("Background duration \(backgroundAsset.duration.seconds)")
             let smallestDuration = CMTimeCompare(backgroundAsset.duration, prototypeAsset.duration) < 0 ? backgroundAsset.duration : prototypeAsset.duration
 
             self.prototypeComposition = AVMutableComposition()
@@ -1229,7 +1129,16 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
                 self.prototypePlayerView.syncLayer?.addSublayer(shapeLayer)
                 CATransaction.commit()
                 
-                let (appearAnimation,strokeEndAnimation,transformationAnimation) = tier.buildAnimations()
+                let (appearAnimation,inkAnimation,strokeEndAnimation,transformationAnimation) = tier.buildAnimations(totalRecordingTime:self.prototypeComposition!.duration.seconds)
+                
+                if let appearAnimation = appearAnimation {
+                    shapeLayer.add(appearAnimation, forKey: appearAnimation.keyPath!)
+                }
+                
+                if let inkAnimation = inkAnimation {
+                    shapeLayer.strokeEnd = 0
+                    shapeLayer.add(inkAnimation, forKey: inkAnimation.keyPath!)
+                }
                 
                 if let strokeEndAnimation = strokeEndAnimation {
                     shapeLayer.strokeEnd = 0
@@ -1239,10 +1148,6 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
                 if let transformationAnimation = transformationAnimation {
                     shapeLayer.transform = CATransform3DIdentity
                     shapeLayer.add(transformationAnimation, forKey: transformationAnimation.keyPath!)
-                }
-                
-                if let appearAnimation = appearAnimation {
-                    shapeLayer.add(appearAnimation, forKey: appearAnimation.keyPath!)
                 }
             }
             
@@ -1262,7 +1167,16 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
                 
                 self.backgroundPlayerSyncLayer!.addSublayer(shapeLayer)
                 
-                let (appearAnimation,strokeEndAnimation,transformationAnimation) = tier.buildAnimations()
+                let (appearAnimation,inkAnimation,strokeEndAnimation,transformationAnimation) = tier.buildAnimations(totalRecordingTime:self.backgroundComposition!.duration.seconds)
+                
+                if let appearAnimation = appearAnimation {
+                    shapeLayer.add(appearAnimation, forKey: appearAnimation.keyPath!)
+                }
+                
+                if let inkAnimation = inkAnimation {
+                    shapeLayer.strokeEnd = 0
+                    shapeLayer.add(inkAnimation, forKey: inkAnimation.keyPath!)
+                }
                 
                 if let strokeEndAnimation = strokeEndAnimation {
                     shapeLayer.strokeEnd = 0
@@ -1272,10 +1186,6 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
                 if let transformationAnimation = transformationAnimation {
                     shapeLayer.transform = CATransform3DIdentity
                     shapeLayer.add(transformationAnimation, forKey: transformationAnimation.keyPath!)
-                }
-                
-                if let appearAnimation = appearAnimation {
-                    shapeLayer.add(appearAnimation, forKey: appearAnimation.keyPath!)
                 }
             }
             
@@ -1290,6 +1200,8 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
             
             self.backgroundPlayer.play()
             self.prototypePlayer.play()
+            
+            self.canvasControllerMode = CanvasControllerPlayingMode(controller:self)
         }
     }
     
@@ -1350,11 +1262,11 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
         backgroundItemTime = backgroundVideoOutput.itemTime(forHostTime: nextVSync)
 */
         
-        if isLive || isRecording {
+        if type(of: canvasControllerMode) != CanvasControllerPlayingMode.self {
 
             let weakSelf = self
             
-            sampleBufferQueue.async {
+            streamerQueue.async {
 //                if let ciImage = weakSelf.backgroundCameraFrame {
 //                    weakSelf.setImageOpenGL(view: weakSelf.backgroundFrameImageView, image: ciImage)
 //                }
@@ -1404,7 +1316,7 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
                 
                 let weakSelf = self
                 
-                sampleBufferQueue.async {
+                streamerQueue.async {
                     if let obtainedBox = weakSelf.videoModel.backgroundTrack?.box(forItemTime: prototypeItemTime, adjustment: 0.035) {
                         weakSelf.box = obtainedBox
                     } else {
@@ -2241,11 +2153,12 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
     
     //-MARK: VideoPlayerDelegate
     
-    func play() {
+    func playPlayer() {
         let playBlock = { [unowned self] in
             self.prototypePlayer.play()
             self.backgroundPlayer.play()
-            self.isPlaying = true
+            
+            self.canvasControllerMode.resume(controller: self)
         }
         
         if CMTimeCompare(prototypePlayer.currentTime(), prototypePlayerItem.duration) == 0 {
@@ -2255,11 +2168,12 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
         }
     }
     
-    func pause() {
+    func pausePlayer() {
         self.lastPlaybackRate = prototypePlayer.rate
         prototypePlayer.pause()
         backgroundPlayer.pause()
-        isPlaying = false
+        
+        canvasControllerMode.pause(controller: self)
     }
     
     func playBackComplete() {
@@ -2267,7 +2181,7 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
         
         //        self.scrubberSlider.value = 0.0
         //        self.togglePlaybackButton.isSelected = false
-        isPlaying = false
+        canvasControllerMode.pause(controller: self)
     }
     
     func setCurrentTime(_ time:TimeInterval, duration:TimeInterval) {
@@ -2278,7 +2192,7 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
     }
     
     @IBAction func scrubbingDidStart() {
-        self.pause()
+        self.pausePlayer()
         
         if let observer = self.periodicTimeObserver {
             prototypePlayer.removeTimeObserver(observer)
@@ -2290,7 +2204,7 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
         //        self.updateLabels(CMTimeGetSeconds(self.player!.currentTime()),duration: CMTimeGetSeconds(self.playerItem!.duration))
         self.addPlayerItemPeriodicTimeObserver()
         if self.lastPlaybackRate > 0 {
-            play()
+            playPlayer()
         }
     }
     
@@ -2397,6 +2311,223 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
     }
 }
 
+extension CameraController:CanvasControllerModeDelegate {
+    func startedRecording(mode: CanvasControllerRecordingMode) {
+        recordingIndicator.alpha = 0
+        
+        let options:UIViewAnimationOptions = [.allowUserInteraction,.autoreverse,.repeat]
+        UIView.animate(withDuration: 0.5, delay: 0, options: options, animations: { () -> Void in
+            self.recordingIndicator.alpha = 1.0
+        }, completion: nil)
+        
+        saveButton.isEnabled = false
+    }
+    
+    func stoppedRecording(mode: CanvasControllerRecordingMode) {
+        recordingIndicator.layer.removeAllAnimations()
+        recordingIndicator.isHidden = true
+        saveButton.isEnabled = true
+        
+        recordingControls.isHidden = true
+        
+        self.videoModel.prototypeTrack?.stopRecording(time:Date().timeIntervalSince1970)
+        self.videoModel.backgroundTrack?.stopRecording(time:Date().timeIntervalSince1970)
+        
+        let dict = ["stopRecording":true]
+        let data = NSKeyedArchiver.archivedData(withRootObject: dict)
+        
+        do {
+            try multipeerSession.send(data, toPeers: cams, with: .reliable)
+        } catch let error as NSError {
+            print("Could not send trigger to stop recording remote cams: \(error.localizedDescription)")
+        }
+    }
+    func pausedRecording(mode:CanvasControllerRecordingMode) {
+        recordingIndicator.layer.removeAllAnimations()
+        recordingIndicator.alpha = 1.0
+        recordingIndicator.textColor = UIColor.black
+        
+        self.videoModel.prototypeTrack?.pauseRecording()
+        self.videoModel.backgroundTrack?.pauseRecording()
+    }
+
+    func resumedRecording(mode:CanvasControllerRecordingMode,pausedTimeRange:TimeRange?){
+        recordingIndicator.textColor = UIColor.red
+        recordingIndicator.alpha = 0
+        
+        let options:UIViewAnimationOptions = [.allowUserInteraction,.autoreverse,.repeat]
+        UIView.animate(withDuration: 0.5, delay: 0, options: options, animations: { () -> Void in
+            self.recordingIndicator.alpha = 1.0
+        }, completion: nil)
+        
+        if let pausedTimeRange = pausedTimeRange {
+            videoModel.pausedTimeRanges?.append(pausedTimeRange)
+        }
+        
+        self.videoModel.prototypeTrack?.resumeRecording()
+        self.videoModel.backgroundTrack?.resumeRecording()
+
+    }
+    
+    func startedPlaying(mode:CanvasControllerPlayingMode) {
+        
+    }
+    func pausedPlaying(mode:CanvasControllerPlayingMode){
+        playButton.setImage(UIImage(named:"play-icon"), for: UIControlState.normal)
+        videoModel.backgroundTrack?.stopRecording(time: Date().timeIntervalSince1970)
+        videoModel.prototypeTrack?.stopRecording(time: Date().timeIntervalSince1970)
+    }
+    func resumedPlaying(mode:CanvasControllerPlayingMode){
+        playButton.setImage(UIImage(named:"pause-icon"), for: UIControlState.normal)
+        videoModel.prototypeTrack?.startRecording(time: Date().timeIntervalSince1970 - self.prototypePlayerItem.currentTime().seconds)
+        videoModel.backgroundTrack?.startRecording(time: Date().timeIntervalSince1970 - self.backgroundPlayerItem.currentTime().seconds)
+    }
+    
+    func playerItemOffset() -> TimeInterval {
+        return prototypePlayerItem.currentTime().seconds
+    }
+}
+
+extension CameraController: CanvasViewDelegate {
+    
+    @objc func pannedOutsidePopopver() {
+        if palettePopoverPresentationController != nil {
+            presentedViewController?.dismiss(animated: false, completion: nil)
+            palettePopoverPresentationController = nil
+        }
+    }
+    
+    func canvasTierAdded(_ canvas: CanvasView, tier: Tier) {
+         guard canvasControllerMode.isPlayingMode else {
+            return
+        }
+        
+        let shapeLayer = tier.shapeLayer
+        canvas.removeAllSketches()
+        let syncLayer = canvas.associatedSyncLayer
+        
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        syncLayer?.addSublayer(shapeLayer)
+        CATransaction.commit()
+        
+        switch prototypePlayer.timeControlStatus {
+        case .playing:
+            let (appearAnimation,inkAnimation,strokeEndAnimation,transformationAnimation) = tier.buildAnimations(totalRecordingTime: prototypePlayer.currentItem!.duration.seconds)
+            
+            if let appearAnimation = appearAnimation {
+                shapeLayer.add(appearAnimation, forKey: appearAnimation.keyPath!)
+            }
+
+            if let inkAnimation = inkAnimation {
+                shapeLayer.strokeEnd = 0
+                shapeLayer.add(inkAnimation, forKey: inkAnimation.keyPath!)
+            }
+            
+            if let strokeEndAnimation = strokeEndAnimation {
+                shapeLayer.strokeEnd = 0
+                shapeLayer.add(strokeEndAnimation, forKey: strokeEndAnimation.keyPath!)
+            }
+            
+            if let transformationAnimation = transformationAnimation {
+                shapeLayer.transform = CATransform3DIdentity
+                shapeLayer.add(transformationAnimation, forKey: transformationAnimation.keyPath!)
+            }
+        case .paused:
+            let animationKeyTime = prototypePlayerItem.currentTime().seconds
+            let animationDuration = prototypePlayerItem.duration.seconds
+            let appearAnimation = CAKeyframeAnimation()
+            appearAnimation.beginTime = AVCoreAnimationBeginTimeAtZero
+            appearAnimation.calculationMode = kCAAnimationDiscrete
+            appearAnimation.keyPath = "opacity"
+            appearAnimation.values = [0,1,1]
+            appearAnimation.keyTimes = [0,NSNumber(value:animationKeyTime/animationDuration),1]
+            appearAnimation.duration = animationDuration
+            appearAnimation.fillMode = kCAFillModeForwards //to keep opacity = 1 after completing the animation
+            appearAnimation.isRemovedOnCompletion = false
+            
+            shapeLayer.add(appearAnimation, forKey: appearAnimation.keyPath!)
+        default:
+            print("ignoring")
+        }
+        
+    }
+    
+    func canvasTierModified(_ canvas: CanvasView, tier: Tier) {
+        guard canvasControllerMode.isPlayingMode else {
+            return
+        }
+        
+        //We redo the whole thing
+        let shapeLayer = tier.shapeLayer
+        shapeLayer.removeAllAnimations()
+        
+        let (appearAnimation,inkAnimation,strokeEndAnimation,transformationAnimation) = tier.buildAnimations(totalRecordingTime: prototypePlayer.currentItem!.duration.seconds)
+        
+        if let appearAnimation = appearAnimation {
+            shapeLayer.add(appearAnimation, forKey: appearAnimation.keyPath!)
+        }
+        
+        if let inkAnimation = inkAnimation {
+            shapeLayer.strokeEnd = 0
+            shapeLayer.add(inkAnimation, forKey: inkAnimation.keyPath!)
+        }
+        
+        if let strokeEndAnimation = strokeEndAnimation {
+            shapeLayer.strokeEnd = 0
+            shapeLayer.add(strokeEndAnimation, forKey: strokeEndAnimation.keyPath!)
+        }
+        
+        if let transformationAnimation = transformationAnimation {
+            shapeLayer.transform = CATransform3DIdentity
+            shapeLayer.add(transformationAnimation, forKey: transformationAnimation.keyPath!)
+        }
+    }
+    
+    func canvasLongPressed(_ canvas:CanvasView,touchLocation:CGPoint) {
+        
+        let paletteView = canvas.paletteView
+        
+        let paletteController = UIViewController()
+        
+        paletteController.view.translatesAutoresizingMaskIntoConstraints = false
+        paletteController.modalPresentationStyle = UIModalPresentationStyle.popover;
+        let paletteHeight = paletteView.paletteHeight()
+        
+        paletteController.preferredContentSize = CGSize(width:Palette.initialWidth,height:paletteHeight)
+        paletteController.view.frame = CGRect(x:0,y:0,width:Palette.initialWidth,height:paletteHeight)
+        paletteView.frame = CGRect(x: 0, y: 0, width: paletteController.view.frame.width, height: paletteController.view.frame.height)
+        paletteController.view.addSubview(paletteView)
+        //        paletteView.frame = CGRect(x: 0, y: paletteController.view.frame.height - paletteHeight, width: paletteController.view.frame.width, height: paletteHeight)
+        
+        palettePopoverPresentationController = paletteController.popoverPresentationController
+        
+        paletteController.popoverPresentationController?.sourceView = canvas
+        paletteController.popoverPresentationController?.sourceRect = CGRect(origin: touchLocation, size: CGSize.zero)
+        
+        present(paletteController, animated: true) {[unowned self] in
+            guard let v1 = paletteController.view?.superview?.superview?.superview else {
+                return
+            }
+            
+            guard let dimmingViewClass = NSClassFromString("UIDimmingView") else {
+                return
+            }
+            for vx in v1.subviews {
+                if vx.isKind(of: dimmingViewClass.self) {
+                    let pan = UIPanGestureRecognizer(target: self, action: #selector(self.pannedOutsidePopopver))
+                    pan.cancelsTouchesInView = false
+                    pan.allowedTouchTypes = [NSNumber(value:UITouchType.stylus.rawValue)]
+                    vx.addGestureRecognizer(pan)
+                }
+            }
+        }
+    }
+    func normalizeTime1970(time: TimeInterval) -> TimeInterval? {
+        return canvasControllerMode.normalizedTime(time: time)
+    }
+}
+
 extension CameraController: UICollectionViewDelegate {
     
 }
@@ -2479,176 +2610,97 @@ class CalendarEvent {
     
 }
 
-class CanvasViewManager:NSObject, CanvasViewDelegate {
-    var controller:CameraController
-    
-    var canvasView:CanvasView!
-    var canvasViewPlayer:VideoPlayerView!
-    
-    init(controller:CameraController) {
-        self.controller = controller
-    }
-    
-    var palettePopoverPresentationController:UIPopoverPresentationController?
-    
-    @objc func pannedOutsidePopopver() {
-        if palettePopoverPresentationController != nil {
-            controller.presentedViewController?.dismiss(animated: false, completion: nil)
-            palettePopoverPresentationController = nil
-        }
-    }
-    
-    func canvasTierAdded(_ canvas: CanvasView, tier: Tier) {
-        preconditionFailure("This method must be overridden")
-    }
-    
-    func canvasTierModified(_ canvas: CanvasView, tier: Tier) {
-        preconditionFailure("This method must be overridden")
-    }
-    
-    
-    func playerItemOffset() -> TimeInterval {
-        preconditionFailure("This method must be overridden")
-    }
-    
-    func canvasLongPressed(_ canvas:CanvasView,touchLocation:CGPoint) {
-        
-        let paletteView = canvas.paletteView
-        
-        let paletteController = UIViewController()
-        
-        paletteController.view.translatesAutoresizingMaskIntoConstraints = false
-        paletteController.modalPresentationStyle = UIModalPresentationStyle.popover;
-        let paletteHeight = paletteView.paletteHeight()
-        
-        paletteController.preferredContentSize = CGSize(width:Palette.initialWidth,height:paletteHeight)
-        paletteController.view.frame = CGRect(x:0,y:0,width:Palette.initialWidth,height:paletteHeight)
-        paletteView.frame = CGRect(x: 0, y: 0, width: paletteController.view.frame.width, height: paletteController.view.frame.height)
-        paletteController.view.addSubview(paletteView)
-        //        paletteView.frame = CGRect(x: 0, y: paletteController.view.frame.height - paletteHeight, width: paletteController.view.frame.width, height: paletteHeight)
-        
-        palettePopoverPresentationController = paletteController.popoverPresentationController
-        
-        paletteController.popoverPresentationController?.sourceView = canvas
-        paletteController.popoverPresentationController?.sourceRect = CGRect(origin: touchLocation, size: CGSize.zero)
-        
-        controller.present(paletteController, animated: true) {[unowned self] in
-            guard let v1 = paletteController.view?.superview?.superview?.superview else {
-                return
-            }
-            
-            guard let dimmingViewClass = NSClassFromString("UIDimmingView") else {
-                return
-            }
-            for vx in v1.subviews {
-                if vx.isKind(of: dimmingViewClass.self) {
-                    let pan = UIPanGestureRecognizer(target: self, action: #selector(self.pannedOutsidePopopver))
-                    pan.cancelsTouchesInView = false
-                    pan.allowedTouchTypes = [NSNumber(value:UITouchType.stylus.rawValue)]
-                    vx.addGestureRecognizer(pan)
-                }
-            }
-        }
-    }
-    
-    
-}
-
-class RecordingCanvasViewManager:CanvasViewManager {
-    override func canvasTierAdded(_ canvas: CanvasView, tier: Tier) {
-        
-    }
-    
-    override func canvasTierModified(_ canvas: CanvasView, tier: Tier) {
-        
-    }
-    
-    override func playerItemOffset() -> TimeInterval {
-        return 0
-    }
-}
-
-class PlaybackCanvasViewManager:CanvasViewManager {
-    
-    
-    
-    override func canvasTierAdded(_ canvas: CanvasView, tier: Tier) {
-        let shapeLayer = tier.shapeLayer
-        canvas.removeAllSketches()
-//        let syncLayer = controller.backgroundPlayerSyncLayer
-//        let syncLayer = controller.prototypePlayerView.syncLayer
-        let syncLayer = canvas.associatedSyncLayer
-
-//        controller.backgroundPlayerSyncLayer?.addSublayer(shapeLayer)
-        
-        CATransaction.begin()
-        CATransaction.setDisableActions(true)
-        syncLayer?.addSublayer(shapeLayer)
-        CATransaction.commit()
-        
-        switch controller.prototypePlayer.timeControlStatus {
-        case .playing:
-            let (appearAnimation,strokeEndAnimation,transformationAnimation) = tier.buildAnimations()
-            
-            if let strokeEndAnimation = strokeEndAnimation {
-                shapeLayer.strokeEnd = 0
-                shapeLayer.add(strokeEndAnimation, forKey: strokeEndAnimation.keyPath!)
-            }
-            
-            if let transformationAnimation = transformationAnimation {
-                shapeLayer.transform = CATransform3DIdentity
-                shapeLayer.add(transformationAnimation, forKey: transformationAnimation.keyPath!)
-            }
-            
-            if let appearAnimation = appearAnimation {
-                shapeLayer.add(appearAnimation, forKey: appearAnimation.keyPath!)
-            }
-        case .paused:
-            let animationKeyTime = controller.prototypePlayerItem.currentTime().seconds
-            let animationDuration = controller.prototypePlayerItem.duration.seconds
-            let appearAnimation = CAKeyframeAnimation()
-            appearAnimation.beginTime = AVCoreAnimationBeginTimeAtZero
-            appearAnimation.calculationMode = kCAAnimationDiscrete
-            appearAnimation.keyPath = "opacity"
-            appearAnimation.values = [0,1,1]
-            appearAnimation.keyTimes = [0,NSNumber(value:animationKeyTime/animationDuration),1]
-            appearAnimation.duration = animationDuration
-            appearAnimation.fillMode = kCAFillModeForwards //to keep opacity = 1 after completing the animation
-            appearAnimation.isRemovedOnCompletion = false
-            
-            shapeLayer.add(appearAnimation, forKey: appearAnimation.keyPath!)
-        default:
-            print("ignoring")
-        }
-
-    }
-    
-    override func canvasTierModified(_ canvas: CanvasView, tier: Tier) {
-        //We redo the whole thing
-        let shapeLayer = tier.shapeLayer
-        shapeLayer.removeAllAnimations()
-        
-        let (appearAnimation,strokeEndAnimation,transformationAnimation) = tier.buildAnimations()
-        
-        if let strokeEndAnimation = strokeEndAnimation {
-            shapeLayer.strokeEnd = 0
-            shapeLayer.add(strokeEndAnimation, forKey: strokeEndAnimation.keyPath!)
-        }
-        
-        if let transformationAnimation = transformationAnimation {
-            shapeLayer.transform = CATransform3DIdentity
-            shapeLayer.add(transformationAnimation, forKey: transformationAnimation.keyPath!)
-        }
-        
-        if let appearAnimation = appearAnimation {
-            shapeLayer.add(appearAnimation, forKey: appearAnimation.keyPath!)
-        }
-    }
-    
-    override func playerItemOffset() -> TimeInterval {
-        return controller.prototypePlayerItem.currentTime().seconds
-    }
-}
+//class RecordingCanvasViewManager:CanvasViewManager {
+//    override func canvasTierAdded(_ canvas: CanvasView, tier: Tier) {
+//
+//    }
+//
+//    override func canvasTierModified(_ canvas: CanvasView, tier: Tier) {
+//
+//    }
+//
+//    override func playerItemOffset() -> TimeInterval {
+//        return 0
+//    }
+//}
+//
+//class PlaybackCanvasViewManager:CanvasViewManager {
+//
+//
+//
+//    override func canvasTierAdded(_ canvas: CanvasView, tier: Tier) {
+//        let shapeLayer = tier.shapeLayer
+//        canvas.removeAllSketches()
+//        let syncLayer = canvas.associatedSyncLayer
+//
+//        CATransaction.begin()
+//        CATransaction.setDisableActions(true)
+//        syncLayer?.addSublayer(shapeLayer)
+//        CATransaction.commit()
+//
+//        switch controller.prototypePlayer.timeControlStatus {
+//        case .playing:
+//            let (appearAnimation,strokeEndAnimation,transformationAnimation) = tier.buildAnimations()
+//
+//            if let strokeEndAnimation = strokeEndAnimation {
+//                shapeLayer.strokeEnd = 0
+//                shapeLayer.add(strokeEndAnimation, forKey: strokeEndAnimation.keyPath!)
+//            }
+//
+//            if let transformationAnimation = transformationAnimation {
+//                shapeLayer.transform = CATransform3DIdentity
+//                shapeLayer.add(transformationAnimation, forKey: transformationAnimation.keyPath!)
+//            }
+//
+//            if let appearAnimation = appearAnimation {
+//                shapeLayer.add(appearAnimation, forKey: appearAnimation.keyPath!)
+//            }
+//        case .paused:
+//            let animationKeyTime = controller.prototypePlayerItem.currentTime().seconds
+//            let animationDuration = controller.prototypePlayerItem.duration.seconds
+//            let appearAnimation = CAKeyframeAnimation()
+//            appearAnimation.beginTime = AVCoreAnimationBeginTimeAtZero
+//            appearAnimation.calculationMode = kCAAnimationDiscrete
+//            appearAnimation.keyPath = "opacity"
+//            appearAnimation.values = [0,1,1]
+//            appearAnimation.keyTimes = [0,NSNumber(value:animationKeyTime/animationDuration),1]
+//            appearAnimation.duration = animationDuration
+//            appearAnimation.fillMode = kCAFillModeForwards //to keep opacity = 1 after completing the animation
+//            appearAnimation.isRemovedOnCompletion = false
+//
+//            shapeLayer.add(appearAnimation, forKey: appearAnimation.keyPath!)
+//        default:
+//            print("ignoring")
+//        }
+//
+//    }
+//
+//    override func canvasTierModified(_ canvas: CanvasView, tier: Tier) {
+//        //We redo the whole thing
+//        let shapeLayer = tier.shapeLayer
+//        shapeLayer.removeAllAnimations()
+//
+//        let (appearAnimation,strokeEndAnimation,transformationAnimation) = tier.buildAnimations()
+//
+//        if let strokeEndAnimation = strokeEndAnimation {
+//            shapeLayer.strokeEnd = 0
+//            shapeLayer.add(strokeEndAnimation, forKey: strokeEndAnimation.keyPath!)
+//        }
+//
+//        if let transformationAnimation = transformationAnimation {
+//            shapeLayer.transform = CATransform3DIdentity
+//            shapeLayer.add(transformationAnimation, forKey: transformationAnimation.keyPath!)
+//        }
+//
+//        if let appearAnimation = appearAnimation {
+//            shapeLayer.add(appearAnimation, forKey: appearAnimation.keyPath!)
+//        }
+//    }
+//
+//    override func playerItemOffset() -> TimeInterval {
+//        return controller.prototypePlayerItem.currentTime().seconds
+//    }
+//}
 
 //extension CameraController: TCMaskViewDelegate{
     //
