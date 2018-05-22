@@ -22,7 +22,7 @@ enum Transformation {
 public class Tier: NSManagedObject {
 
     var recordedPathInputs = [(TimeInterval,Transformation)]()
-    var recordedStokeEndInputs = [(TimeInterval,Transformation)]()
+    var recordedStrokeEndInputs = [(TimeInterval,Transformation)]()
 //    var recordedOpacityInputs = [(TimeInterval,Transformation)]()
     var recordedTransformInputs = [(TimeInterval,Transformation)]()
 
@@ -191,13 +191,13 @@ public class Tier: NSManagedObject {
     
     func strokeEndChanged(_ percentage:CGFloat, timestamp:TimeInterval?) {
         if let timestamp = timestamp {
-            recordedStokeEndInputs.append((timestamp, .changeStrokeEnd(strokeEndPercentage: percentage)))
+            recordedStrokeEndInputs.append((timestamp, .changeStrokeEnd(strokeEndPercentage: percentage)))
         }
     }
     
     // MARK: Animation
     
-//    func buildAnimations() -> (appearAnimation:CAKeyframeAnimation?,strokeEndAnimation:CAKeyframeAnimation?,transformationAnimation:CAKeyframeAnimation?) {
+//    func buildAnimations2() -> (appearAnimation:CAKeyframeAnimation?,strokeEndAnimation:CAKeyframeAnimation?,transformationAnimation:CAKeyframeAnimation?) {
 //
 //        var animations = [CAKeyframeAnimation]()
 //
@@ -400,6 +400,38 @@ public class Tier: NSManagedObject {
 //        return (appearAnimation,strokeEndAnimation,transformAnimation)
 //    }
     
+    func rebuildAnimations(forLayer shapeLayer:CAShapeLayer, totalRecordingTime:TimeInterval) {
+        let (appearAnimation,inkAnimation,strokeEndAnimation,transformationAnimation) = buildAnimations(totalRecordingTime:totalRecordingTime)
+
+        shapeLayer.removeAnimation(forKey: "appearAnimation")
+        if let appearAnimation = appearAnimation {
+            shapeLayer.add(appearAnimation, forKey: "appearAnimation")
+        }
+        
+        shapeLayer.removeAnimation(forKey: "inkAnimation")
+        if let inkAnimation = inkAnimation {
+            CATransaction.begin()
+            CATransaction.setDisableActions(true)
+            shapeLayer.strokeEnd = 0
+            CATransaction.commit()
+            shapeLayer.add(inkAnimation, forKey: "inkAnimation")
+        }
+        
+        shapeLayer.removeAnimation(forKey: "strokeEndAnimation")
+        if let strokeEndAnimation = strokeEndAnimation {
+            shapeLayer.add(strokeEndAnimation, forKey: "strokeEndAnimation")
+        }
+        
+        shapeLayer.removeAnimation(forKey: "transformationAnimation")
+        if let transformationAnimation = transformationAnimation {
+            CATransaction.begin()
+            CATransaction.setDisableActions(true)
+            shapeLayer.transform = CATransform3DIdentity
+            CATransaction.commit()
+            shapeLayer.add(transformationAnimation, forKey: "transformationAnimation")
+        }
+    }
+    
     func buildAnimations(totalRecordingTime:TimeInterval) -> (appearAnimation:CAKeyframeAnimation?,inkAnimation:CAKeyframeAnimation?,strokeEndAnimation:CAKeyframeAnimation?,transformationAnimation:CAKeyframeAnimation?) {
         
         var inkAnimation:CAKeyframeAnimation?
@@ -452,15 +484,15 @@ public class Tier: NSManagedObject {
         
         var strokeEndAnimation:CAKeyframeAnimation?
         
-        if let firstStrokeTimestamp = recordedStokeEndInputs.first?.0,
-            let lastStrokeTimestamp = recordedStokeEndInputs.last?.0 {
+        if let firstStrokeTimestamp = recordedStrokeEndInputs.first?.0,
+            let lastStrokeTimestamp = recordedStrokeEndInputs.last?.0 {
             
             let animationDuration = lastStrokeTimestamp - firstStrokeTimestamp
             
             var strokeEndValues = [CGFloat]()
             var keyTimes = [NSNumber]()
             
-            for (timestamp, strokeChangedTransformation) in recordedStokeEndInputs {
+            for (timestamp, strokeChangedTransformation) in recordedStrokeEndInputs {
                 switch strokeChangedTransformation {
                 case let .changeStrokeEnd(strokeEndPercentage):
                     strokeEndValues.append(strokeEndPercentage)

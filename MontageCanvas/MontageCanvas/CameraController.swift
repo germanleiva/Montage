@@ -1129,26 +1129,7 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
                 self.prototypePlayerView.syncLayer?.addSublayer(shapeLayer)
                 CATransaction.commit()
                 
-                let (appearAnimation,inkAnimation,strokeEndAnimation,transformationAnimation) = tier.buildAnimations(totalRecordingTime:self.prototypeComposition!.duration.seconds)
-                
-                if let appearAnimation = appearAnimation {
-                    shapeLayer.add(appearAnimation, forKey: appearAnimation.keyPath!)
-                }
-                
-                if let inkAnimation = inkAnimation {
-                    shapeLayer.strokeEnd = 0
-                    shapeLayer.add(inkAnimation, forKey: inkAnimation.keyPath!)
-                }
-                
-                if let strokeEndAnimation = strokeEndAnimation {
-                    shapeLayer.strokeEnd = 0
-                    shapeLayer.add(strokeEndAnimation, forKey: strokeEndAnimation.keyPath!)
-                }
-                
-                if let transformationAnimation = transformationAnimation {
-                    shapeLayer.transform = CATransform3DIdentity
-                    shapeLayer.add(transformationAnimation, forKey: transformationAnimation.keyPath!)
-                }
+                tier.rebuildAnimations(forLayer:shapeLayer, totalRecordingTime:self.prototypeComposition!.duration.seconds)
             }
             
             //Background Player Canvas View
@@ -1167,26 +1148,7 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
                 
                 self.backgroundPlayerSyncLayer!.addSublayer(shapeLayer)
                 
-                let (appearAnimation,inkAnimation,strokeEndAnimation,transformationAnimation) = tier.buildAnimations(totalRecordingTime:self.backgroundComposition!.duration.seconds)
-                
-                if let appearAnimation = appearAnimation {
-                    shapeLayer.add(appearAnimation, forKey: appearAnimation.keyPath!)
-                }
-                
-                if let inkAnimation = inkAnimation {
-                    shapeLayer.strokeEnd = 0
-                    shapeLayer.add(inkAnimation, forKey: inkAnimation.keyPath!)
-                }
-                
-                if let strokeEndAnimation = strokeEndAnimation {
-                    shapeLayer.strokeEnd = 0
-                    shapeLayer.add(strokeEndAnimation, forKey: strokeEndAnimation.keyPath!)
-                }
-                
-                if let transformationAnimation = transformationAnimation {
-                    shapeLayer.transform = CATransform3DIdentity
-                    shapeLayer.add(transformationAnimation, forKey: transformationAnimation.keyPath!)
-                }
+                tier.rebuildAnimations(forLayer:shapeLayer, totalRecordingTime:self.backgroundComposition!.duration.seconds)
             }
             
             self.playButtonContainer.isEnabled = true
@@ -2413,75 +2375,28 @@ extension CameraController: CanvasViewDelegate {
         
         switch prototypePlayer.timeControlStatus {
         case .playing:
-            let (appearAnimation,inkAnimation,strokeEndAnimation,transformationAnimation) = tier.buildAnimations(totalRecordingTime: prototypePlayer.currentItem!.duration.seconds)
-            
-            if let appearAnimation = appearAnimation {
-                shapeLayer.add(appearAnimation, forKey: appearAnimation.keyPath!)
-            }
-
-            if let inkAnimation = inkAnimation {
-                shapeLayer.strokeEnd = 0
-                shapeLayer.add(inkAnimation, forKey: inkAnimation.keyPath!)
-            }
-            
-            if let strokeEndAnimation = strokeEndAnimation {
-                shapeLayer.strokeEnd = 0
-                shapeLayer.add(strokeEndAnimation, forKey: strokeEndAnimation.keyPath!)
-            }
-            
-            if let transformationAnimation = transformationAnimation {
-                shapeLayer.transform = CATransform3DIdentity
-                shapeLayer.add(transformationAnimation, forKey: transformationAnimation.keyPath!)
-            }
+            print("canvasTierAdded while playing: we need to create the animations, as always")
+            tier.rebuildAnimations(forLayer:shapeLayer,totalRecordingTime: prototypePlayerItem.duration.seconds)
         case .paused:
-            let animationKeyTime = prototypePlayerItem.currentTime().seconds
-            let animationDuration = prototypePlayerItem.duration.seconds
-            let appearAnimation = CAKeyframeAnimation()
-            appearAnimation.beginTime = AVCoreAnimationBeginTimeAtZero
-            appearAnimation.calculationMode = kCAAnimationDiscrete
-            appearAnimation.keyPath = "opacity"
-            appearAnimation.values = [0,1,1]
-            appearAnimation.keyTimes = [0,NSNumber(value:animationKeyTime/animationDuration),1]
-            appearAnimation.duration = animationDuration
-            appearAnimation.fillMode = kCAFillModeForwards //to keep opacity = 1 after completing the animation
-            appearAnimation.isRemovedOnCompletion = false
+            print("canvasTierAdded while paused: appearedAtTimes = [\(prototypePlayerItem.currentTime().seconds)]")
+            tier.appearedAtTimes = [NSNumber(value:prototypePlayerItem.currentTime().seconds)]
             
-            shapeLayer.add(appearAnimation, forKey: appearAnimation.keyPath!)
+            tier.rebuildAnimations(forLayer:shapeLayer,totalRecordingTime: prototypePlayerItem.duration.seconds)
         default:
-            print("ignoring")
+            print("canvasTierAdded ignoring")
         }
-        
     }
     
     func canvasTierModified(_ canvas: CanvasView, tier: Tier) {
         guard canvasControllerMode.isPlayingMode else {
+            print("canvasTierModified while playing: ignoring")
             return
         }
         
         //We redo the whole thing
         let shapeLayer = tier.shapeLayer
-        shapeLayer.removeAllAnimations()
-        
-        let (appearAnimation,inkAnimation,strokeEndAnimation,transformationAnimation) = tier.buildAnimations(totalRecordingTime: prototypePlayer.currentItem!.duration.seconds)
-        
-        if let appearAnimation = appearAnimation {
-            shapeLayer.add(appearAnimation, forKey: appearAnimation.keyPath!)
-        }
-        
-        if let inkAnimation = inkAnimation {
-            shapeLayer.strokeEnd = 0
-            shapeLayer.add(inkAnimation, forKey: inkAnimation.keyPath!)
-        }
-        
-        if let strokeEndAnimation = strokeEndAnimation {
-            shapeLayer.strokeEnd = 0
-            shapeLayer.add(strokeEndAnimation, forKey: strokeEndAnimation.keyPath!)
-        }
-        
-        if let transformationAnimation = transformationAnimation {
-            shapeLayer.transform = CATransform3DIdentity
-            shapeLayer.add(transformationAnimation, forKey: transformationAnimation.keyPath!)
-        }
+
+        tier.rebuildAnimations(forLayer:shapeLayer,totalRecordingTime: prototypePlayerItem.duration.seconds)
     }
     
     func canvasLongPressed(_ canvas:CanvasView,touchLocation:CGPoint) {
@@ -2640,7 +2555,7 @@ class CalendarEvent {
 //
 //        switch controller.prototypePlayer.timeControlStatus {
 //        case .playing:
-//            let (appearAnimation,strokeEndAnimation,transformationAnimation) = tier.buildAnimations()
+//            let (appearAnimation,strokeEndAnimation,transformationAnimation) = tier.buildAnimations2()
 //
 //            if let strokeEndAnimation = strokeEndAnimation {
 //                shapeLayer.strokeEnd = 0
