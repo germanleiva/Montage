@@ -165,25 +165,25 @@ public class Tier: NSManagedObject {
         return sketch!.pathActions!.isEmpty
     }
     
-    func addFirstPoint(_ touchLocation:CGPoint,timestamp:TimeInterval?) {
+    func addFirstPoint(_ touchLocation:CGPoint,timestamp:TimeInterval?, shouldRecord:Bool) {
         sketch?.move(to:touchLocation)
 
         mutableShapeLayerPath.move(to: touchLocation)
         shapeLayer.didChangeValue(for: \CAShapeLayer.path)
         
-        if let timestamp = timestamp {
+        if shouldRecord, let timestamp = timestamp {
             print("saving addFirstPoint with normalized timestamp \(timestamp)")
             recordedPathInputs.append((timestamp, .move(point: touchLocation)))
         }
     }
     
-    func addPoint(_ touchLocation:CGPoint,timestamp:TimeInterval?) {
+    func addPoint(_ touchLocation:CGPoint,timestamp:TimeInterval?, shouldRecord:Bool) {
         sketch?.addLine(to:touchLocation)
         
         mutableShapeLayerPath.addLine(to: touchLocation)
         shapeLayer.didChangeValue(for: \CAShapeLayer.path)
         
-        if let timestamp = timestamp {
+        if shouldRecord, let timestamp = timestamp {
             print("saving addPoint with normalized timestamp \(timestamp)")
             recordedPathInputs.append((timestamp, .addLine(point: touchLocation)))
         }
@@ -560,25 +560,28 @@ public class Tier: NSManagedObject {
         if appearedAtTimes == nil {
             appearedAtTimes = [0]
         }
-        
         if dissappearAtTimes == nil {
-            dissappearAtTimes = [NSNumber(value:totalRecordingTime)]
+            dissappearAtTimes = [NSNumber(value:0),NSNumber(value:totalRecordingTime)]
         }
         
         if let firstAppearanceTime = appearedAtTimes?.first?.doubleValue,
             let lastDisappearanceTime = dissappearAtTimes?.last?.doubleValue {
             
-            let animationDuration = lastDisappearanceTime - firstAppearanceTime
+            if firstAppearanceTime == 0, let firstDisappearanceTime = dissappearAtTimes?.first?.doubleValue, firstDisappearanceTime == 0 {
+                dissappearAtTimes?.removeFirst()
+            }
+            
+            let animationDuration = totalRecordingTime
 
             var calculatedValues = [(Double,Int)]()
             
             for eachAppearanceTime in (appearedAtTimes!.map { $0.doubleValue }) {
-                let percentage = (eachAppearanceTime - firstAppearanceTime) / animationDuration
+                let percentage = eachAppearanceTime / animationDuration
                 calculatedValues.append((percentage,1))
             }
 
             for eachDissappearanceTime in (dissappearAtTimes!.map { $0.doubleValue }) {
-                let percentage = (eachDissappearanceTime - firstAppearanceTime) / animationDuration
+                let percentage = eachDissappearanceTime / animationDuration
                 calculatedValues.append((percentage,0))
             }
             

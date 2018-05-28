@@ -23,6 +23,9 @@ protocol CanvasControllerModeDelegate:AnyObject {
 }
 
 class CanvasControllerMode {
+    var shouldRecordInking:Bool {
+        return false
+    }
     var isPaused:Bool {
         return false
     }
@@ -84,6 +87,9 @@ class CanvasControllerLiveMode:CanvasControllerMode {
 }
 
 class CanvasControllerRecordingMode:CanvasControllerMode {
+    override var shouldRecordInking:Bool {
+        return !isPaused
+    }
     override var isRecording:Bool {
         return true
     }
@@ -140,6 +146,10 @@ class CanvasControllerRecordingMode:CanvasControllerMode {
 }
 
 class CanvasControllerPlayingMode:CanvasControllerMode {
+    override var shouldRecordInking:Bool {
+        return !isPaused
+    }
+    
     override var isPlayingMode:Bool {
         return true
     }

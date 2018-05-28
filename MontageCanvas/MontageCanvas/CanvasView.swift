@@ -17,6 +17,8 @@ protocol CanvasViewDelegate:AnyObject {
     func canvasTierModified(_ canvas:CanvasView,tier:Tier)
     func playerItemOffset() -> TimeInterval
     func normalizeTime1970(time:TimeInterval) -> TimeInterval?
+    
+    var shouldRecordInking:Bool { get }
 }
 
 class CanvasView: UIView, UIGestureRecognizerDelegate {
@@ -220,7 +222,7 @@ class CanvasView: UIView, UIGestureRecognizerDelegate {
                     }
                 }
 
-                currentlyDrawnSketch?.addFirstPoint(touchLocation,timestamp: normalizeTime(touch.timestamp1970))
+                currentlyDrawnSketch?.addFirstPoint(touchLocation,timestamp: normalizeTime(touch.timestamp1970), shouldRecord: delegate?.shouldRecordInking ?? false)
                 
             }
         }
@@ -238,14 +240,11 @@ class CanvasView: UIView, UIGestureRecognizerDelegate {
                             let percentage = CGFloat(1) - invisibleXSliderValue / selectedTier.shapeLayer.path!.boundingBoxOfPath.width
                             selectedTier.strokeEndChanged(percentage, timestamp: normalizeTime(touch.timestamp1970))
                             
-                            CATransaction.begin()
-                            CATransaction.setDisableActions(true)
                             selectedTier.shapeLayer.strokeEnd = percentage
-                            CATransaction.commit()
                         }
                     }
                 } else {
-                    currentlyDrawnSketch?.addPoint(touchLocation, timestamp: normalizeTime(touch.timestamp1970))
+                    currentlyDrawnSketch?.addPoint(touchLocation, timestamp: normalizeTime(touch.timestamp1970), shouldRecord: delegate?.shouldRecordInking ?? false)
                 }
             }
         }

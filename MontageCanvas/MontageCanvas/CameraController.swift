@@ -2441,6 +2441,10 @@ extension CameraController: CanvasViewDelegate {
     func normalizeTime1970(time: TimeInterval) -> TimeInterval? {
         return canvasControllerMode.normalizedTime(time: time)
     }
+    
+    var shouldRecordInking: Bool {
+        return canvasControllerMode.shouldRecordInking
+    }
 }
 
 extension CameraController: UICollectionViewDelegate {
