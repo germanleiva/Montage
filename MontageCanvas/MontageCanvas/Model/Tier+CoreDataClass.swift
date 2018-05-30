@@ -16,12 +16,14 @@ enum Transformation {
     case addLine(point:CGPoint)
     case transform(affineTransform:CGAffineTransform)
     case changeStrokeEnd(strokeEndPercentage:CGFloat)
+    case changeStrokeStart(strokeStartPercentage:CGFloat)
 }
 
 @objc(Tier)
 public class Tier: NSManagedObject {
 
     var recordedPathInputs = [(TimeInterval,Transformation)]()
+    var recordedStrokeStartInputs = [(TimeInterval,Transformation)]()
     var recordedStrokeEndInputs = [(TimeInterval,Transformation)]()
 //    var recordedOpacityInputs = [(TimeInterval,Transformation)]()
     var recordedTransformInputs = [(TimeInterval,Transformation)]()
@@ -192,6 +194,12 @@ public class Tier: NSManagedObject {
     func strokeEndChanged(_ percentage:CGFloat, timestamp:TimeInterval?) {
         if let timestamp = timestamp {
             recordedStrokeEndInputs.append((timestamp, .changeStrokeEnd(strokeEndPercentage: percentage)))
+        }
+    }
+    
+    func strokeStartChanged(_ percentage:CGFloat, timestamp:TimeInterval?) {
+        if let timestamp = timestamp {
+            recordedStrokeStartInputs.append((timestamp, .changeStrokeStart(strokeStartPercentage: percentage)))
         }
     }
     
@@ -401,7 +409,7 @@ public class Tier: NSManagedObject {
 //    }
     
     func rebuildAnimations(forLayer shapeLayer:CAShapeLayer, totalRecordingTime:TimeInterval) {
-        let (appearAnimation,inkAnimation,strokeEndAnimation,transformationAnimation) = buildAnimations(totalRecordingTime:totalRecordingTime)
+        let (appearAnimation,inkAnimation,strokeEndAnimation,strokeStartAnimation,transformationAnimation) = buildAnimations(totalRecordingTime:totalRecordingTime)
 
         shapeLayer.removeAnimation(forKey: "appearAnimation")
         if let appearAnimation = appearAnimation {
@@ -410,49 +418,61 @@ public class Tier: NSManagedObject {
         
         shapeLayer.removeAnimation(forKey: "inkAnimation")
         if let inkAnimation = inkAnimation {
-            CATransaction.begin()
-            CATransaction.setDisableActions(true)
-            shapeLayer.strokeEnd = 0
-            CATransaction.commit()
+//            CATransaction.begin()
+//            CATransaction.setDisableActions(true)
+//            shapeLayer.strokeEnd = 0
+//            CATransaction.commit()
             shapeLayer.add(inkAnimation, forKey: "inkAnimation")
         }
         
         shapeLayer.removeAnimation(forKey: "strokeEndAnimation")
         if let strokeEndAnimation = strokeEndAnimation {
+//            CATransaction.begin()
+//            CATransaction.setDisableActions(true)
+//            shapeLayer.strokeEnd = 1
+//            CATransaction.commit()
             shapeLayer.add(strokeEndAnimation, forKey: "strokeEndAnimation")
+        }
+        
+        shapeLayer.removeAnimation(forKey: "strokeStartAnimation")
+        if let strokeStartAnimation = strokeStartAnimation {
+            //            CATransaction.begin()
+            //            CATransaction.setDisableActions(true)
+            //            shapeLayer.strokeEnd = 1
+            //            CATransaction.commit()
+            shapeLayer.add(strokeStartAnimation, forKey: "strokeStartAnimation")
         }
         
         shapeLayer.removeAnimation(forKey: "transformationAnimation")
         if let transformationAnimation = transformationAnimation {
-            CATransaction.begin()
-            CATransaction.setDisableActions(true)
-            shapeLayer.transform = CATransform3DIdentity
-            CATransaction.commit()
+//            CATransaction.begin()
+//            CATransaction.setDisableActions(true)
+//            shapeLayer.transform = CATransform3DIdentity
+//            CATransaction.commit()
             shapeLayer.add(transformationAnimation, forKey: "transformationAnimation")
         }
     }
     
-    func buildAnimations(totalRecordingTime:TimeInterval) -> (appearAnimation:CAKeyframeAnimation?,inkAnimation:CAKeyframeAnimation?,strokeEndAnimation:CAKeyframeAnimation?,transformationAnimation:CAKeyframeAnimation?) {
-        
+    func buildAnimations(totalRecordingTime:TimeInterval) -> (appearAnimation:CAKeyframeAnimation?,inkAnimation:CAKeyframeAnimation?,strokeEndAnimation:CAKeyframeAnimation?,strokeStartAnimation:CAKeyframeAnimation?,transformationAnimation:CAKeyframeAnimation?) {
+        print("buildAnimations >> START \(self)")
+
         var inkAnimation:CAKeyframeAnimation?
         
-        if let totalDistance = sketch?.pathLength,
-            let firstStrokeTimestamp = recordedPathInputs.first?.0,
-            let lastStrokeTimestamp = recordedPathInputs.last?.0 {
+        if let totalDistance = sketch?.pathLength, !recordedPathInputs.isEmpty {
             
             var accumDistance:CGFloat = 0
             var currentPoint:CGPoint?
             
-            let animationDuration = lastStrokeTimestamp - firstStrokeTimestamp
+            let animationDuration = totalRecordingTime
             
-            var inkValues = [CGFloat]()
-            var keyTimes = [NSNumber]()
+            var inkValues = [CGFloat(0)]
+            var keyTimes = [NSNumber(value:0)]
             
             for (timestamp, pathTransformation) in recordedPathInputs {
                 switch pathTransformation {
                 case let .move(point):
                     currentPoint = point
-                    let percentage = (timestamp - firstStrokeTimestamp) / animationDuration
+                    let percentage = timestamp / animationDuration
                     keyTimes.append(NSNumber(value:percentage))
                 case let .addLine(point):
                     inkValues.append(CGFloat(accumDistance/totalDistance))
@@ -460,7 +480,7 @@ public class Tier: NSManagedObject {
                         accumDistance += point.distance(lastPoint)
                     }
                     currentPoint = point
-                    let percentage = (timestamp - firstStrokeTimestamp) / animationDuration
+                    let percentage = timestamp / animationDuration
                     keyTimes.append(NSNumber(value:percentage))
                 default:
                     print("does not apply to recordedPathInputs")
@@ -469,35 +489,36 @@ public class Tier: NSManagedObject {
             
             if !inkValues.isEmpty {
                 let newStrokeEndAnimation = CAKeyframeAnimation()
-                newStrokeEndAnimation.beginTime = firstStrokeTimestamp //AVCoreAnimationBeginTimeAtZero
+                newStrokeEndAnimation.beginTime = AVCoreAnimationBeginTimeAtZero
                 newStrokeEndAnimation.calculationMode = kCAAnimationDiscrete
                 newStrokeEndAnimation.keyPath = "strokeEnd"
                 newStrokeEndAnimation.values = inkValues
                 newStrokeEndAnimation.keyTimes = keyTimes
                 newStrokeEndAnimation.duration = animationDuration
-                newStrokeEndAnimation.fillMode = kCAFillModeForwards //to keep strokeEnd = 1 after completing the animation
+                newStrokeEndAnimation.fillMode = kCAFillModeForwards //the changes caused by the animation will hang around
                 newStrokeEndAnimation.isRemovedOnCompletion = false
                 
                 inkAnimation = newStrokeEndAnimation
+                
+                print("buildAnimations >> inkAnimation: \(newStrokeEndAnimation.debugDescription)")
             }
         }
         
         var strokeEndAnimation:CAKeyframeAnimation?
         
-        if let firstStrokeTimestamp = recordedStrokeEndInputs.first?.0,
-            let lastStrokeTimestamp = recordedStrokeEndInputs.last?.0 {
+        if !recordedStrokeEndInputs.isEmpty {
             
-            let animationDuration = lastStrokeTimestamp - firstStrokeTimestamp
+            let animationDuration = totalRecordingTime
             
-            var strokeEndValues = [CGFloat]()
-            var keyTimes = [NSNumber]()
-            
+            var strokeEndValues = [CGFloat(1)]
+            var keyTimes = [NSNumber(value:0)]
+
             for (timestamp, strokeChangedTransformation) in recordedStrokeEndInputs {
                 switch strokeChangedTransformation {
                 case let .changeStrokeEnd(strokeEndPercentage):
                     strokeEndValues.append(strokeEndPercentage)
                     
-                    let percentage = (timestamp - firstStrokeTimestamp) / animationDuration
+                    let percentage = timestamp / animationDuration
                     keyTimes.append(NSNumber(value:percentage))
                 default:
                     print("does not apply to recordedStrokeEndInputs")
@@ -506,34 +527,73 @@ public class Tier: NSManagedObject {
             
             if !strokeEndValues.isEmpty {
                 let newStrokeEndAnimation = CAKeyframeAnimation()
-                newStrokeEndAnimation.beginTime = firstStrokeTimestamp //AVCoreAnimationBeginTimeAtZero
+                newStrokeEndAnimation.beginTime = AVCoreAnimationBeginTimeAtZero
                 newStrokeEndAnimation.calculationMode = kCAAnimationDiscrete
                 newStrokeEndAnimation.keyPath = "strokeEnd"
                 newStrokeEndAnimation.values = strokeEndValues
                 newStrokeEndAnimation.keyTimes = keyTimes
                 newStrokeEndAnimation.duration = animationDuration
-                newStrokeEndAnimation.fillMode = kCAFillModeForwards //to keep strokeEnd = 1 after completing the animation
+                newStrokeEndAnimation.fillMode = kCAFillModeForwards //the changes caused by the animation will hang around
                 newStrokeEndAnimation.isRemovedOnCompletion = false
                 
                 strokeEndAnimation = newStrokeEndAnimation
+                
+                print("buildAnimations >> strokeEndAnimation: \(newStrokeEndAnimation.debugDescription)")
+            }
+        }
+        
+        var strokeStartAnimation:CAKeyframeAnimation?
+        
+        if !recordedStrokeStartInputs.isEmpty {
+            
+            let animationDuration = totalRecordingTime
+            
+            var strokeStartValues = [CGFloat(0)]
+            var keyTimes = [NSNumber(value:0)]
+            
+            for (timestamp, strokeChangedTransformation) in recordedStrokeStartInputs {
+                switch strokeChangedTransformation {
+                case let .changeStrokeStart(strokeStartPercentage):
+                    strokeStartValues.append(strokeStartPercentage)
+                    
+                    let percentage = timestamp / animationDuration
+                    keyTimes.append(NSNumber(value:percentage))
+                default:
+                    print("does not apply to recordedStrokeStartInputs")
+                }
+            }
+            
+            if !strokeStartValues.isEmpty {
+                let newStrokeStartAnimation = CAKeyframeAnimation()
+                newStrokeStartAnimation.beginTime = AVCoreAnimationBeginTimeAtZero
+                newStrokeStartAnimation.calculationMode = kCAAnimationDiscrete
+                newStrokeStartAnimation.keyPath = "strokeStart"
+                newStrokeStartAnimation.values = strokeStartValues
+                newStrokeStartAnimation.keyTimes = keyTimes
+                newStrokeStartAnimation.duration = animationDuration
+                newStrokeStartAnimation.fillMode = kCAFillModeForwards //the changes caused by the animation will hang around
+                newStrokeStartAnimation.isRemovedOnCompletion = false
+                
+                strokeStartAnimation = newStrokeStartAnimation
+                
+                print("buildAnimations >> strokeStartnimation: \(newStrokeStartAnimation.debugDescription)")
             }
         }
         
         var transformationAnimation:CAKeyframeAnimation?
         
-        if let firstTransformTimestamp = recordedTransformInputs.first?.0,
-            let lastTransformTimestamp = recordedTransformInputs.last?.0 {
+        if !recordedTransformInputs.isEmpty {
             
-            let animationDuration = lastTransformTimestamp - firstTransformTimestamp
+            let animationDuration = totalRecordingTime
             
-            var transformValues = [CATransform3D]()
-            var transformKeyTimes = [NSNumber]()
+            var transformValues = [CATransform3DIdentity]
+            var transformKeyTimes = [NSNumber(value:0)]
             
             for (timestamp, transformTransformation) in recordedTransformInputs {
                 switch transformTransformation {
                 case let .transform(affineTransform):
                     transformValues.append(CATransform3DMakeAffineTransform(affineTransform))
-                    let percentage = (timestamp - firstTransformTimestamp) / animationDuration
+                    let percentage = timestamp / animationDuration
                     transformKeyTimes.append(NSNumber(value:percentage))
                 default:
                     print("does not apply to recordedTransformInputs")
@@ -542,16 +602,18 @@ public class Tier: NSManagedObject {
             
             if !transformValues.isEmpty {
                 let newTransformAnimation = CAKeyframeAnimation()
-                newTransformAnimation.beginTime = firstTransformTimestamp //AVCoreAnimationBeginTimeAtZero
+                newTransformAnimation.beginTime = AVCoreAnimationBeginTimeAtZero
                 newTransformAnimation.calculationMode = kCAAnimationDiscrete
                 newTransformAnimation.keyPath = "transform"
                 newTransformAnimation.values = transformValues
                 newTransformAnimation.keyTimes = transformKeyTimes
                 newTransformAnimation.duration = animationDuration
-                newTransformAnimation.fillMode = kCAFillModeForwards //to keep strokeEnd = 1 after completing the animation
+                newTransformAnimation.fillMode = kCAFillModeForwards //the changes caused by the animation will hang around
                 newTransformAnimation.isRemovedOnCompletion = false
                 
                 transformationAnimation = newTransformAnimation
+                
+                print("buildAnimations >> transformationAnimation: \(transformationAnimation.debugDescription)")
             }
         }
         
@@ -564,9 +626,7 @@ public class Tier: NSManagedObject {
             dissappearAtTimes = [NSNumber(value:0),NSNumber(value:totalRecordingTime)]
         }
         
-        if let firstAppearanceTime = appearedAtTimes?.first?.doubleValue,
-            let lastDisappearanceTime = dissappearAtTimes?.last?.doubleValue {
-            
+        if let firstAppearanceTime = appearedAtTimes?.first?.doubleValue {
             if firstAppearanceTime == 0, let firstDisappearanceTime = dissappearAtTimes?.first?.doubleValue, firstDisappearanceTime == 0 {
                 dissappearAtTimes?.removeFirst()
             }
@@ -597,8 +657,10 @@ public class Tier: NSManagedObject {
             toggleAnimation!.values = opacityValues
             toggleAnimation!.keyTimes = keyTimes
             toggleAnimation!.duration = animationDuration
-            toggleAnimation!.fillMode = kCAFillModeForwards //to keep opacity = 1 after completing the animation
+            toggleAnimation!.fillMode = kCAFillModeForwards //the changes caused by the animation will hang around
             toggleAnimation!.isRemovedOnCompletion = false
+            
+            print("buildAnimations >> toggleAnimation: \(toggleAnimation!.debugDescription)")
         }
         //CAAnimationGroup do not work with AVSyncronizedLayer
         //        let strokeAndMove = CAAnimationGroup()
@@ -607,7 +669,9 @@ public class Tier: NSManagedObject {
         //        strokeAndMove.duration = endedRecordingAt - startedRecordingAt
         
         //        print("-----> \(appearedAt)")
-        return (toggleAnimation,inkAnimation,strokeEndAnimation,transformationAnimation)
+        print("buildAnimations >> FINISH \(self)")
+            
+        return (toggleAnimation,inkAnimation,strokeEndAnimation,strokeStartAnimation,transformationAnimation)
     }
     
     var isSelected:Bool {

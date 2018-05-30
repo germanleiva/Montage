@@ -260,13 +260,13 @@
                                             <containerView opaque="NO" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="136-gb-TLv">
                                                 <rect key="frame" x="0.0" y="0.0" width="512" height="416"/>
                                                 <connections>
-                                                    <segue destination="R0W-H9-jWX" kind="embed" identifier="BACKGROUND_TIMELINE_SEGUE" id="gMa-nQ-tt9"/>
+                                                    <segue destination="zxU-C8-BVw" kind="embed" identifier="BACKGROUND_TIMELINE_SEGUE" id="gMa-nQ-tt9"/>
                                                 </connections>
                                             </containerView>
                                             <containerView opaque="NO" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="OCf-xr-2Sq">
                                                 <rect key="frame" x="512" y="0.0" width="512" height="416"/>
                                                 <connections>
-                                                    <segue destination="R0W-H9-jWX" kind="embed" identifier="PROTOTYPE_TIMELINE_SEGUE" id="4kT-tB-3h7"/>
+                                                    <segue destination="zxU-C8-BVw" kind="embed" identifier="PROTOTYPE_TIMELINE_SEGUE" id="4kT-tB-3h7"/>
                                                 </connections>
                                             </containerView>
                                         </subviews>
@@ -597,30 +597,50 @@
                                     <barButtonItem style="plain" systemItem="flexibleSpace" id="gp7-NF-7Yh"/>
                                     <barButtonItem style="plain" id="P5U-Ye-01V">
                                         <button key="customView" opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" id="emM-4x-at3">
-                                            <rect key="frame" x="229.5" y="7" width="30" height="30"/>
+                                            <rect key="frame" x="88.5" y="7" width="30" height="30"/>
                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                             <state key="normal" title="In"/>
                                             <connections>
-                                                <action selector="inButtonPressed:" destination="R0W-H9-jWX" eventType="touchDown" id="olQ-zg-2CF"/>
-                                                <action selector="inButtonReleased:" destination="R0W-H9-jWX" eventType="touchUpOutside" id="6Qk-R7-tX7"/>
-                                                <action selector="inButtonReleased:" destination="R0W-H9-jWX" eventType="touchUpInside" id="hk8-SH-GDh"/>
+                                                <action selector="inButtonPressed:" destination="R0W-H9-jWX" eventType="touchUpInside" id="YDg-FB-1CR"/>
                                             </connections>
                                         </button>
                                     </barButtonItem>
                                     <barButtonItem style="plain" systemItem="flexibleSpace" id="QzF-c6-VW4"/>
                                     <barButtonItem style="plain" id="eyP-Yn-KrE">
                                         <button key="customView" opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" id="hf3-Ju-CBf">
-                                            <rect key="frame" x="352.5" y="7" width="46" height="30"/>
+                                            <rect key="frame" x="141.5" y="7" width="46" height="30"/>
                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                             <state key="normal" title="Out"/>
                                             <connections>
-                                                <action selector="outButtonPressed:" destination="R0W-H9-jWX" eventType="touchDown" id="wSn-In-DNa"/>
-                                                <action selector="outButtonReleased:" destination="R0W-H9-jWX" eventType="touchUpOutside" id="jqG-dl-hz5"/>
-                                                <action selector="outButtonReleased:" destination="R0W-H9-jWX" eventType="touchUpInside" id="qmf-HB-Ig8"/>
+                                                <action selector="outButtonPressed:" destination="R0W-H9-jWX" eventType="touchUpInside" id="ebW-wP-Tud"/>
                                             </connections>
                                         </button>
                                     </barButtonItem>
+                                    <barButtonItem style="plain" systemItem="flexibleSpace" id="6oH-un-WZe"/>
+                                    <barButtonItem style="plain" id="z0C-yi-RPF">
+                                        <slider key="customView" opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" minValue="0.0" maxValue="1" id="kcw-iR-Rqc">
+                                            <rect key="frame" x="210" y="5" width="118" height="34"/>
+                                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                            <connections>
+                                                <action selector="strokeStartSliderChanged:" destination="R0W-H9-jWX" eventType="valueChanged" id="w2e-Qm-xop"/>
+                                                <action selector="strokeStartSliderReleased:" destination="R0W-H9-jWX" eventType="touchUpOutside" id="7Y1-3w-FuT"/>
+                                                <action selector="strokeStartSliderReleased:" destination="R0W-H9-jWX" eventType="touchUpInside" id="ykN-qT-KTM"/>
+                                            </connections>
+                                        </slider>
+                                    </barButtonItem>
                                     <barButtonItem style="plain" systemItem="flexibleSpace" id="W7N-CD-CQt"/>
+                                    <barButtonItem style="plain" id="d8S-TN-LTp">
+                                        <slider key="customView" opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" value="1" minValue="0.0" maxValue="1" id="Aga-aX-HJg">
+                                            <rect key="frame" x="351" y="5" width="118" height="34"/>
+                                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                            <connections>
+                                                <action selector="strokeEndSliderChanged:" destination="R0W-H9-jWX" eventType="valueChanged" id="8NO-gm-JlY"/>
+                                                <action selector="strokeEndSliderReleased:" destination="R0W-H9-jWX" eventType="touchUpOutside" id="Oxm-7N-u5M"/>
+                                                <action selector="strokeEndSliderReleased:" destination="R0W-H9-jWX" eventType="touchUpInside" id="cgW-OR-lCY"/>
+                                            </connections>
+                                        </slider>
+                                    </barButtonItem>
+                                    <barButtonItem style="plain" systemItem="flexibleSpace" id="c6K-yB-kpc"/>
                                 </items>
                             </toolbar>
                         </subviews>
@@ -636,11 +656,53 @@
                         </constraints>
                         <viewLayoutGuide key="safeArea" id="2E3-uL-Ejw"/>
                     </view>
+                    <navigationItem key="navigationItem" id="UTO-BC-uMh">
+                        <nil key="title"/>
+                        <view key="titleView" contentMode="scaleToFill" id="i25-Xm-Ah8">
+                            <rect key="frame" x="256" y="0.0" width="0.0" height="44"/>
+                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                            <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                        </view>
+                    </navigationItem>
                     <connections>
                         <outlet property="tableView" destination="QUI-BF-TpT" id="RPi-27-fR1"/>
+                        <segue destination="zJx-LQ-Pmn" kind="show" id="iCC-Uz-P3X"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="jhx-jM-1MF" userLabel="First Responder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="2743" y="127"/>
+        </scene>
+        <!--View Controller-->
+        <scene sceneID="il3-3p-eNW">
+            <objects>
+                <viewController id="zJx-LQ-Pmn" sceneMemberID="viewController">
+                    <view key="view" contentMode="scaleToFill" id="F4B-gF-ZdZ">
+                        <rect key="frame" x="0.0" y="0.0" width="512" height="416"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                        <viewLayoutGuide key="safeArea" id="vp5-gM-3EX"/>
+                    </view>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="QcG-cD-mms" userLabel="First Responder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="3234" y="128"/>
+        </scene>
+        <!--Navigation Controller-->
+        <scene sceneID="sav-3d-8CT">
+            <objects>
+                <navigationController automaticallyAdjustsScrollViewInsets="NO" id="zxU-C8-BVw" sceneMemberID="viewController">
+                    <toolbarItems/>
+                    <navigationBar key="navigationBar" contentMode="scaleToFill" insetsLayoutMarginsFromSafeArea="NO" id="lpN-J3-Qjf">
+                        <rect key="frame" x="0.0" y="20" width="512" height="44"/>
+                        <autoresizingMask key="autoresizingMask"/>
+                    </navigationBar>
+                    <nil name="viewControllers"/>
+                    <connections>
+                        <segue destination="R0W-H9-jWX" kind="relationship" relationship="rootViewController" id="MPv-V7-hLR"/>
+                    </connections>
+                </navigationController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="miO-Ll-AA8" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
             <point key="canvasLocation" x="2201.953125" y="128.90625"/>
         </scene>
@@ -649,7 +711,7 @@
         <image name="pause-icon" width="44" height="44"/>
     </resources>
     <inferredMetricsTieBreakers>
-        <segue reference="4kT-tB-3h7"/>
+        <segue reference="gMa-nQ-tt9"/>
         <segue reference="ewd-hm-Jcq"/>
     </inferredMetricsTieBreakers>
 </document>

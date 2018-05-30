@@ -17,6 +17,7 @@ class TimelineViewController: UIViewController, NSFetchedResultsControllerDelega
             }
         }
     }
+    var canvasView:CanvasView!
     
     let managedObjectContext = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
     
@@ -292,20 +293,70 @@ class TimelineViewController: UIViewController, NSFetchedResultsControllerDelega
     // MARK: - Actions
     
     @IBAction func outButtonPressed(_ sender:AnyObject?) {
-        Globals.outIsPressedDown = true
+//        Globals.outIsPressedDown = true
+        for selectedTier in canvasView.selectedSketches {
+            if let newDisappearedTime = canvasView.delegate!.normalizeTime1970(time: Date().timeIntervalSince1970) {
+                if let dissaperancesCount = selectedTier.dissappearAtTimes?.count {
+                    assert(dissaperancesCount>=2)
+                    
+                    if dissaperancesCount >= 3 {
+                        selectedTier.dissappearAtTimes?.removeLast()
+                    }
+                }
+                selectedTier.dissappearAtTimes?.append(NSNumber(value:newDisappearedTime))
+                canvasView.delegate?.canvasTierModified(canvasView, tier: selectedTier)
+            }
+        }
     }
     
-    @IBAction func  inButtonPressed(_ sender:AnyObject?) {
-        Globals.inIsPressedDown = true
+    @IBAction func inButtonPressed(_ sender:AnyObject?) {
+//        Globals.inIsPressedDown = true
+        for selectedTier in canvasView.selectedSketches {
+            if let newAppearedTime = canvasView.delegate!.normalizeTime1970(time: Date().timeIntervalSince1970) {
+                selectedTier.appearedAtTimes = [NSNumber(value:newAppearedTime)]
+                canvasView.delegate?.canvasTierModified(canvasView, tier: selectedTier)
+            }
+        }
     }
     
-    @IBAction func  outButtonReleased(_ sender:AnyObject?) {
-        Globals.outIsPressedDown = false
+    @IBAction func strokeStartSliderChanged(_ sender:UISlider) {
+        print("strokeStartSliderChanged")
+        let percentage = CGFloat(sender.value)
+        for selectedTier in canvasView.selectedSketches {
+            selectedTier.strokeStartChanged(percentage, timestamp: canvasView.normalizeTime(Date().timeIntervalSince1970))
+            CATransaction.begin()
+            CATransaction.setDisableActions(true)
+            selectedTier.shapeLayer.strokeStart = percentage
+            CATransaction.commit()
+        }
     }
     
-    @IBAction func  inButtonReleased(_ sender:AnyObject?) {
-        Globals.inIsPressedDown = false
-
+    @IBAction func strokeStartSliderReleased(_ sender:UISlider) {
+        print("strokeStartSliderReleased")
+        for selected in canvasView.selectedSketches {
+            canvasView.delegate?.canvasTierModified(canvasView, tier: selected)
+        }
+        sender.value = 0
+    }
+    
+    @IBAction func strokeEndSliderChanged(_ sender:UISlider) {
+        print("strokeEndSliderChanged")
+        let percentage = CGFloat(sender.value)
+        for selectedTier in canvasView.selectedSketches {
+            selectedTier.strokeEndChanged(percentage, timestamp: canvasView.normalizeTime(Date().timeIntervalSince1970))
+            CATransaction.begin()
+            CATransaction.setDisableActions(true)
+            selectedTier.shapeLayer.strokeEnd = percentage
+            CATransaction.commit()
+        }
+    }
+    
+    @IBAction func strokeEndSliderReleased(_ sender:UISlider) {
+        print("strokeEndSliderReleased")
+        for selected in canvasView.selectedSketches {
+            canvasView.delegate?.canvasTierModified(canvasView, tier: selected)
+        }
+        sender.value = 1
     }
     
 }

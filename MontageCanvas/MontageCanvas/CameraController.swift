@@ -601,12 +601,16 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
         // Get the new view controller using segue.destinationViewController.
         // Pass the selected object to the new view controller.
         if "BACKGROUND_TIMELINE_SEGUE" == segue.identifier {
-            backgroundTimeline = segue.destination as? TimelineViewController
+            let navigationController = segue.destination as? UINavigationController
+            backgroundTimeline = navigationController?.topViewController as? TimelineViewController
             backgroundTimeline?.videoTrack = videoModel.backgroundTrack
+            prototypeTimeline?.canvasView = backgroundCanvasView
         }
         if "PROTOTYPE_TIMELINE_SEGUE" == segue.identifier {
-            prototypeTimeline = segue.destination as? TimelineViewController
+            let navigationController = segue.destination as? UINavigationController
+            prototypeTimeline = navigationController?.topViewController as? TimelineViewController
             prototypeTimeline?.videoTrack = videoModel.prototypeTrack
+            prototypeTimeline?.canvasView = prototypeCanvasView
         }
     }
     
