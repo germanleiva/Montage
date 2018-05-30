@@ -74,7 +74,7 @@ class CanvasControllerLiveMode:CanvasControllerMode {
         controller.canvasControllerMode = CanvasControllerRecordingMode(controller: controller)
     }
     override func stopRecording(controller:CameraController) {
-        controller.alert(nil, title: "Cannot do", message: "I'm not recording")
+//        controller.alert(nil, title: "Cannot do", message: "I'm not recording")
     }
     
     override func pause(controller:CameraController) {
