@@ -626,64 +626,107 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
     }
     
     @IBAction func savePressed(_ sender: Any) {
-        do {
             displayLink.isPaused = true
 
-//            if let backgroundMutableComposition = backgroundComposition {
-//
-//                let exportSession = AVAssetExportSession(asset: backgroundMutableComposition, presetName: AVAssetExportPreset1280x720)
-//
-//                let filter = CIFilter(name: "CIGaussianBlur")!
-//                let videoComposition = AVVideoComposition(asset: backgroundMutableComposition, applyingCIFiltersWithHandler: { request in
-//                    let seekerGroup = DispatchGroup()
-//
-//                    seekerGroup.enter()
-//                    self.backgroundPlayerItem.seek(to: request.compositionTime, toleranceBefore: kCMTimeZero, toleranceAfter: kCMTimeZero, completionHandler: { (finished) in
-//                        seekerGroup.leave()
-//                    })
-//
-//                    seekerGroup.enter()
-//                    self.prototypePlayerItem.seek(to: request.compositionTime, toleranceBefore: kCMTimeZero, toleranceAfter: kCMTimeZero, completionHandler: { (finished) in
-//                        seekerGroup.leave()
-//                    })
-//
-//                    seekerGroup.notify(queue: DispatchQueue.main, execute: {
-//                        self.getFramesForPlayback()
-//
-//                        // Clamp to avoid blurring transparent pixels at the image edges
-//                        let source = request.sourceImage.clampedToExtent()
-//                        filter.setValue(source, forKey: kCIInputImageKey)
-//
-//                        // Vary filter parameters based on video timing
-//                        let seconds = CMTimeGetSeconds(request.compositionTime)
-//                        filter.setValue(seconds * 10.0, forKey: kCIInputRadiusKey)
-//
-//                        // Crop the blurred output to the bounds of the original image
-//                        let output = filter.outputImage!.cropped(to: request.sourceImage.extent)
-//
-//                        // Provide the filter output to the composition
-//                        request.finish(with: output, context: nil)
-//                    })
-//                })
-//
-//                exportSession?.outputFileType = AVFileType.mov
-//                exportSession?.outputURL = videoModel.file!
-//                exportSession?.videoComposition = videoComposition
-//
-//                exportSession?.exportAsynchronously {
-//                    print("export")
-//                }
-//
-//
-//            }
-            
-            try coreDataContext.save()
-            dismiss(animated: true, completion: nil)
-        } catch {
-            alert(error, title: "DB Error", message: "Could not save recorded video") {
-                self.dismiss(animated: true, completion: nil)
+            if let backgroundMutableComposition = backgroundComposition?.copy() as? AVComposition {
+
+                let exportSession = AVAssetExportSession(asset: backgroundMutableComposition, presetName: AVAssetExportPreset1280x720)
+
+                let filter = CIFilter(name: "CIGaussianBlur")!
+                
+                let weakSelf = self
+                
+                let videoComposition = AVVideoComposition(asset: backgroundMutableComposition, applyingCIFiltersWithHandler: { request in
+                    self.prototypePlayerItem.seek(to: request.compositionTime, toleranceBefore: kCMTimeZero, toleranceAfter: kCMTimeZero, completionHandler: { (finished) in
+                        
+                        let finalBackgroundFrameImage = request.sourceImage
+                        
+                        let currentMediaTime = CACurrentMediaTime()
+                        let prototypeItemTime = weakSelf.prototypeVideoOutput.itemTime(forHostTime: currentMediaTime)
+                        if let prototypePixelBuffer = weakSelf.prototypeVideoOutput.copyPixelBuffer(forItemTime: prototypeItemTime, itemTimeForDisplay: nil) {
+                            
+                            let source = CIImage(cvPixelBuffer: prototypePixelBuffer)
+                            
+                            DispatchQueue.main.async {
+                                if let copiedSyncLayer = weakSelf.prototypePlayerView.syncLayer?.presentation(), let copiedCanvasLayer = weakSelf.prototypePlayerCanvasView?.canvasLayer.presentation() {
+                                    weakSelf.snapshotSketchOverlay(layers:[copiedSyncLayer,copiedCanvasLayer],size:weakSelf.prototypePlayerView.frame.size)
+                                    
+                                    if let currentBox = weakSelf.videoModel.backgroundTrack?.box(forItemTime: prototypeItemTime, adjustment: 0.035) {
+                                        let currentPrototypeAndOverlayFrame:CIImage
+                                        
+                                        if let overlay = weakSelf.sketchOverlay {
+                                            let scaledSource = source.transformed(by: CGAffineTransform.identity.scaledBy(x: overlay.extent.width / source.extent.width, y: overlay.extent.height / source.extent.height ))
+                                            
+                                            let overlayFilter = CIFilter(name: "CISourceOverCompositing")!
+                                            overlayFilter.setValue(scaledSource, forKey: kCIInputBackgroundImageKey)
+                                            overlayFilter.setValue(overlay, forKey: kCIInputImageKey)
+                                            
+                                            currentPrototypeAndOverlayFrame = overlayFilter.outputImage!
+                                        } else {
+                                            currentPrototypeAndOverlayFrame = source
+                                        }
+                                        
+                                        let perspectiveTransformFilter = CIFilter(name: "CIPerspectiveTransform")!
+                                        
+                                        let w = finalBackgroundFrameImage.extent.size.width
+                                        let h = finalBackgroundFrameImage.extent.size.height
+                                        
+                                        perspectiveTransformFilter.setValue(CIVector(cgPoint:CGPoint(x: currentBox.topLeft.x * w, y: h * (1 - currentBox.topLeft.y))), forKey: "inputTopLeft")
+                                        perspectiveTransformFilter.setValue(CIVector(cgPoint:CGPoint(x: currentBox.topRight.x * w, y: h * (1 - currentBox.topRight.y))), forKey: "inputTopRight")
+                                        perspectiveTransformFilter.setValue(CIVector(cgPoint:CGPoint(x: currentBox.bottomRight.x * w, y: h * (1 - currentBox.bottomRight.y))), forKey: "inputBottomRight")
+                                        perspectiveTransformFilter.setValue(CIVector(cgPoint:CGPoint(x: currentBox.bottomLeft.x * w, y: h * (1 - currentBox.bottomLeft.y))), forKey: "inputBottomLeft")
+                                        
+                                        perspectiveTransformFilter.setValue(currentPrototypeAndOverlayFrame.oriented(CGImagePropertyOrientation.downMirrored),
+                                                                            forKey: kCIInputImageKey)
+                                        
+                                        let composite = ChromaKeyFilter()
+                                        composite.inputImage = finalBackgroundFrameImage
+                                        composite.backgroundImage = perspectiveTransformFilter.outputImage
+                                        composite.activeColor = CIColor(red: 0, green: 1, blue: 0)
+                                        
+                                        // Provide the filter output to the composition
+                                        request.finish(with: composite.outputImage, context: nil)
+                                    }
+                                    
+                                    
+                                } else {
+                                    print("Could not get presentation()")
+                                }
+                            }
+                        }
+
+                        
+
+                    })
+                })
+
+                exportSession?.outputFileType = AVFileType.mov
+                var outputURL = Globals.documentsDirectory
+                outputURL.appendPathComponent("prueba.mov")
+                exportSession?.outputURL = outputURL //videoModel.file!
+                exportSession?.videoComposition = videoComposition
+
+                exportSession?.exportAsynchronously {
+                    switch exportSession!.status {
+                    case .cancelled, .completed, .failed:
+                        print("export session .cancelled, .completed, .failed")
+                    default:
+                        break
+                    }
+                    if exportSession!.status == .completed {
+                        DispatchQueue.main.async { [unowned self] in
+                            do {
+                                try self.coreDataContext.save()
+                                self.dismiss(animated: true, completion: nil)
+                            } catch {
+                                self.alert(error, title: "DB Error", message: "Could not save recorded video") {
+                                    self.dismiss(animated: true, completion: nil)
+                                }
+                            }
+                        }
+                    }
+                }
             }
-        }
     }
     
     @IBAction func cancelPressed(_ sender: Any) {
