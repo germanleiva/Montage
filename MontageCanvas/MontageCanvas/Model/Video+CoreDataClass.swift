@@ -153,7 +153,7 @@ public class Video: NSManagedObject {
         guard let aName = self.name else {
             return nil
         }
-        return aName + "-background.mov"
+        return aName + "-final.mov"
     }
     
     var file:URL? {

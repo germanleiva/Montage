@@ -701,9 +701,10 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
                 })
 
                 exportSession?.outputFileType = AVFileType.mov
-                var outputURL = Globals.documentsDirectory
-                outputURL.appendPathComponent("prueba.mov")
-                exportSession?.outputURL = outputURL //videoModel.file!
+//                var outputURL = Globals.documentsDirectory
+//                outputURL.appendPathComponent("prueba.mov")
+                var outputURL = videoModel.file!
+                exportSession?.outputURL = outputURL
                 exportSession?.videoComposition = videoComposition
 
                 exportSession?.exportAsynchronously {

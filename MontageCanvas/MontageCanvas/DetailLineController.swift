@@ -9,6 +9,7 @@
 import UIKit
 import CoreData
 import AVFoundation
+import AVKit
 
 class DetailLineController: UIViewController, UICollectionViewDelegate, UICollectionViewDataSource, NSFetchedResultsControllerDelegate, UINavigationControllerDelegate, UIImagePickerControllerDelegate {
     let coreDataContext = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
@@ -50,6 +51,11 @@ class DetailLineController: UIViewController, UICollectionViewDelegate, UICollec
         NotificationCenter.default.addObserver(forName: NSNotification.Name(rawValue: "DELETE_RECORDING_VIDEO"), object: nil, queue: OperationQueue.main) { (notif) in
             self.deleteRecordingVideo()
         }
+    }
+     
+    override func viewWillAppear(_ animated: Bool) {
+        //TODO instead of reloading the whole collection view, we need to reload only the added cell (notification or delegate from the CameraController)
+        collectionView.reloadData()
     }
 
     override func didReceiveMemoryWarning() {
@@ -98,6 +104,21 @@ class DetailLineController: UIViewController, UICollectionViewDelegate, UICollec
         }
         
         return cell
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        let video = fetchedResultController.object(at: indexPath)
+
+        guard let videoURL = video.file else {
+            return
+        }
+        
+        let player = AVPlayer(url: videoURL)
+        let playerViewController = AVPlayerViewController()
+        playerViewController.player = player
+        present(playerViewController, animated: true) {
+            playerViewController.player!.play()
+        }
     }
     
     lazy var imagePickerController: UIImagePickerController = {
