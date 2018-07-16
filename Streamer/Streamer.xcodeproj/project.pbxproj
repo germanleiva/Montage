@@ -12,6 +12,30 @@
 		A470BD112084C4F400A48E14 /* StreamerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A470BD102084C4F400A48E14 /* StreamerTests.swift */; };
 		A470BD132084C4F400A48E14 /* Streamer.h in Headers */ = {isa = PBXBuildFile; fileRef = A470BD052084C4F400A48E14 /* Streamer.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		A4A049FD208514A8003FDC6A /* MCPeerID+Reusable.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4A049FC208514A8003FDC6A /* MCPeerID+Reusable.swift */; };
+		A4AF04BC20FCB9460074C357 /* Streamer.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A4AF04B320FCB9450074C357 /* Streamer.framework */; };
+		A4AF04CA20FCBA160074C357 /* Streamer.h in Headers */ = {isa = PBXBuildFile; fileRef = A470BD052084C4F400A48E14 /* Streamer.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		A4AF04CC20FCBA280074C357 /* StreamerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A470BD102084C4F400A48E14 /* StreamerTests.swift */; };
+		A4AF04D220FCBBBF0074C357 /* H264Decoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4F50DD12084F2EE00E2E200 /* H264Decoder.swift */; };
+		A4AF04D320FCBBC20074C357 /* MCPeerID+Reusable.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4A049FC208514A8003FDC6A /* MCPeerID+Reusable.swift */; };
+		A4AF04D420FCBBC50074C357 /* H264Encoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4F50DD22084F2EE00E2E200 /* H264Encoder.swift */; };
+		A4AF04D520FCBBC70074C357 /* OutputStreamer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4F50DD62084F30700E2E200 /* OutputStreamer.swift */; };
+		A4AF04D620FCBBC90074C357 /* InputStreamer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4F50DD82084F31D00E2E200 /* InputStreamer.swift */; };
+		A4AF04D720FCBBD20074C357 /* CMAudioFormatDescription+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4F50DE02084F51000E2E200 /* CMAudioFormatDescription+Extension.swift */; };
+		A4AF04D820FCBBD20074C357 /* CMBlockBuffer+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4F50DE22084F51000E2E200 /* CMBlockBuffer+Extension.swift */; };
+		A4AF04D920FCBBD20074C357 /* CMFormatDescription+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4F50DDF2084F51000E2E200 /* CMFormatDescription+Extension.swift */; };
+		A4AF04DA20FCBBD20074C357 /* CMSampleBuffer+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4F50DEA2084F51100E2E200 /* CMSampleBuffer+Extension.swift */; };
+		A4AF04DB20FCBBD20074C357 /* CMSampleTimingInfo+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4F50DE62084F51000E2E200 /* CMSampleTimingInfo+Extension.swift */; };
+		A4AF04DC20FCBBD20074C357 /* CMVideoFormatDescription+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4F50DE12084F51000E2E200 /* CMVideoFormatDescription+Extension.swift */; };
+		A4AF04DD20FCBBD20074C357 /* CVPixelBuffer+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4F50DE92084F51100E2E200 /* CVPixelBuffer+Extension.swift */; };
+		A4AF04DE20FCBBD20074C357 /* Data+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4F50DE32084F51000E2E200 /* Data+Extension.swift */; };
+		A4AF04DF20FCBBD20074C357 /* ExpressibleByIntegerLiteral+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4F50DE82084F51100E2E200 /* ExpressibleByIntegerLiteral+Extension.swift */; };
+		A4AF04E020FCBBD20074C357 /* Mirror+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4F50DE52084F51000E2E200 /* Mirror+Extension.swift */; };
+		A4AF04E120FCBBD20074C357 /* URL+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4F50DE42084F51000E2E200 /* URL+Extension.swift */; };
+		A4AF04E220FCBBD20074C357 /* VTSession+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4F50DE72084F51000E2E200 /* VTSession+Extension.swift */; };
+		A4AF04E320FCBBD50074C357 /* H264+AVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4F50DF82084F59B00E2E200 /* H264+AVC.swift */; };
+		A4AF04E420FCBBD80074C357 /* ByteArray.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4F50E002084F5CE00E2E200 /* ByteArray.swift */; };
+		A4AF04E520FCBBDD0074C357 /* Constant.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4F50DFC2084F5C700E2E200 /* Constant.swift */; };
+		A4AF04E620FCBBDD0074C357 /* Protocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4F50DFD2084F5C700E2E200 /* Protocol.swift */; };
 		A4F50DD42084F2EE00E2E200 /* H264Decoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4F50DD12084F2EE00E2E200 /* H264Decoder.swift */; };
 		A4F50DD52084F2EE00E2E200 /* H264Encoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4F50DD22084F2EE00E2E200 /* H264Encoder.swift */; };
 		A4F50DD72084F30700E2E200 /* OutputStreamer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4F50DD62084F30700E2E200 /* OutputStreamer.swift */; };
@@ -32,6 +56,7 @@
 		A4F50DFE2084F5C700E2E200 /* Constant.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4F50DFC2084F5C700E2E200 /* Constant.swift */; };
 		A4F50DFF2084F5C700E2E200 /* Protocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4F50DFD2084F5C700E2E200 /* Protocol.swift */; };
 		A4F50E012084F5CE00E2E200 /* ByteArray.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4F50E002084F5CE00E2E200 /* ByteArray.swift */; };
+		E1CB255DA0440FB5DA5A3187 /* Pods_Streamer_Mac.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 60191F52C510F7EC9CC97C69 /* Pods_Streamer_Mac.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -42,12 +67,21 @@
 			remoteGlobalIDString = A470BD012084C4F400A48E14;
 			remoteInfo = Streamer;
 		};
+		A4AF04BD20FCB9460074C357 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A470BCF92084C4F300A48E14 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A4AF04B220FCB9450074C357;
+			remoteInfo = Streamer_Mac;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
 		0BAB2D7BDE9AD8A45AC3EA66 /* Pods_Streamer.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Streamer.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		450649DB501B17164417E2C6 /* Pods-Streamer.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Streamer.release.xcconfig"; path = "../Pods/Target Support Files/Pods-Streamer/Pods-Streamer.release.xcconfig"; sourceTree = "<group>"; };
 		511813A6022E2C8797EFD10A /* Pods-Streamer.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Streamer.debug.xcconfig"; path = "../Pods/Target Support Files/Pods-Streamer/Pods-Streamer.debug.xcconfig"; sourceTree = "<group>"; };
+		60191F52C510F7EC9CC97C69 /* Pods_Streamer_Mac.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Streamer_Mac.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		7C6BCDA58A3557C6958473A9 /* Pods-Streamer_Mac.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Streamer_Mac.release.xcconfig"; path = "../Pods/Target Support Files/Pods-Streamer_Mac/Pods-Streamer_Mac.release.xcconfig"; sourceTree = "<group>"; };
 		A470BD022084C4F400A48E14 /* Streamer.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Streamer.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		A470BD052084C4F400A48E14 /* Streamer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Streamer.h; sourceTree = "<group>"; };
 		A470BD062084C4F400A48E14 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -55,6 +89,8 @@
 		A470BD102084C4F400A48E14 /* StreamerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StreamerTests.swift; sourceTree = "<group>"; };
 		A470BD122084C4F400A48E14 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A4A049FC208514A8003FDC6A /* MCPeerID+Reusable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MCPeerID+Reusable.swift"; sourceTree = "<group>"; };
+		A4AF04B320FCB9450074C357 /* Streamer.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Streamer.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		A4AF04BB20FCB9460074C357 /* Streamer_MacTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = Streamer_MacTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A4F50DD12084F2EE00E2E200 /* H264Decoder.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = H264Decoder.swift; sourceTree = "<group>"; };
 		A4F50DD22084F2EE00E2E200 /* H264Encoder.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = H264Encoder.swift; sourceTree = "<group>"; };
 		A4F50DD62084F30700E2E200 /* OutputStreamer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = OutputStreamer.swift; sourceTree = "<group>"; };
@@ -75,6 +111,7 @@
 		A4F50DFC2084F5C700E2E200 /* Constant.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Constant.swift; sourceTree = "<group>"; };
 		A4F50DFD2084F5C700E2E200 /* Protocol.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Protocol.swift; sourceTree = "<group>"; };
 		A4F50E002084F5CE00E2E200 /* ByteArray.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ByteArray.swift; sourceTree = "<group>"; };
+		EF7E2635EE083C927039ADA2 /* Pods-Streamer_Mac.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Streamer_Mac.debug.xcconfig"; path = "../Pods/Target Support Files/Pods-Streamer_Mac/Pods-Streamer_Mac.debug.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -94,6 +131,22 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		A4AF04AF20FCB9450074C357 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E1CB255DA0440FB5DA5A3187 /* Pods_Streamer_Mac.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A4AF04B820FCB9460074C357 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A4AF04BC20FCB9460074C357 /* Streamer.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -101,6 +154,7 @@
 			isa = PBXGroup;
 			children = (
 				0BAB2D7BDE9AD8A45AC3EA66 /* Pods_Streamer.framework */,
+				60191F52C510F7EC9CC97C69 /* Pods_Streamer_Mac.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -110,6 +164,8 @@
 			children = (
 				511813A6022E2C8797EFD10A /* Pods-Streamer.debug.xcconfig */,
 				450649DB501B17164417E2C6 /* Pods-Streamer.release.xcconfig */,
+				EF7E2635EE083C927039ADA2 /* Pods-Streamer_Mac.debug.xcconfig */,
+				7C6BCDA58A3557C6958473A9 /* Pods-Streamer_Mac.release.xcconfig */,
 			);
 			name = Pods;
 			sourceTree = "<group>";
@@ -130,6 +186,8 @@
 			children = (
 				A470BD022084C4F400A48E14 /* Streamer.framework */,
 				A470BD0B2084C4F400A48E14 /* StreamerTests.xctest */,
+				A4AF04B320FCB9450074C357 /* Streamer.framework */,
+				A4AF04BB20FCB9460074C357 /* Streamer_MacTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -216,6 +274,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		A4AF04B020FCB9450074C357 /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A4AF04CA20FCBA160074C357 /* Streamer.h in Headers */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXHeadersBuildPhase section */
 
 /* Begin PBXNativeTarget section */
@@ -256,14 +322,51 @@
 			productReference = A470BD0B2084C4F400A48E14 /* StreamerTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
+		A4AF04B220FCB9450074C357 /* Streamer_Mac */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A4AF04C820FCB9460074C357 /* Build configuration list for PBXNativeTarget "Streamer_Mac" */;
+			buildPhases = (
+				249BADD310627BD18A7FEDF5 /* [CP] Check Pods Manifest.lock */,
+				A4AF04AE20FCB9450074C357 /* Sources */,
+				A4AF04AF20FCB9450074C357 /* Frameworks */,
+				A4AF04B020FCB9450074C357 /* Headers */,
+				A4AF04B120FCB9450074C357 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Streamer_Mac;
+			productName = Streamer_Mac;
+			productReference = A4AF04B320FCB9450074C357 /* Streamer.framework */;
+			productType = "com.apple.product-type.framework";
+		};
+		A4AF04BA20FCB9460074C357 /* Streamer_MacTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A4AF04C920FCB9460074C357 /* Build configuration list for PBXNativeTarget "Streamer_MacTests" */;
+			buildPhases = (
+				A4AF04B720FCB9460074C357 /* Sources */,
+				A4AF04B820FCB9460074C357 /* Frameworks */,
+				A4AF04B920FCB9460074C357 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				A4AF04BE20FCB9460074C357 /* PBXTargetDependency */,
+			);
+			name = Streamer_MacTests;
+			productName = Streamer_MacTests;
+			productReference = A4AF04BB20FCB9460074C357 /* Streamer_MacTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
 		A470BCF92084C4F300A48E14 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastSwiftUpdateCheck = 0930;
-				LastUpgradeCheck = 0930;
+				LastSwiftUpdateCheck = 0940;
+				LastUpgradeCheck = 0940;
 				ORGANIZATIONNAME = ExSitu;
 				TargetAttributes = {
 					A470BD012084C4F400A48E14 = {
@@ -272,6 +375,12 @@
 					};
 					A470BD0A2084C4F400A48E14 = {
 						CreatedOnToolsVersion = 9.3;
+					};
+					A4AF04B220FCB9450074C357 = {
+						CreatedOnToolsVersion = 9.4;
+					};
+					A4AF04BA20FCB9460074C357 = {
+						CreatedOnToolsVersion = 9.4;
 					};
 				};
 			};
@@ -289,6 +398,8 @@
 			targets = (
 				A470BD012084C4F400A48E14 /* Streamer */,
 				A470BD0A2084C4F400A48E14 /* StreamerTests */,
+				A4AF04B220FCB9450074C357 /* Streamer_Mac */,
+				A4AF04BA20FCB9460074C357 /* Streamer_MacTests */,
 			);
 		};
 /* End PBXProject section */
@@ -308,9 +419,41 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		A4AF04B120FCB9450074C357 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A4AF04B920FCB9460074C357 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
+		249BADD310627BD18A7FEDF5 /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
+				"${PODS_ROOT}/Manifest.lock",
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/Pods-Streamer_Mac-checkManifestLockResult.txt",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			showEnvVarsInLog = 0;
+		};
 		B8A557FE6C28C28EE572DA63 /* [CP] Check Pods Manifest.lock */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
@@ -368,6 +511,42 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		A4AF04AE20FCB9450074C357 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A4AF04E020FCBBD20074C357 /* Mirror+Extension.swift in Sources */,
+				A4AF04DF20FCBBD20074C357 /* ExpressibleByIntegerLiteral+Extension.swift in Sources */,
+				A4AF04DE20FCBBD20074C357 /* Data+Extension.swift in Sources */,
+				A4AF04D820FCBBD20074C357 /* CMBlockBuffer+Extension.swift in Sources */,
+				A4AF04DD20FCBBD20074C357 /* CVPixelBuffer+Extension.swift in Sources */,
+				A4AF04DB20FCBBD20074C357 /* CMSampleTimingInfo+Extension.swift in Sources */,
+				A4AF04D420FCBBC50074C357 /* H264Encoder.swift in Sources */,
+				A4AF04E520FCBBDD0074C357 /* Constant.swift in Sources */,
+				A4AF04E220FCBBD20074C357 /* VTSession+Extension.swift in Sources */,
+				A4AF04D220FCBBBF0074C357 /* H264Decoder.swift in Sources */,
+				A4AF04D920FCBBD20074C357 /* CMFormatDescription+Extension.swift in Sources */,
+				A4AF04E420FCBBD80074C357 /* ByteArray.swift in Sources */,
+				A4AF04E120FCBBD20074C357 /* URL+Extension.swift in Sources */,
+				A4AF04D320FCBBC20074C357 /* MCPeerID+Reusable.swift in Sources */,
+				A4AF04D520FCBBC70074C357 /* OutputStreamer.swift in Sources */,
+				A4AF04D720FCBBD20074C357 /* CMAudioFormatDescription+Extension.swift in Sources */,
+				A4AF04D620FCBBC90074C357 /* InputStreamer.swift in Sources */,
+				A4AF04E620FCBBDD0074C357 /* Protocol.swift in Sources */,
+				A4AF04DA20FCBBD20074C357 /* CMSampleBuffer+Extension.swift in Sources */,
+				A4AF04E320FCBBD50074C357 /* H264+AVC.swift in Sources */,
+				A4AF04DC20FCBBD20074C357 /* CMVideoFormatDescription+Extension.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A4AF04B720FCB9460074C357 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A4AF04CC20FCBA280074C357 /* StreamerTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -375,6 +554,11 @@
 			isa = PBXTargetDependency;
 			target = A470BD012084C4F400A48E14 /* Streamer */;
 			targetProxy = A470BD0D2084C4F400A48E14 /* PBXContainerItemProxy */;
+		};
+		A4AF04BE20FCB9460074C357 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A4AF04B220FCB9450074C357 /* Streamer_Mac */;
+			targetProxy = A4AF04BD20FCB9460074C357 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -592,6 +776,108 @@
 			};
 			name = Release;
 		};
+		A4AF04C420FCB9460074C357 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = EF7E2635EE083C927039ADA2 /* Pods-Streamer_Mac.debug.xcconfig */;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				DEFINES_MODULE = YES;
+				DEVELOPMENT_TEAM = NJZSW7J9AZ;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				FRAMEWORK_VERSION = A;
+				INFOPLIST_FILE = Streamer/Info.plist;
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.13;
+				PRODUCT_BUNDLE_IDENTIFIER = "ex-situ.lri.fr.Streamer-Mac";
+				PRODUCT_NAME = Streamer;
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 4.0;
+			};
+			name = Debug;
+		};
+		A4AF04C520FCB9460074C357 /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 7C6BCDA58A3557C6958473A9 /* Pods-Streamer_Mac.release.xcconfig */;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				DEFINES_MODULE = YES;
+				DEVELOPMENT_TEAM = NJZSW7J9AZ;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				FRAMEWORK_VERSION = A;
+				INFOPLIST_FILE = Streamer/Info.plist;
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.13;
+				PRODUCT_BUNDLE_IDENTIFIER = "ex-situ.lri.fr.Streamer-Mac";
+				PRODUCT_NAME = Streamer;
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 4.0;
+			};
+			name = Release;
+		};
+		A4AF04C620FCB9460074C357 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				CODE_SIGN_IDENTITY = "Mac Developer";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				DEVELOPMENT_TEAM = 7HVPEZWBRD;
+				INFOPLIST_FILE = Streamer_MacTests/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.13;
+				PRODUCT_BUNDLE_IDENTIFIER = "ex-situ.lri.fr.Streamer-MacTests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_VERSION = 4.0;
+			};
+			name = Debug;
+		};
+		A4AF04C720FCB9460074C357 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				CODE_SIGN_IDENTITY = "Mac Developer";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				DEVELOPMENT_TEAM = 7HVPEZWBRD;
+				INFOPLIST_FILE = Streamer_MacTests/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.13;
+				PRODUCT_BUNDLE_IDENTIFIER = "ex-situ.lri.fr.Streamer-MacTests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_VERSION = 4.0;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -618,6 +904,24 @@
 			buildConfigurations = (
 				A470BD1A2084C4F400A48E14 /* Debug */,
 				A470BD1B2084C4F400A48E14 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A4AF04C820FCB9460074C357 /* Build configuration list for PBXNativeTarget "Streamer_Mac" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A4AF04C420FCB9460074C357 /* Debug */,
+				A4AF04C520FCB9460074C357 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A4AF04C920FCB9460074C357 /* Build configuration list for PBXNativeTarget "Streamer_MacTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A4AF04C620FCB9460074C357 /* Debug */,
+				A4AF04C720FCB9460074C357 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

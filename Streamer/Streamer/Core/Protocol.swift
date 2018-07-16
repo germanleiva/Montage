@@ -1,4 +1,10 @@
+#if os(iOS)
 import UIKit
+//typealias BaseClass = UIView
+#else
+import AppKit
+//typealias BaseClass = NSView
+#endif
 
 protocol DataConvertible {
     var data: Data { get set }

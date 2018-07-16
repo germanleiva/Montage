@@ -6,7 +6,6 @@
 //  Copyright © 2018 ExSitu. All rights reserved.
 //
 
-import UIKit
 import MultipeerConnectivity
 
 public protocol OutputStreamerDelegate:class {

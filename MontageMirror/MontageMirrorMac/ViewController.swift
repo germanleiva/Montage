@@ -8,6 +8,7 @@
 
 import Cocoa
 import MultipeerConnectivity
+import Streamer
 
 let streamingQueue1 = DispatchQueue(label: "fr.lri.ex-situ.Montage.serial_streaming_queue_1", qos: DispatchQoS.userInteractive)
 let streamingQueue2 = DispatchQueue(label: "fr.lri.ex-situ.Montage.serial_streaming_queue_2", qos: DispatchQoS.userInteractive)
@@ -239,7 +240,7 @@ class ViewController: NSViewController, MCSessionDelegate, InputStreamOwnerDeleg
                 return
             }
             
-            if role == MontageRole.iphoneCam || role == MontageRole.iPadCam {
+            if role == MontageRole.cam {
                 let data = "MONTAGE_MIRROR".data(using: .utf8)
                 camName = peerID.displayName
                 browser.invitePeer(peerID, to: multipeerSession, withContext: data, timeout: 30)

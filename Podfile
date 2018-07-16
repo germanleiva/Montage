@@ -1,5 +1,6 @@
 # Uncomment this line to define a global platform for your project
 platform :ios, '11.3'
+
 # Uncomment this line if you're using Swift
 use_frameworks!
 
@@ -21,6 +22,12 @@ target 'Streamer' do
     other_pods
 end
 
+target 'Streamer_Mac' do
+    platform :osx, '10.13'
+    project 'Streamer/Streamer.xcodeproj'
+    other_pods
+end
+
 target 'MontageCanvas' do
     project 'MontageCanvas/MontageCanvas.xcodeproj'
     common_ui_pods
@@ -34,4 +41,9 @@ end
 target 'MontageMirror' do
     project 'MontageMirror/MontageMirror.xcodeproj'
     common_ui_pods
+end
+
+target 'MontageMirrorMac' do
+    platform :osx, '10.13'
+    project 'MontageMirror/MontageMirror.xcodeproj'
 end
