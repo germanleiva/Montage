@@ -18,6 +18,7 @@ import GLKit
 
 let STATUS_KEYPATH  = "status"
 let REFRESH_INTERVAL = Float64(0.5)
+let fps = 30.0
 
 let streamerQueue = DispatchQueue(label: "fr.lri.ex-situ.Montage.streamer_queue", qos: DispatchQoS.userInteractive)
 let mirrorQueue = DispatchQueue(label: "fr.lri.ex-situ.Montage.serial_mirror_queue", qos: DispatchQoS.userInteractive)
@@ -47,7 +48,7 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
     var lastTimeSent = Date()
     // MARK: Streaming Multipeer
     
-    // MARK: InputStreamerDelegate
+    // MARK: OutputStreamerDelegate
     func didClose(streamer: OutputStreamer) {
         if let outputStreamerIndex = outputStreamers.index(of: streamer) {
             outputStreamers.remove(at: outputStreamerIndex)
@@ -56,6 +57,7 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
     }
     
     var outputStreamers = [OutputStreamer]()
+    var outputStreamerForMirror:SimpleOutputStreamer?
     
     // MARK: InputStreamerDelegate
     var inputStreamer1:InputStreamer?
@@ -94,24 +96,16 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
 //
 //                    weakSelf.applyFilterFromPrototypeToBackground(source: receivedCIImage)
 //                }
-            }
-
-            /*
-            if weakSelf.camBackgroundPeer == nil {
-                let source = ciImage
-                DispatchQueue.main.async {
-                    weakSelf.prototypeFrameImageView.image = UIImage(ciImage:source)
-                }
-                /* TODO: MIRROR DISABLED */
-                /*
-                if let connectedMirrorPeer = weakSelf.mirrorPeer {
-                    let isPhoneMirror:Bool
+                /* TODO: MIRROR */
+                
+                if let _ = weakSelf.mirrorPeer {
+                    let isPhoneMirror:Bool = false
                     
-                    if let mirrorRole = weakSelf.peersRoles[connectedMirrorPeer.displayName], mirrorRole == MontageRole.iphoneCam {
-                        isPhoneMirror = true
-                    } else {
-                        isPhoneMirror = false
-                    }
+                    //                    if let mirrorRole = weakSelf.peersRoles[connectedMirrorPeer.displayName], mirrorRole == MontageRole.iphoneCam {
+                    //                        isPhoneMirror = true
+                    //                    } else {
+                    //                        isPhoneMirror = false
+                    //                    }
                     
                     if Date().timeIntervalSince(weakSelf.lastTimeSent) >= (1 / fps) {
                         mirrorQueue.async {[unowned self] in
@@ -120,7 +114,6 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
                             }
                             
                             var overlay = self.sketchOverlay!
-                            
                             
                             if isPhoneMirror {
                                 //Reduce the overlay drastically
@@ -142,38 +135,30 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
                                 print("Could not build overly image to mirror")
                                 return
                             }
-                            let currentDate = Date()
-                            //                                    let streamName = "\(currentDate.description(with: Locale.current)) \(currentDate.timeIntervalSince1970)"
-                            let streamName = "\(currentDate.timeIntervalSince1970)"
                             
-                            DispatchQueue.main.async {[unowned self] in
-                                
-                                let outputStream:OutputStream
-                                
-                                do {
-                                    outputStream = try self.multipeerSession.startStream(withName: streamName, toPeer: connectedMirrorPeer)
-                                } catch let error as NSError {
-                                    print("Couldn't crete output stream: \(error.localizedDescription)")
-                                    return
-                                }
-                                
+                            DispatchQueue.main.async {
                                 guard let data = UIImagePNGRepresentation(image) else {
-                                    //                                        guard let UIImageJPEGRepresentation(image, 0.25) else {
+//                                guard let data = UIImageJPEGRepresentation(image, 0.25) else {
                                     print("Could not build data to mirror")
                                     return
                                 }
                                 
-                                let outputStreamHandler = OutputStreamHandler(outputStream,owner:self,data: data as NSData,queue:mirrorQueue2)
+                                weakSelf.outputStreamerForMirror?.sendData(data)
+                                print("Sent sketches, count \(data.count)")
                                 
-                                outputStream.delegate = outputStreamHandler
-                                outputStream.schedule(in: RunLoop.main, forMode: RunLoopMode.defaultRunLoopMode)
-                                outputStream.open()
                                 weakSelf.lastTimeSent = Date()
                             }
                         }
                     }
-                }*/
-            }*/
+                }
+            }
+
+//            if weakSelf.camBackgroundPeer == nil {
+//                let source = ciImage
+//                DispatchQueue.main.async {
+//                    weakSelf.prototypeFrameImageView.image = UIImage(ciImage:source)
+//                }
+            
         }
 
     }
@@ -1501,9 +1486,9 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
         //        perspectiveTransform.setValue(CIVector(cgPoint:currentBox.topRight.scaled(to: ciSize)), forKey: "inputTopRight")
         //        perspectiveTransform.setValue(CIVector(cgPoint:currentBox.bottomRight.scaled(to: ciSize)), forKey: "inputBottomRight")
         //        perspectiveTransform.setValue(CIVector(cgPoint:currentBox.bottomLeft.scaled(to: ciSize)), forKey: "inputBottomLeft")
-        perspectiveTransformFilter.setValue(currentPrototypeAndOverlayFrame.oriented(CGImagePropertyOrientation.downMirrored),
-                                            forKey: kCIInputImageKey)
         
+        perspectiveTransformFilter.setValue(currentPrototypeAndOverlayFrame.oriented(CGImagePropertyOrientation.downMirrored), forKey: kCIInputImageKey)
+//        perspectiveTransformFilter.setValue(currentPrototypeAndOverlayFrame.oriented(CGImagePropertyOrientation.rightMirrored), forKey: kCIInputImageKey)
         
         let composite = ChromaKeyFilter()
         composite.inputImage = finalBackgroundFrameImage
@@ -1540,8 +1525,7 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
         perspectiveCorrection.setValue(perspectiveTransformFilter.value(forKey: "inputBottomLeft"),
                                        forKey: "inputBottomLeft")
         
-        perspectiveCorrection.setValue(finalBackgroundFrameImage/*.oriented(CGImagePropertyOrientation.downMirrored)*/,
-            forKey: kCIInputImageKey)
+        perspectiveCorrection.setValue(finalBackgroundFrameImage/*.oriented(CGImagePropertyOrientation.downMirrored)*/,forKey: kCIInputImageKey)
         
         //            guard let scaleFilter2 = CIFilter(name: "CILanczosScaleTransform") else {
         //                return
@@ -1552,6 +1536,7 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
         
         //            let composite2 = ChromaKeyFilter()
         
+//        if isUserOverlayActive, let ghost = perspectiveCorrection.outputImage?.oriented(CGImagePropertyOrientation.rightMirrored) {
         if isUserOverlayActive, let ghost = perspectiveCorrection.outputImage?.oriented(CGImagePropertyOrientation.downMirrored) {
             let scaledGhost = ghost.transformed(by: CGAffineTransform.identity.scaledBy(x: source.extent.width / ghost.extent.width, y: source.extent.height / ghost.extent.height ))
             
@@ -1898,10 +1883,23 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
             case .mirror:
                 if mirrorPeer == nil {
                     mirrorPeer = peerID
-                    if let connectedWizardCam = wizardCamPeer {
-                        //Let's notify the wizardCam to connect to the mirror
-                        sendMessage(peerID:connectedWizardCam,dict:["mirrorMode":peerID])
+
+                    do {
+                        let outputStream = try multipeerSession.startStream(withName: "canvas_sketches_stream_for_mirror", toPeer: peerID)
+                        print("Created MultipeerSession Stream for mirror peer: \(peerID.displayName)")
+                        
+                        outputStreamerForMirror = SimpleOutputStreamer(peerID,outputStream:outputStream)
+                        outputStreamerForMirror?.delegate = self
+                        
+                        if let connectedWizardCam = wizardCamPeer {
+                            //Let's notify the wizardCam to connect to the mirror
+                            sendMessage(peerID:connectedWizardCam,dict:["mirrorMode":peerID])
+                        }
+                        
+                    } catch {
+                        print("Could not create multipeer stream for mirror peer \(peerID.displayName)")
                     }
+                    
                 }
             default:
                 print("ignoring other roles \(peerRole.rawValue)")
@@ -1925,6 +1923,10 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
             
             if peerID.isEqual(mirrorPeer) {
                 mirrorPeer = nil
+                
+                outputStreamerForMirror?.close()
+                outputStreamerForMirror = nil
+                
                 if let connectedWizardCam = wizardCamPeer {
                     sendMessage(peerID:connectedWizardCam,dict:["mirrorMode":nil])
                 }

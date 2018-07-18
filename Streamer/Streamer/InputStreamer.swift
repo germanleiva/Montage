@@ -66,6 +66,7 @@ public class InputStreamer: NSObject, VideoDecoderDelegate, StreamDelegate {
     var readingQueue:DispatchQueue
     var savedDataSampleBuffer = Data()
     var decoder: H264Decoder?
+    public var isSimpleData = false
     var isRunning = false {
         didSet {
             print("Running changed \(peerID.description) isRunning \(isRunning)")
@@ -139,6 +140,14 @@ public class InputStreamer: NSObject, VideoDecoderDelegate, StreamDelegate {
                 }
                 
                 if readResult > 0 {
+                    if weakSelf.isSimpleData {
+                        var imageData = Data()
+                        imageData.append(readingSampleBuffer, count:readResult)
+                        if let finalImage = CIImage(data: imageData) {
+                            weakSelf.delegate?.inputStreamer(self, decodedImage:finalImage)
+                        }
+                        return
+                    }
                     //                print("readResult > 0: \(readResult)")
                     self.savedDataSampleBuffer.append(readingSampleBuffer,count:readResult)
                     

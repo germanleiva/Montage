@@ -1,5 +1,6 @@
 import Foundation
 import AVFoundation
+import CoreImage
 
 extension CVPixelBuffer {
     static func create(_ image: CIImage) -> CVPixelBuffer? {

@@ -12,6 +12,14 @@ public protocol OutputStreamerDelegate:class {
     func didClose(streamer:OutputStreamer)
 }
 
+public class SimpleOutputStreamer: OutputStreamer {
+    convenience public init(_ peerID:MCPeerID, outputStream:OutputStream) {
+        self.init(peerID, outputStream: outputStream, initialChunk: nil)
+        isInitialized = true
+    }
+}
+
+
 public class OutputStreamer: NSObject, StreamDelegate {
     public weak var delegate:OutputStreamerDelegate?
     public private(set) var peerID:MCPeerID

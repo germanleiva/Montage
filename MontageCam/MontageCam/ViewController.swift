@@ -170,21 +170,24 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
     }()
     
     lazy var serviceAdvertiser:MCNearbyServiceAdvertiser = {
+        return self.createServiceAdvertiser()
+    }()
+    
+    func createServiceAdvertiser() -> MCNearbyServiceAdvertiser {
         let role:MontageRole
-        switch UIDevice.current.userInterfaceIdiom {
-        case .phone:
+        
+        if let currentRole = myRole {
+            role = currentRole
+        } else {
             role = .cam
-        case .pad:
-            role = .cam
-        default:
-            role = .undefined
         }
         
         let info = ["role":String(describing:role.rawValue)]
         let _serviceAdvertiser = MCNearbyServiceAdvertiser(peer: localPeerID, discoveryInfo: info, serviceType: serviceType)
         _serviceAdvertiser.delegate = self
+        
         return _serviceAdvertiser
-    }()
+    }
     
     deinit {
         NotificationCenter.default.removeObserver(self)
@@ -687,9 +690,14 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
                 }
                 
                 if peerID.isEqual(weakSelf.serverPeer) || peerID.isEqual(weakSelf.mirrorPeer) {
+                    if peerID.isEqual(weakSelf.mirrorPeer) {
+                        print("IS MIRRORING")
+                    }
                     let id = weakSelf.outputStreamers.count + 1
                     do {
                         let outputStream = try weakSelf.multipeerSession.startStream(withName: "videoStreamPruebita \(id) \(Date())", toPeer: peerID)
+                        print("Created MultipeerSession Stream with peer: \(peerID.displayName)")
+                        
                         let newOutputStreamer = OutputStreamer(peerID,outputStream:outputStream,initialChunk:weakSelf.initialChunkSPS_PPS)
                         newOutputStreamer.delegate = weakSelf
                         weakSelf.outputStreamers.append(newOutputStreamer)
@@ -778,6 +786,10 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
                     }
                 case "mirrorMode":
                     mirrorPeer = value as? MCPeerID
+                case "ARE_YOU_WIZARD_CAM":
+                    if let aRole = self.myRole, aRole == .wizardCam {
+                        sendMessage(peerID: peerID, dict: ["I_AM_WIZARD_CAM":true])
+                    }
                 case "streaming":
                     isStreaming = value as! Bool
                 default:
@@ -818,10 +830,10 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
     // MARK: MCNearbyServiceAdvertiserDelegate
     func advertiser(_ advertiser: MCNearbyServiceAdvertiser, didReceiveInvitationFromPeer peerID: MCPeerID, withContext context: Data?, invitationHandler: @escaping (Bool, MCSession?) -> Void) {
         
-        if let data = context, let stringData = String(data: data, encoding: .utf8), "MONTAGE_CANVAS" == stringData {
+        if let data = context, let stringData = String(data: data, encoding: .utf8), "MONTAGE_CANVAS" == stringData || (myRole == .wizardCam && "MONTAGE_MIRROR" == stringData) {
             serverPeer = peerID
             
-            print("invitationHandler true \(peerID.displayName)")
+            print("invitationHandler true \(peerID.displayName) with stringData = \(stringData)")
             invitationHandler(true,multipeerSession)
         } else {
             print("invitationHandler false \(peerID.displayName)")
@@ -1058,6 +1070,7 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
         let weakSelf = self
         streamerQueue.async {
             for outputStreamer in weakSelf.outputStreamers {
+//                print("Sending chunk to \(outputStreamer.peerID.displayName)")
                 outputStreamer.sendData(chunk)
             }
         }

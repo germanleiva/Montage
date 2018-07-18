@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.Storyboard.XIB" version="3.0" toolsVersion="13771" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" initialViewController="B8D-0N-5wS">
+<document type="com.apple.InterfaceBuilder3.Cocoa.Storyboard.XIB" version="3.0" toolsVersion="14113" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" initialViewController="B8D-0N-5wS">
     <dependencies>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="13771"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="14113"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <scenes>
@@ -709,28 +709,27 @@
                         <rect key="frame" x="0.0" y="0.0" width="480" height="270"/>
                         <autoresizingMask key="autoresizingMask"/>
                         <subviews>
-                            <imageView hidden="YES" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="zkW-lR-m9i">
+                            <customView translatesAutoresizingMaskIntoConstraints="NO" id="zen-A6-BBB" customClass="MetalImageView" customModule="MontageMirrorMac" customModuleProvider="target">
                                 <rect key="frame" x="0.0" y="0.0" width="480" height="270"/>
-                                <imageCell key="cell" refusesFirstResponder="YES" alignment="left" imageScaling="proportionallyDown" id="knj-Od-rRG"/>
-                            </imageView>
+                            </customView>
                             <imageView hidden="YES" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="alC-rW-l8V">
                                 <rect key="frame" x="0.0" y="0.0" width="480" height="270"/>
                                 <imageCell key="cell" refusesFirstResponder="YES" alignment="left" imageScaling="proportionallyDown" id="Y1w-Ql-Oa9"/>
                             </imageView>
                         </subviews>
                         <constraints>
-                            <constraint firstItem="zkW-lR-m9i" firstAttribute="top" secondItem="m2S-Jp-Qdl" secondAttribute="top" id="2N3-Rc-wPh"/>
-                            <constraint firstItem="zkW-lR-m9i" firstAttribute="leading" secondItem="m2S-Jp-Qdl" secondAttribute="leading" id="DhL-ju-7pf"/>
+                            <constraint firstItem="zen-A6-BBB" firstAttribute="leading" secondItem="m2S-Jp-Qdl" secondAttribute="leading" id="18h-1s-jJh"/>
                             <constraint firstItem="alC-rW-l8V" firstAttribute="leading" secondItem="m2S-Jp-Qdl" secondAttribute="leading" id="GBB-h3-MIk"/>
                             <constraint firstAttribute="bottom" secondItem="alC-rW-l8V" secondAttribute="bottom" id="Lmb-yp-Jkz"/>
+                            <constraint firstAttribute="trailing" secondItem="zen-A6-BBB" secondAttribute="trailing" id="RaJ-ED-dmd"/>
+                            <constraint firstItem="zen-A6-BBB" firstAttribute="top" secondItem="m2S-Jp-Qdl" secondAttribute="top" id="U1h-N2-XHF"/>
                             <constraint firstItem="alC-rW-l8V" firstAttribute="top" secondItem="m2S-Jp-Qdl" secondAttribute="top" id="UA0-Sf-g76"/>
                             <constraint firstAttribute="trailing" secondItem="alC-rW-l8V" secondAttribute="trailing" id="Xk9-Xa-wO1"/>
-                            <constraint firstAttribute="trailing" secondItem="zkW-lR-m9i" secondAttribute="trailing" id="ZQl-iZ-i78"/>
-                            <constraint firstAttribute="bottom" secondItem="zkW-lR-m9i" secondAttribute="bottom" id="nHN-QF-vlV"/>
+                            <constraint firstAttribute="bottom" secondItem="zen-A6-BBB" secondAttribute="bottom" id="k9a-ar-lPR"/>
                         </constraints>
                     </view>
                     <connections>
-                        <outlet property="imageView" destination="zkW-lR-m9i" id="06c-GA-ay4"/>
+                        <outlet property="imageView" destination="zen-A6-BBB" id="UM9-xg-aSt"/>
                         <outlet property="overlayImageView" destination="alC-rW-l8V" id="B0s-9c-L8e"/>
                     </connections>
                 </viewController>

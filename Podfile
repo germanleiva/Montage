@@ -17,13 +17,13 @@ end
 def other_pods
 end
 
-target 'Streamer' do
+target 'Streamer_Mac' do
+    platform :osx, '10.13'
     project 'Streamer/Streamer.xcodeproj'
     other_pods
 end
 
-target 'Streamer_Mac' do
-    platform :osx, '10.13'
+target 'Streamer' do
     project 'Streamer/Streamer.xcodeproj'
     other_pods
 end
