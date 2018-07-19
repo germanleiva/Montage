@@ -9,7 +9,6 @@
 /* Begin PBXBuildFile section */
 		0BBE8E70F60D863B672C54FE /* Pods_MontageMirrorMac.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 998E4B77C27E66D00D9B70FD /* Pods_MontageMirrorMac.framework */; };
 		0E9826456E90B93F5FAF9BB3 /* Pods_MontageMirror.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A4AF04EB20FCBC410074C357 /* Pods_MontageMirror.framework */; };
-		A4300B5D20FF907400EE958A /* MetalImageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4300B5C20FF907400EE958A /* MetalImageView.swift */; };
 		A4AF04AB20FCB7FE0074C357 /* Streamer.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A4AF04AA20FCB7FE0074C357 /* Streamer.framework */; };
 		A4AF04AC20FCB7FE0074C357 /* Streamer.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = A4AF04AA20FCB7FE0074C357 /* Streamer.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		A4B15EB920FCC2460035B94D /* Streamer.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A4B15EB820FCC2460035B94D /* Streamer.framework */; };
@@ -139,7 +138,6 @@
 		6E74C24329C1047DD8834665 /* Pods_MontageMirror.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_MontageMirror.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		79A20324464E0E54311EDC07 /* Pods-MontageMirrorMac.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-MontageMirrorMac.debug.xcconfig"; path = "../Pods/Target Support Files/Pods-MontageMirrorMac/Pods-MontageMirrorMac.debug.xcconfig"; sourceTree = "<group>"; };
 		998E4B77C27E66D00D9B70FD /* Pods_MontageMirrorMac.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_MontageMirrorMac.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		A4300B5C20FF907400EE958A /* MetalImageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetalImageView.swift; sourceTree = "<group>"; };
 		A4AF04AA20FCB7FE0074C357 /* Streamer.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = Streamer.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		A4AF04CD20FCBADD0074C357 /* Streamer.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = Streamer.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		A4AF04E720FCBC1B0074C357 /* Streamer.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = Streamer.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -373,7 +371,6 @@
 			children = (
 				A4F50D9C2084DF5400E2E200 /* AppDelegate.swift */,
 				A4F50D9E2084DF5400E2E200 /* ViewController.swift */,
-				A4300B5C20FF907400EE958A /* MetalImageView.swift */,
 				A4F50DCB2084E02800E2E200 /* Main.storyboard */,
 				A4F50DA32084DF5500E2E200 /* Assets.xcassets */,
 				A4F50DA82084DF5500E2E200 /* Info.plist */,
@@ -789,7 +786,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				A4F50D9F2084DF5400E2E200 /* ViewController.swift in Sources */,
-				A4300B5D20FF907400EE958A /* MetalImageView.swift in Sources */,
 				A4F50DA22084DF5400E2E200 /* MontageMirrorMac.xcdatamodeld in Sources */,
 				A4F50D9D2084DF5400E2E200 /* AppDelegate.swift in Sources */,
 			);
@@ -988,7 +984,10 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 7HVPEZWBRD;
 				INFOPLIST_FILE = MontageMirror/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = "ex-situ.lri.fr.MontageMirror";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 4.0;
@@ -1004,7 +1003,10 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 7HVPEZWBRD;
 				INFOPLIST_FILE = MontageMirror/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = "ex-situ.lri.fr.MontageMirror";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 4.0;
@@ -1020,7 +1022,11 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 7HVPEZWBRD;
 				INFOPLIST_FILE = MontageMirrorTests/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = "ex-situ.lri.fr.MontageMirrorTests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 4.0;
@@ -1037,7 +1043,11 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 7HVPEZWBRD;
 				INFOPLIST_FILE = MontageMirrorTests/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = "ex-situ.lri.fr.MontageMirrorTests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 4.0;
@@ -1053,7 +1063,11 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 7HVPEZWBRD;
 				INFOPLIST_FILE = MontageMirrorUITests/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = "ex-situ.lri.fr.MontageMirrorUITests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 4.0;
@@ -1069,7 +1083,11 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 7HVPEZWBRD;
 				INFOPLIST_FILE = MontageMirrorUITests/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = "ex-situ.lri.fr.MontageMirrorUITests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 4.0;
@@ -1085,7 +1103,11 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 7HVPEZWBRD;
 				INFOPLIST_FILE = "MontageWatch Extension/Info.plist";
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = "ex-situ.lri.fr.MontageMirror.watchkitapp.watchkitextension";
 				PRODUCT_NAME = "${TARGET_NAME}";
 				SDKROOT = watchos;
@@ -1103,7 +1125,11 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 7HVPEZWBRD;
 				INFOPLIST_FILE = "MontageWatch Extension/Info.plist";
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = "ex-situ.lri.fr.MontageMirror.watchkitapp.watchkitextension";
 				PRODUCT_NAME = "${TARGET_NAME}";
 				SDKROOT = watchos;
@@ -1163,7 +1189,10 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				DEVELOPMENT_TEAM = NJZSW7J9AZ;
 				INFOPLIST_FILE = MontageMirrorMac/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
 				PRODUCT_BUNDLE_IDENTIFIER = "ex-situ.lri.fr.MontageMirrorMac";
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1183,7 +1212,10 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				DEVELOPMENT_TEAM = NJZSW7J9AZ;
 				INFOPLIST_FILE = MontageMirrorMac/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
 				PRODUCT_BUNDLE_IDENTIFIER = "ex-situ.lri.fr.MontageMirrorMac";
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1202,7 +1234,11 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				DEVELOPMENT_TEAM = NJZSW7J9AZ;
 				INFOPLIST_FILE = MontageMirrorMacTests/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
 				PRODUCT_BUNDLE_IDENTIFIER = "ex-situ.lri.fr.MontageMirrorMacTests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1222,7 +1258,11 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				DEVELOPMENT_TEAM = NJZSW7J9AZ;
 				INFOPLIST_FILE = MontageMirrorMacTests/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
 				PRODUCT_BUNDLE_IDENTIFIER = "ex-situ.lri.fr.MontageMirrorMacTests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1241,7 +1281,11 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				DEVELOPMENT_TEAM = NJZSW7J9AZ;
 				INFOPLIST_FILE = MontageMirrorMacUITests/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
 				PRODUCT_BUNDLE_IDENTIFIER = "ex-situ.lri.fr.MontageMirrorMacUITests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1260,7 +1304,11 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				DEVELOPMENT_TEAM = NJZSW7J9AZ;
 				INFOPLIST_FILE = MontageMirrorMacUITests/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
 				PRODUCT_BUNDLE_IDENTIFIER = "ex-situ.lri.fr.MontageMirrorMacUITests";
 				PRODUCT_NAME = "$(TARGET_NAME)";

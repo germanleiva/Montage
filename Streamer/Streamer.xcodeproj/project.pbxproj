@@ -36,6 +36,8 @@
 		A4AF04E420FCBBD80074C357 /* ByteArray.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4F50E002084F5CE00E2E200 /* ByteArray.swift */; };
 		A4AF04E520FCBBDD0074C357 /* Constant.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4F50DFC2084F5C700E2E200 /* Constant.swift */; };
 		A4AF04E620FCBBDD0074C357 /* Protocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4F50DFD2084F5C700E2E200 /* Protocol.swift */; };
+		A4B486C72100BA82006D4545 /* MetalImageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4B486C62100BA82006D4545 /* MetalImageView.swift */; };
+		A4B486C82100BA82006D4545 /* MetalImageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4B486C62100BA82006D4545 /* MetalImageView.swift */; };
 		A4F50DD42084F2EE00E2E200 /* H264Decoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4F50DD12084F2EE00E2E200 /* H264Decoder.swift */; };
 		A4F50DD52084F2EE00E2E200 /* H264Encoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4F50DD22084F2EE00E2E200 /* H264Encoder.swift */; };
 		A4F50DD72084F30700E2E200 /* OutputStreamer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4F50DD62084F30700E2E200 /* OutputStreamer.swift */; };
@@ -91,6 +93,7 @@
 		A4A049FC208514A8003FDC6A /* MCPeerID+Reusable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MCPeerID+Reusable.swift"; sourceTree = "<group>"; };
 		A4AF04B320FCB9450074C357 /* Streamer.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Streamer.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		A4AF04BB20FCB9460074C357 /* Streamer_MacTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = Streamer_MacTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		A4B486C62100BA82006D4545 /* MetalImageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetalImageView.swift; sourceTree = "<group>"; };
 		A4F50DD12084F2EE00E2E200 /* H264Decoder.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = H264Decoder.swift; sourceTree = "<group>"; };
 		A4F50DD22084F2EE00E2E200 /* H264Encoder.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = H264Encoder.swift; sourceTree = "<group>"; };
 		A4F50DD62084F30700E2E200 /* OutputStreamer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = OutputStreamer.swift; sourceTree = "<group>"; };
@@ -205,6 +208,7 @@
 				A4F50DD22084F2EE00E2E200 /* H264Encoder.swift */,
 				A4F50DD62084F30700E2E200 /* OutputStreamer.swift */,
 				A4F50DD82084F31D00E2E200 /* InputStreamer.swift */,
+				A4B486C62100BA82006D4545 /* MetalImageView.swift */,
 				A470BD062084C4F400A48E14 /* Info.plist */,
 			);
 			path = Streamer;
@@ -487,6 +491,7 @@
 				A4F50DEC2084F51100E2E200 /* CMAudioFormatDescription+Extension.swift in Sources */,
 				A4F50DD72084F30700E2E200 /* OutputStreamer.swift in Sources */,
 				A4F50DD92084F31D00E2E200 /* InputStreamer.swift in Sources */,
+				A4B486C72100BA82006D4545 /* MetalImageView.swift in Sources */,
 				A4F50DF02084F51100E2E200 /* URL+Extension.swift in Sources */,
 				A4F50DFF2084F5C700E2E200 /* Protocol.swift in Sources */,
 				A4F50DEE2084F51100E2E200 /* CMBlockBuffer+Extension.swift in Sources */,
@@ -523,6 +528,7 @@
 				A4AF04DB20FCBBD20074C357 /* CMSampleTimingInfo+Extension.swift in Sources */,
 				A4AF04D420FCBBC50074C357 /* H264Encoder.swift in Sources */,
 				A4AF04E520FCBBDD0074C357 /* Constant.swift in Sources */,
+				A4B486C82100BA82006D4545 /* MetalImageView.swift in Sources */,
 				A4AF04E220FCBBD20074C357 /* VTSession+Extension.swift in Sources */,
 				A4AF04D220FCBBBF0074C357 /* H264Decoder.swift in Sources */,
 				A4AF04D920FCBBD20074C357 /* CMFormatDescription+Extension.swift in Sources */,

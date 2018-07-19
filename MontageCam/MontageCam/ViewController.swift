@@ -11,7 +11,6 @@ import AVFoundation
 import MultipeerConnectivity
 import Vision
 import CloudKit
-import WatchConnectivity
 import Streamer
 import VideoToolbox
 
@@ -23,7 +22,7 @@ let captureOutputQueue = DispatchQueue(label: "fr.lri.ex-situ.Montage.serial_cap
 
 let fps = 30.0
 
-class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataOutputSampleBufferDelegate, MCSessionDelegate, MCNearbyServiceAdvertiserDelegate, WCSessionDelegate, VideoEncoderDelegate, OutputStreamerDelegate {
+class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataOutputSampleBufferDelegate, MCSessionDelegate, MCNearbyServiceAdvertiserDelegate, VideoEncoderDelegate, OutputStreamerDelegate {
     
     var initialChunkSPS_PPS:Data? {
         didSet {
@@ -206,8 +205,6 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
         NotificationCenter.default.addObserver(self, selector: #selector(appWillResignActive), name: NSNotification.Name.UIApplicationWillResignActive, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(appWillTerminate), name: NSNotification.Name.UIApplicationWillTerminate, object: nil)
         
-        //        setupWatchSession()
-        
         //        setupVisionDetection()
     }
     
@@ -219,35 +216,7 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
             print("initial startAdvertisingPeer")
         }
     }
-    
-    //Watch related code
-    
-    var lastTimeSent = Date()
-    var watchConnectivitySession:WCSession?
-    
-    func session(_ session: WCSession, activationDidCompleteWith activationState: WCSessionActivationState, error: Error?) {
-        print("activationDidCompleteWith \(activationState)")
-    }
-    
-    func sessionDidBecomeInactive(_ session: WCSession) {
-        print("sessionDidBecomeInactive")
-    }
-    
-    func sessionDidDeactivate(_ session: WCSession) {
-        print("activationDidCompleteWith")
-    }
-    
-    func setupWatchSession() {
-        if WCSession.isSupported() {
-            let session = WCSession.default
-            session.delegate = self
-            session.activate()
-            
-            watchConnectivitySession = session
-        }
-    }
-    
-    
+
     func cloudKitInitialize() {
         //        publicDatabase.fetch(withRecordID: CKRecordID(recordName:"115")) { (videoRecord, error) in
         //            if let error = error {
@@ -596,68 +565,11 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
             duration: sampleBuffer.duration
         )
         
-        //TODO: WATCH
-        /*
-        if self.watchConnectivitySession?.isReachable ?? false {
-            watchQueue.async {[unowned self] in
-                guard let scaleFilter = CIFilter(name: "CILanczosScaleTransform") else {
-                    return
-                }
-                scaleFilter.setValue(finalImage, forKey: "inputImage")
-                let scaleFactor = 0.5
-                scaleFilter.setValue(scaleFactor, forKey: "inputScale")
-                scaleFilter.setValue(1.0, forKey: "inputAspectRatio")
-                
-                guard let scaledFinalImage = scaleFilter.outputImage else {
-                    return
-                }
-                
-                let currentMirroredImage:CIImage
-                
-                if let currentOverlayImage = self.overlayImage {
-                    let scaledOverlay = currentOverlayImage.transformed(by: CGAffineTransform.identity.scaledBy(x: scaledFinalImage.extent.width / currentOverlayImage.extent.width, y: scaledFinalImage.extent.height / currentOverlayImage.extent.height))
-                    let overlayFilter = CIFilter(name: "CISourceOverCompositing")!
-                    overlayFilter.setValue(scaledFinalImage, forKey: kCIInputBackgroundImageKey)
-                    overlayFilter.setValue(scaledOverlay, forKey: kCIInputImageKey)
-                    if let obtainedImage = overlayFilter.outputImage {
-                        currentMirroredImage = obtainedImage
-                    } else {
-                        currentMirroredImage = scaledFinalImage
-                    }
-                } else {
-                    currentMirroredImage = scaledFinalImage
-                }
-                
-                guard let image = self.cgImageBackedImage(withCIImage: currentMirroredImage) else {
-                    return
-                }
-                
-                if Date().timeIntervalSince(self.lastTimeSent) >= (1 / fps) {
-                    if let smallData = UIImageJPEGRepresentation(image, 0.1) {
-                        self.watchConnectivitySession?.sendMessageData(smallData, replyHandler: nil, errorHandler: { (error) in
-                            print("*** watchConnectivitySession sendMessage error: \(error)")
-                        })
-                        //                        self.watchConnectivitySession?.sendMessageData(smallData, replyHandler: nil, errorHandler: nil)
-                        self.lastTimeSent = Date()
-                    }
-                }
-            }
-        }
- */
         //    CGContextRelease(newContext);
         //    CGColorSpaceRelease(colorSpace);
         //    UIImage *image = [[UIImage alloc] initWithCGImage:newImage scale:1 orientation:UIImageOrientationUpMirrored];
         //    CGImageRelease(newImage);
         //    CVPixelBufferUnlockBaseAddress(imageBuffer,0);
-    }
-    
-    func cgImageBackedImage(withCIImage ciImage:CIImage) -> UIImage? {
-        guard let ref = context.createCGImage(ciImage, from: ciImage.extent) else {
-            return nil
-        }
-        let image = UIImage(cgImage: ref, scale: UIScreen.main.scale, orientation: UIImageOrientation.up)
-        
-        return image
     }
     
     // MARK: Multipeer Streaming

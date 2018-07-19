@@ -9,32 +9,123 @@
 import UIKit
 import MultipeerConnectivity
 import Streamer
+import WatchConnectivity
 
-let streamingQueue1 = DispatchQueue(label: "fr.lri.ex-situ.Montage.serial_streaming_queue_1", qos: DispatchQoS.userInteractive)
-let streamingQueue2 = DispatchQueue(label: "fr.lri.ex-situ.Montage.serial_streaming_queue_2", qos: DispatchQoS.userInteractive)
+let fps = 30.0
 
-class ViewController: UIViewController, MCSessionDelegate, MCNearbyServiceAdvertiserDelegate, MCNearbyServiceBrowserDelegate, InputStreamOwnerDelegate {
-    // MARK: InputStreamOwner
+let watchQueue = DispatchQueue(label: "fr.lri.ex-situ.Montage.serial_watch_queue", qos: DispatchQoS.userInteractive)
+
+class ViewController: UIViewController, MCSessionDelegate, InputStreamerDelegate, MCNearbyServiceAdvertiserDelegate, WCSessionDelegate {
+    // MARK: InputStreamerDelegate
+    var inputStreamer:InputStreamer?
+    var inputStreamerSketches:InputStreamer?
     
-    var inputStreamHandlers = Set<InputStreamHandler>()
-    
-    func addInputStreamHandler(_ inputStreamHandler:InputStreamHandler) {
-        inputStreamHandlers.insert(inputStreamHandler)
+    let context = CIContext()
+    var lastSketchFrame:CIImage?
+    var lastPrototypeFrame:CIImage? {
+        didSet {
+            //WATCH
+            if self.watchConnectivitySession?.isReachable ?? false {
+                guard let finalImage = lastPrototypeFrame else {
+                    return
+                }
+                
+                watchQueue.async {[unowned self] in
+                    guard let scaleFilter = CIFilter(name: "CILanczosScaleTransform") else {
+                        return
+                    }
+                    scaleFilter.setValue(finalImage, forKey: "inputImage")
+                    let scaleFactor = 0.5
+                    scaleFilter.setValue(scaleFactor, forKey: "inputScale")
+                    scaleFilter.setValue(1.0, forKey: "inputAspectRatio")
+                    
+                    guard let scaledFinalImage = scaleFilter.outputImage else {
+                        return
+                    }
+                    
+                    let currentMirroredImage:CIImage
+                    
+                    if let currentOverlayImage = self.lastSketchFrame {
+                        let scaledOverlay = currentOverlayImage.transformed(by: CGAffineTransform.identity.scaledBy(x: scaledFinalImage.extent.width / currentOverlayImage.extent.width, y: scaledFinalImage.extent.height / currentOverlayImage.extent.height))
+                        let overlayFilter = CIFilter(name: "CISourceOverCompositing")!
+                        overlayFilter.setValue(scaledFinalImage, forKey: kCIInputBackgroundImageKey)
+                        overlayFilter.setValue(scaledOverlay, forKey: kCIInputImageKey)
+                        if let obtainedImage = overlayFilter.outputImage {
+                            currentMirroredImage = obtainedImage
+                        } else {
+                            currentMirroredImage = scaledFinalImage
+                        }
+                    } else {
+                        currentMirroredImage = scaledFinalImage
+                    }
+                    
+                    guard let image = self.cgImageBackedImage(withCIImage: currentMirroredImage) else {
+                        return
+                    }
+                    
+                    if Date().timeIntervalSince(self.lastTimeSent) >= (1 / fps) {
+                        if let smallData = UIImageJPEGRepresentation(image, 0.1) {
+                            self.watchConnectivitySession?.sendMessageData(smallData, replyHandler: nil, errorHandler: { (error) in
+                                print("*** watchConnectivitySession sendMessage error: \(error)")
+                            })
+                            //                        self.watchConnectivitySession?.sendMessageData(smallData, replyHandler: nil, errorHandler: nil)
+                            self.lastTimeSent = Date()
+                        }
+                    }
+                }
+            }
+        }
     }
     
-    func removeInputStreamHandler(_ inputStreamHandler:InputStreamHandler) {
-        inputStreamHandlers.remove(inputStreamHandler)
+    func cgImageBackedImage(withCIImage ciImage:CIImage) -> UIImage? {
+        guard let ref = context.createCGImage(ciImage, from: ciImage.extent) else {
+            return nil
+        }
+        let image = UIImage(cgImage: ref, scale: UIScreen.main.scale, orientation: UIImageOrientation.up)
+        
+        return image
     }
     
-    @IBOutlet weak var imageView:UIImageView!
+    func inputStreamer(_ streamer: InputStreamer, decodedImage ciImage: CIImage) {
+        switch streamer {
+        case inputStreamer:
+            lastPrototypeFrame = ciImage
+            imageView.image = ciImage
+        case inputStreamerSketches:
+            lastSketchFrame = ciImage
+
+            guard let overlayImageView = overlayImageView else {
+                return
+            }
+//            if overlayImageView.isHidden {
+//                overlayImageView.isHidden = false
+//            }
+            overlayImageView.image = nil
+            overlayImageView.image = UIImage(ciImage:ciImage)
+
+        default:
+            print("Unrecognized streamer")
+        }
+    }
+    
+    func didClose(_ streamer: InputStreamer) {
+        if streamer.isEqual(inputStreamer) {
+            inputStreamer = nil
+            print("didClose InputStreamer")
+        }
+        if streamer.isEqual(inputStreamerSketches) {
+            inputStreamer = nil
+            print("didClose InputStreamer for the sketches")
+        }
+    }
+    
     @IBOutlet weak var overlayImageView:UIImageView!
+    @IBOutlet weak var imageView:MetalImageView!
     
     let serviceType = "multipeer-video"
     
     let localPeerID = MCPeerID(displayName: UIDevice.current.name)
     var serverName:String?
-    var camName:String?
-    
     
     lazy var multipeerSession:MCSession = {
         let _session = MCSession(peer: localPeerID, securityIdentity: nil, encryptionPreference: MCEncryptionPreference.optional)
@@ -44,16 +135,9 @@ class ViewController: UIViewController, MCSessionDelegate, MCNearbyServiceAdvert
     
     lazy var serviceAdvertiser:MCNearbyServiceAdvertiser = {
         let info = ["role":String(describing:MontageRole.mirror.rawValue)]
-        
         let _serviceAdvertiser = MCNearbyServiceAdvertiser(peer: localPeerID, discoveryInfo: info, serviceType: serviceType)
         _serviceAdvertiser.delegate = self
         return _serviceAdvertiser
-    }()
-    
-    lazy var browser:MCNearbyServiceBrowser = {
-        let _browser = MCNearbyServiceBrowser(peer: localPeerID, serviceType: "multipeer-video")
-        _browser.delegate = self
-        return _browser
     }()
     
     var chromaColor = UIColor.green {
@@ -68,12 +152,40 @@ class ViewController: UIViewController, MCSessionDelegate, MCNearbyServiceAdvert
     
     override func viewDidLoad() {
         super.viewDidLoad()
+
+        setupWatchSession()
         // Do any additional setup after loading the view, typically from a nib.
         chromaColor = UIColor.green
         
         print("startAdvertisingPeer")
-        browser.startBrowsingForPeers()
         serviceAdvertiser.startAdvertisingPeer()
+    }
+    
+    //Watch related code
+    
+    var lastTimeSent = Date()
+    var watchConnectivitySession:WCSession?
+    
+    func session(_ session: WCSession, activationDidCompleteWith activationState: WCSessionActivationState, error: Error?) {
+        print("activationDidCompleteWith \(activationState)")
+    }
+    
+    func sessionDidBecomeInactive(_ session: WCSession) {
+        print("sessionDidBecomeInactive")
+    }
+    
+    func sessionDidDeactivate(_ session: WCSession) {
+        print("activationDidCompleteWith")
+    }
+    
+    func setupWatchSession() {
+        if WCSession.isSupported() {
+            let session = WCSession.default
+            session.delegate = self
+            session.activate()
+            
+            watchConnectivitySession = session
+        }
     }
     
     override func didReceiveMemoryWarning() {
@@ -86,16 +198,15 @@ class ViewController: UIViewController, MCSessionDelegate, MCNearbyServiceAdvert
     func session(_ session: MCSession, peer peerID: MCPeerID, didChange state: MCSessionState) {
         switch state {
         case .connected:
-            print("PEER CONNECTED: \(peerID.displayName)")
-            //            if peerID.isEqual(connectedServer) {
-            //
-            //                print("Let's start browsing for a cam")
-            //                browser.startBrowsingForPeers()
-            //            } //TODO testing
-            if camName?.isEqual(peerID.displayName) ?? false && connectedServer != nil {
+            print("WHO's CONNECTED? \(peerID.displayName)")
+            
+            if peerID.isEqual(connectedServer) {
+                print("SERVER PEER CONNECTED: \(peerID.displayName)")
+                
                 print("stopAdvertisingPeer")
                 serviceAdvertiser.stopAdvertisingPeer()
-                browser.stopBrowsingForPeers()
+            } else {
+                sendMessage(peerID: peerID, dict: ["ARE_YOU_WIZARD_CAM":true])
             }
             break
         case .connecting:
@@ -103,15 +214,14 @@ class ViewController: UIViewController, MCSessionDelegate, MCNearbyServiceAdvert
             break
         case .notConnected:
             print("PEER NOT CONNECTED: \(peerID.displayName)")
-            if serverName?.isEqual(peerID.displayName) ?? false {
+            if serverName?.isEqual(peerID.displayName) ?? false  {
                 serverName = nil
+                overlayImageView.backgroundColor = UIColor.green
                 print("startAdvertisingPeer")
                 serviceAdvertiser.startAdvertisingPeer()
             }
-            if peerID.displayName.isEqual(camName) {
-                camName = nil
-                print("startBrowsing")
-                browser.startBrowsingForPeers()
+            if peerID.isEqual(connectedWizardCam) {
+                connectedWizardCam = nil
             }
             break
         }
@@ -119,27 +229,24 @@ class ViewController: UIViewController, MCSessionDelegate, MCNearbyServiceAdvert
     
     var connectedServer:MCPeerID? {
         return self.multipeerSession.connectedPeers.first { (peer) -> Bool in
-            return serverName?.isEqual(peer.displayName) ?? false
+            return peer.displayName.isEqual(serverName)
         }
     }
-    var connectedCam:MCPeerID? {
-        return self.multipeerSession.connectedPeers.first { (peer) -> Bool in
-            return peer.displayName.isEqual(camName)
-        }
-    }
+    var connectedWizardCam:MCPeerID?
     
     func session(_ session: MCSession, didReceive data: Data, fromPeer peerID: MCPeerID) {
-        //        print("Received data from \(peerID.displayName) Read \(data.count) bytes")
+//        print("Received data from \(peerID.displayName) Read \(data.count) bytes")
         if let receivedDict = NSKeyedUnarchiver.unarchiveObject(with: data) as? [String:Any] {
             for (messageType, value) in receivedDict {
                 switch messageType {
-                case "detectedRectangle":
+                case "I_AM_WIZARD_CAM":
                     //                    if let currentRectangle = value as? VNRectangleObservation {
                     //                        box = currentRectangle
                     //                    }
-                    break
+                    print("\(peerID.displayName) is the new wizardCam")
+                    connectedWizardCam = peerID
                 default:
-                    print("Unrecognized message in receivedDict \(receivedDict)")
+                    print("Unrecognized message in receivedDict \(messageType)")
                 }
             }
             
@@ -147,42 +254,16 @@ class ViewController: UIViewController, MCSessionDelegate, MCNearbyServiceAdvert
     }
     
     func session(_ session: MCSession, didReceive stream: InputStream, withName streamName: String, fromPeer peerID: MCPeerID) {
-        let weakSelf = self
-        if peerID.displayName.isEqual(camName) {
-            streamingQueue1.async { [unowned self] in
-                self.readDataToInputStream(stream, owner:self, queue: streamingQueue1) { ciImage in
-                    guard let receivedImage = ciImage else {
-                        return
-                    }
-                    weakSelf.imageView.image = UIImage(ciImage:receivedImage)
-                }
-            }
-        }
-        if serverName?.isEqual(peerID.displayName) ?? false {
-            streamingQueue2.async { [unowned self] in
-                self.readDataToInputStream(stream, owner:self, queue: streamingQueue2) { ciImage in
-                    guard let receivedImage = ciImage else {
-                        return
-                    }
-                    guard let overlayImageView = weakSelf.overlayImageView else {
-                        return
-                    }
-                    if overlayImageView.isHidden {
-                        overlayImageView.isHidden = false
-                    }
-                    overlayImageView.image = nil
-                    overlayImageView.image = UIImage(ciImage:receivedImage)
-                }
-            }
-        }
-    }
-    
-    func readDataToInputStream(_ iStream:InputStream,owner:InputStreamOwnerDelegate,queue:DispatchQueue,completion:((CIImage?)->())?) {
-        let inputStreamHandler = InputStreamHandler(iStream,owner:owner,queue: queue)
+        //        print("didReceive stream from someone")
         
-        inputStreamHandler.completionBlock = completion
-        
-        iStream.open()
+        if serverName?.isEqual(peerID.displayName) ?? false  {
+            inputStreamerSketches = InputStreamer(peerID,stream:stream)
+            inputStreamerSketches?.isSimpleData = true
+            inputStreamerSketches?.delegate = self
+        } else {
+            inputStreamer = InputStreamer(peerID,stream:stream)
+            inputStreamer?.delegate = self
+        }
     }
     
     func session(_ session: MCSession, didStartReceivingResourceWithName resourceName: String, fromPeer peerID: MCPeerID, with progress: Progress) {
@@ -202,35 +283,22 @@ class ViewController: UIViewController, MCSessionDelegate, MCNearbyServiceAdvert
     func advertiser(_ advertiser: MCNearbyServiceAdvertiser, didReceiveInvitationFromPeer peerID: MCPeerID, withContext context: Data?, invitationHandler: @escaping (Bool, MCSession?) -> Void) {
         if let data = context, let stringData = String(data: data, encoding: .utf8), stringData == "MONTAGE_CANVAS" {
             serverName = peerID.displayName
-            
+//            imageView.isHidden = false
+            overlayImageView.backgroundColor = UIColor.clear
             invitationHandler(true,multipeerSession)
         } else {
             invitationHandler(false,multipeerSession)
         }
     }
     
-    // MARK: MCNearbyServiceBrowserDelegate
-    
-    func browser(_ browser: MCNearbyServiceBrowser, didNotStartBrowsingForPeers error: Error) {
-        print("didNotStartBrowsingForPeers")
-    }
-    
-    func browser(_ browser: MCNearbyServiceBrowser, foundPeer peerID: MCPeerID, withDiscoveryInfo info: [String : String]?) {
-        if let info = info {
-            guard let value = info["role"], let rawValue = Int(value), let role = MontageRole(rawValue: rawValue) else {
-                return
-            }
-            
-            if role == MontageRole.cam {
-                let data = "MONTAGE_MIRROR".data(using: .utf8)
-                camName = peerID.displayName
-                browser.invitePeer(peerID, to: multipeerSession, withContext: data, timeout: 30)
-            }
+    func sendMessage(peerID:MCPeerID,dict:[String:Any?]) {
+        let data = NSKeyedArchiver.archivedData(withRootObject: dict)
+        
+        do {
+            try multipeerSession.send(data, toPeers: [peerID], with: .reliable)
+        } catch let error as NSError {
+            print("Could not send dict message: \(error.localizedDescription)")
         }
-    }
-    
-    func browser(_ browser: MCNearbyServiceBrowser, lostPeer peerID: MCPeerID) {
-        print("lostPeer \(peerID.displayName)")
     }
 }
 
