@@ -115,7 +115,7 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
                             
                             var overlay = self.sketchOverlay!
                             
-                            if isPhoneMirror {
+//                            if isPhoneMirror {
                                 //Reduce the overlay drastically
                                 guard let scaleFilter = CIFilter(name: "CILanczosScaleTransform") else {
                                     return
@@ -129,7 +129,7 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
                                     return
                                 }
                                 overlay = scaledFinalImage
-                            }
+//                            }
                             
                             guard let image = self.cgImageBackedImage(withCIImage: overlay) else {
                                 print("Could not build overly image to mirror")
@@ -143,8 +143,11 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
                                     return
                                 }
                                 
-                                weakSelf.outputStreamerForMirror?.sendData(data)
-                                print("Sent sketches, count \(data.count)")
+                                var dataToSend = data
+                                dataToSend.append(simpleSepdata)
+                                
+                                weakSelf.outputStreamerForMirror?.sendData(dataToSend)
+                                print("Sent sketches, count \(dataToSend.count)")
                                 
                                 weakSelf.lastTimeSent = Date()
                             }

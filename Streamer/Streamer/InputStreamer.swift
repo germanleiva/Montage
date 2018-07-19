@@ -58,6 +58,7 @@ enum NaluType:UInt8 {
 }
 
 let sepdata = Data([0x0,0x0,0x0,0x1])
+public let simpleSepdata = Data([0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x1])
 
 public class InputStreamer: NSObject, VideoDecoderDelegate, StreamDelegate {
     public private(set) var peerID: MCPeerID
@@ -140,18 +141,39 @@ public class InputStreamer: NSObject, VideoDecoderDelegate, StreamDelegate {
                 }
                 
                 if readResult > 0 {
-                    if weakSelf.isSimpleData {
-                        var imageData = Data()
-                        imageData.append(readingSampleBuffer, count:readResult)
-                        if let finalImage = CIImage(data: imageData) {
-                            weakSelf.delegate?.inputStreamer(self, decodedImage:finalImage)
-                        }
-                        return
-                    }
                     //                print("readResult > 0: \(readResult)")
                     self.savedDataSampleBuffer.append(readingSampleBuffer,count:readResult)
                     
                     let readingDataSampleBuffer = self.savedDataSampleBuffer
+                    
+                    if weakSelf.isSimpleData {
+                        //The simpleData is just a bunch of bytes that end with simpleSepdata
+                        let searchRange:Range<Data.Index> = 0 ..< readingDataSampleBuffer.count
+                        guard let nextRange = readingDataSampleBuffer.range(of: simpleSepdata, options: [], in: searchRange) else {
+                            //We need to keep reading
+                            return
+                        }
+                        
+                        let imageData = self.savedDataSampleBuffer.subdata(in: 0..<nextRange.lowerBound)
+
+                        if self.savedDataSampleBuffer.count > nextRange.upperBound {
+                            self.savedDataSampleBuffer = self.savedDataSampleBuffer.subdata(in: nextRange.upperBound + 1 ..< self.savedDataSampleBuffer.count)
+                        } else {
+                            self.savedDataSampleBuffer.removeAll()
+                        }
+
+//                        print("Trying to decode imageData into CIImage")
+                        if let finalImage = CIImage(data: imageData) {
+//                            print("Decoding successful, imageData into CIImage")
+                            DispatchQueue.main.async {
+                                weakSelf.delegate?.inputStreamer(self, decodedImage:finalImage)
+                            }
+                        } else {
+                            print("Decoding failed, imageData into CIImage")
+                        }
+                        return
+                    }
+                    
                     guard readingDataSampleBuffer.count > 4 else {
                         print("not enough data")
                         return
