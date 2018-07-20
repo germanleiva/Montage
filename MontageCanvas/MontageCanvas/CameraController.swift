@@ -625,66 +625,88 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
                 let weakSelf = self
                 
                 let videoComposition = AVVideoComposition(asset: backgroundMutableComposition, applyingCIFiltersWithHandler: { request in
-                    self.prototypePlayerItem.seek(to: request.compositionTime, toleranceBefore: kCMTimeZero, toleranceAfter: kCMTimeZero, completionHandler: { (finished) in
-                        
-                        let finalBackgroundFrameImage = request.sourceImage
-                        
-                        let currentMediaTime = CACurrentMediaTime()
-                        let prototypeItemTime = weakSelf.prototypeVideoOutput.itemTime(forHostTime: currentMediaTime)
-                        if let prototypePixelBuffer = weakSelf.prototypeVideoOutput.copyPixelBuffer(forItemTime: prototypeItemTime, itemTimeForDisplay: nil) {
+                    self.backgroundPlayerItem.seek(to: request.compositionTime, toleranceBefore: kCMTimeZero, toleranceAfter: kCMTimeZero, completionHandler: { (finishedBackgroundPlayerItem) in
+                        self.prototypePlayerItem.seek(to: request.compositionTime, toleranceBefore: kCMTimeZero, toleranceAfter: kCMTimeZero, completionHandler: { (finishedPrototypePlayerItem) in
                             
-                            let source = CIImage(cvPixelBuffer: prototypePixelBuffer)
+                            let backgroundFrameImage = request.sourceImage
                             
-                            DispatchQueue.main.async {
-                                if let copiedSyncLayer = weakSelf.prototypePlayerView.syncLayer?.presentation(), let copiedCanvasLayer = weakSelf.prototypePlayerCanvasView?.canvasLayer.presentation() {
-                                    weakSelf.snapshotSketchOverlay(layers:[copiedSyncLayer,copiedCanvasLayer],size:weakSelf.prototypePlayerView.frame.size)
-                                    
-                                    if let currentBox = weakSelf.videoModel.backgroundTrack?.box(forItemTime: prototypeItemTime, adjustment: 0.035) {
-                                        let currentPrototypeAndOverlayFrame:CIImage
+                            let currentMediaTime = CACurrentMediaTime()
+                            let prototypeItemTime = weakSelf.prototypeVideoOutput.itemTime(forHostTime: currentMediaTime)
+                            if let prototypePixelBuffer = weakSelf.prototypeVideoOutput.copyPixelBuffer(forItemTime: prototypeItemTime, itemTimeForDisplay: nil) {
+                                
+                                let source = CIImage(cvPixelBuffer: prototypePixelBuffer)
+                                
+                                DispatchQueue.main.async {
+                                    if let copiedSyncLayer = weakSelf.prototypePlayerView.syncLayer?.presentation(), let copiedCanvasLayer = weakSelf.prototypePlayerCanvasView?.canvasLayer.presentation(),
+                                        let copiedBackgroundSyncLayer = weakSelf.backgroundPlayerSyncLayer?.presentation(),
+                                        let copiedBackgroundCanvasLayer = weakSelf.backgroundCanvasView?.canvasLayer.presentation() {
                                         
-                                        if let overlay = weakSelf.sketchOverlay {
-                                            let scaledSource = source.transformed(by: CGAffineTransform.identity.scaledBy(x: overlay.extent.width / source.extent.width, y: overlay.extent.height / source.extent.height ))
+                                        weakSelf.snapshotSketchOverlay(layers:[copiedSyncLayer,copiedCanvasLayer],size:weakSelf.prototypePlayerView.frame.size)
+                                        
+                                        if let currentBox = weakSelf.videoModel.backgroundTrack?.box(forItemTime: prototypeItemTime, adjustment: 0.035) {
+                                            let currentPrototypeAndOverlayFrame:CIImage
                                             
-                                            let overlayFilter = CIFilter(name: "CISourceOverCompositing")!
-                                            overlayFilter.setValue(scaledSource, forKey: kCIInputBackgroundImageKey)
-                                            overlayFilter.setValue(overlay, forKey: kCIInputImageKey)
+                                            if let overlay = weakSelf.sketchOverlay {
+                                                let scaledSource = source.transformed(by: CGAffineTransform.identity.scaledBy(x: overlay.extent.width / source.extent.width, y: overlay.extent.height / source.extent.height ))
+                                                
+                                                let overlayFilter = CIFilter(name: "CISourceOverCompositing")!
+                                                overlayFilter.setValue(scaledSource, forKey: kCIInputBackgroundImageKey)
+                                                overlayFilter.setValue(overlay, forKey: kCIInputImageKey)
+                                                
+                                                currentPrototypeAndOverlayFrame = overlayFilter.outputImage!
+                                            } else {
+                                                currentPrototypeAndOverlayFrame = source
+                                            }
                                             
-                                            currentPrototypeAndOverlayFrame = overlayFilter.outputImage!
-                                        } else {
-                                            currentPrototypeAndOverlayFrame = source
+                                            let perspectiveTransformFilter = CIFilter(name: "CIPerspectiveTransform")!
+                                            
+                                            let w = backgroundFrameImage.extent.size.width
+                                            let h = backgroundFrameImage.extent.size.height
+                                            
+                                            perspectiveTransformFilter.setValue(CIVector(cgPoint:CGPoint(x: currentBox.topLeft.x * w, y: h * (1 - currentBox.topLeft.y))), forKey: "inputTopLeft")
+                                            perspectiveTransformFilter.setValue(CIVector(cgPoint:CGPoint(x: currentBox.topRight.x * w, y: h * (1 - currentBox.topRight.y))), forKey: "inputTopRight")
+                                            perspectiveTransformFilter.setValue(CIVector(cgPoint:CGPoint(x: currentBox.bottomRight.x * w, y: h * (1 - currentBox.bottomRight.y))), forKey: "inputBottomRight")
+                                            perspectiveTransformFilter.setValue(CIVector(cgPoint:CGPoint(x: currentBox.bottomLeft.x * w, y: h * (1 - currentBox.bottomLeft.y))), forKey: "inputBottomLeft")
+                                            
+                                            perspectiveTransformFilter.setValue(currentPrototypeAndOverlayFrame.oriented(CGImagePropertyOrientation.downMirrored),
+                                                                                forKey: kCIInputImageKey)
+                                            
+                                            let finalBackgroundFrameImage:CIImage
+                                            weakSelf.snapshotSketchOverlay(layers: [copiedBackgroundSyncLayer,copiedBackgroundCanvasLayer], size:weakSelf.backgroundCanvasView.frame.size)
+                                            
+                                            if let backgroundOverlay = weakSelf.sketchOverlay {
+                                                
+                                                let overlayFilter = CIFilter(name: "CISourceOverCompositing")!
+                                                overlayFilter.setValue(backgroundFrameImage, forKey: kCIInputBackgroundImageKey)
+                                                overlayFilter.setValue(backgroundOverlay, forKey: kCIInputImageKey)
+                                                guard let result = overlayFilter.outputImage else {
+                                                    request.finish(with: NSError(domain: "savePressed", code: 666, userInfo: [:]))
+                                                    return
+                                                }
+                                                finalBackgroundFrameImage = result
+                                            } else {
+                                                finalBackgroundFrameImage = backgroundFrameImage
+                                            }
+                                            
+                                            let composite = ChromaKeyFilter()
+                                            composite.inputImage = finalBackgroundFrameImage
+                                            composite.backgroundImage = perspectiveTransformFilter.outputImage
+                                            composite.activeColor = CIColor(red: 0, green: 1, blue: 0)
+                                            
+                                            // Provide the filter output to the composition
+                                            request.finish(with: composite.outputImage, context: nil)
                                         }
                                         
-                                        let perspectiveTransformFilter = CIFilter(name: "CIPerspectiveTransform")!
                                         
-                                        let w = finalBackgroundFrameImage.extent.size.width
-                                        let h = finalBackgroundFrameImage.extent.size.height
-                                        
-                                        perspectiveTransformFilter.setValue(CIVector(cgPoint:CGPoint(x: currentBox.topLeft.x * w, y: h * (1 - currentBox.topLeft.y))), forKey: "inputTopLeft")
-                                        perspectiveTransformFilter.setValue(CIVector(cgPoint:CGPoint(x: currentBox.topRight.x * w, y: h * (1 - currentBox.topRight.y))), forKey: "inputTopRight")
-                                        perspectiveTransformFilter.setValue(CIVector(cgPoint:CGPoint(x: currentBox.bottomRight.x * w, y: h * (1 - currentBox.bottomRight.y))), forKey: "inputBottomRight")
-                                        perspectiveTransformFilter.setValue(CIVector(cgPoint:CGPoint(x: currentBox.bottomLeft.x * w, y: h * (1 - currentBox.bottomLeft.y))), forKey: "inputBottomLeft")
-                                        
-                                        perspectiveTransformFilter.setValue(currentPrototypeAndOverlayFrame.oriented(CGImagePropertyOrientation.downMirrored),
-                                                                            forKey: kCIInputImageKey)
-                                        
-                                        let composite = ChromaKeyFilter()
-                                        composite.inputImage = finalBackgroundFrameImage
-                                        composite.backgroundImage = perspectiveTransformFilter.outputImage
-                                        composite.activeColor = CIColor(red: 0, green: 1, blue: 0)
-                                        
-                                        // Provide the filter output to the composition
-                                        request.finish(with: composite.outputImage, context: nil)
+                                    } else {
+                                        print("Could not get presentation()")
                                     }
-                                    
-                                    
-                                } else {
-                                    print("Could not get presentation()")
                                 }
                             }
-                        }
-
-                        
-
+                            
+                            
+                            
+                        })
                     })
                 })
 
