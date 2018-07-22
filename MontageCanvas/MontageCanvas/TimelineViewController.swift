@@ -123,6 +123,8 @@ class TimelineViewController: UIViewController, NSFetchedResultsControllerDelega
             
             context.delete(tierToDelete)
             
+            canvasView.delegate?.canvasTierRemoved(canvasView, tier: tierToDelete)
+
             //TODO: we need to ensure that this update is trigger if an element is deleted anywhere
 //            board?.rebuildSortIndexes()
             
@@ -170,6 +172,13 @@ class TimelineViewController: UIViewController, NSFetchedResultsControllerDelega
             return
         }
         tableView.deselectRow(at: selectedIndexPath, animated: true)
+    }
+    
+    func select(tier: Tier) {
+        tier.isSelected = true
+        if let tierIndexPath = fetchedResultsController.indexPath(forObject: tier) {
+            tableView.scrollToRow(at: tierIndexPath, at: .bottom, animated: true)
+        }
     }
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
@@ -295,27 +304,16 @@ class TimelineViewController: UIViewController, NSFetchedResultsControllerDelega
     @IBAction func outButtonPressed(_ sender:AnyObject?) {
 //        Globals.outIsPressedDown = true
         for selectedTier in canvasView.selectedSketches {
-            if let newDisappearedTime = canvasView.delegate!.normalizeTime1970(time: Date().timeIntervalSince1970) {
-                if let dissaperancesCount = selectedTier.dissappearAtTimes?.count {
-                    assert(dissaperancesCount>=2)
-                    
-                    if dissaperancesCount >= 3 {
-                        selectedTier.dissappearAtTimes?.removeLast()
-                    }
-                }
-                selectedTier.dissappearAtTimes?.append(NSNumber(value:newDisappearedTime))
-                canvasView.delegate?.canvasTierModified(canvasView, tier: selectedTier)
-            }
+            selectedTier.disappearAtTimes = [canvasView.delegate!.currentTime]
+            canvasView.delegate?.canvasTierModified(canvasView, tier: selectedTier, type: .disappear)
         }
     }
     
     @IBAction func inButtonPressed(_ sender:AnyObject?) {
 //        Globals.inIsPressedDown = true
         for selectedTier in canvasView.selectedSketches {
-            if let newAppearedTime = canvasView.delegate!.normalizeTime1970(time: Date().timeIntervalSince1970) {
-                selectedTier.appearedAtTimes = [NSNumber(value:newAppearedTime)]
-                canvasView.delegate?.canvasTierModified(canvasView, tier: selectedTier)
-            }
+            selectedTier.appearAtTimes = [canvasView.delegate!.currentTime]
+            canvasView.delegate?.canvasTierModified(canvasView, tier: selectedTier, type: .appear)
         }
     }
     
@@ -334,7 +332,7 @@ class TimelineViewController: UIViewController, NSFetchedResultsControllerDelega
     @IBAction func strokeStartSliderReleased(_ sender:UISlider) {
         print("strokeStartSliderReleased")
         for selected in canvasView.selectedSketches {
-            canvasView.delegate?.canvasTierModified(canvasView, tier: selected)
+            canvasView.delegate?.canvasTierModified(canvasView, tier: selected, type:.strokeStart)
         }
         sender.value = 0
     }
@@ -354,7 +352,7 @@ class TimelineViewController: UIViewController, NSFetchedResultsControllerDelega
     @IBAction func strokeEndSliderReleased(_ sender:UISlider) {
         print("strokeEndSliderReleased")
         for selected in canvasView.selectedSketches {
-            canvasView.delegate?.canvasTierModified(canvasView, tier: selected)
+            canvasView.delegate?.canvasTierModified(canvasView, tier: selected, type: .strokeEnd)
         }
         sender.value = 1
     }

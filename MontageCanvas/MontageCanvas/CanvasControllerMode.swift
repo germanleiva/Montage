@@ -60,9 +60,11 @@ class CanvasControllerMode {
         delegate = controller
     }
     
-    func normalizedTime(time:TimeInterval) -> TimeInterval? {
-        return nil
-    }
+    var currentTime:TimeInterval = 0.0
+    
+//    func normalizedTime(time:TimeInterval) -> TimeInterval? {
+//        return nil
+//    }
 }
 
 class CanvasControllerLiveMode:CanvasControllerMode {
@@ -87,6 +89,8 @@ class CanvasControllerLiveMode:CanvasControllerMode {
 }
 
 class CanvasControllerRecordingMode:CanvasControllerMode {
+    var timer:Timer?
+    
     override var shouldRecordInking:Bool {
         return !isPaused
     }
@@ -94,32 +98,56 @@ class CanvasControllerRecordingMode:CanvasControllerMode {
         return true
     }
     override var isPaused:Bool {
-        return currentlyPausedAt != nil
+        return timer == nil
     }
     
-    var startedRecordingAt:TimeInterval
+    let timerInterval = 0.0001 //in seconds, this is 0.1 milliseconds
     var currentlyPausedAt:TimeInterval?
-    var stoppedRecordingAt:TimeInterval?
     
     override init(controller:CameraController) {
-        startedRecordingAt = Date().timeIntervalSince1970
+//        timer = Timer(fire: startRecordingDate, interval: 0, repeats: false, block: { (timer) in
+//            self.recordingIndicator.isHidden = false
+//
+//            self.videoModel.prototypeTrack?.startRecording(time:Date().timeIntervalSince1970)
+//            self.videoModel.backgroundTrack?.startRecording(time:Date().timeIntervalSince1970)
+//            print("START RECORDING!!!! NOW! \(Date().timeIntervalSince1970)")
+//            timer.invalidate()
+//        })
+
         super.init(controller: controller)
         
+        self.launchTimer()
         controller.startedRecording(mode: self)
+    }
+    
+    func launchTimer() {
+        currentlyPausedAt = nil
+        timer = Timer.scheduledTimer(timeInterval: timerInterval, target: self, selector: #selector(self.updateTimer), userInfo: nil, repeats: true)
+        timer?.fire()
+    }
+    
+    @objc func updateTimer() {
+        if !isPaused {
+            currentTime += timerInterval
+//            print("Current Recording time \(currentTime)")
+        }
     }
     
     override func startRecording(controller:CameraController) {
         controller.alert(nil, title: "Cannot do", message: "I'm already recording")
     }
+    
     override func stopRecording(controller:CameraController) {
-        stoppedRecordingAt = Date().timeIntervalSince1970
         controller.stoppedRecording(mode: self)
+        
+        timer?.invalidate()
+        timer = nil
     }
     
     override func pause(controller:CameraController) {
-        if currentlyPausedAt == nil {
-            currentlyPausedAt = Date().timeIntervalSince1970
-        }
+        currentlyPausedAt = Date().timeIntervalSince1970
+        timer?.invalidate()
+        timer = nil
         controller.pausedRecording(mode: self)
     }
     
@@ -128,21 +156,18 @@ class CanvasControllerRecordingMode:CanvasControllerMode {
             return
         }
         
-        let startTime = CMTime(seconds: recordingPauseStartedAt - startedRecordingAt, preferredTimescale: DEFAULT_TIMESCALE)
+        let startTime = CMTime(seconds: currentTime, preferredTimescale: DEFAULT_TIMESCALE)
         let durationInSeconds = Date().timeIntervalSince1970 - recordingPauseStartedAt
         let pausedTimeRange = CMTimeRange(start: startTime, duration: CMTimeMakeWithSeconds(durationInSeconds, DEFAULT_TIMESCALE))
         
-        currentlyPausedAt = nil
+        launchTimer()
         
         controller.resumedRecording(mode: self,pausedTimeRange:pausedTimeRange)
     }
     
-    override func normalizedTime(time:TimeInterval) -> TimeInterval? {
-        if let lastValidTime = currentlyPausedAt {
-            return lastValidTime - startedRecordingAt
-        }
-        return time - startedRecordingAt
-    }
+//    override func normalizedTime(time:TimeInterval) -> TimeInterval? {
+//        return time - startedRecordingAt
+//    }
 }
 
 class CanvasControllerPlayingMode:CanvasControllerMode {
@@ -179,7 +204,16 @@ class CanvasControllerPlayingMode:CanvasControllerMode {
         controller.resumedPlaying(mode: self)
     }
     
-    override func normalizedTime(time:TimeInterval) -> TimeInterval? {
-        return delegate.playerItemOffset()
+    override var currentTime: TimeInterval {
+        get {
+            return delegate.playerItemOffset()
+        }
+        set {
+            preconditionFailure("CanvasControllerPlayingMode >> This method should never be called")
+        }
     }
+    
+//    override func normalizedTime(time:TimeInterval) -> TimeInterval? {
+//        return delegate.playerItemOffset()
+//    }
 }

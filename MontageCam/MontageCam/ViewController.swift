@@ -106,19 +106,19 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
     let context = CIContext()
     var overlayImage:CIImage?
     
-    @IBAction func recordToggle(_ sender:UIButton) {
-        guard let writer = movieWriter else {
-            return
-        }
-        
-        if writer.isWriting {
-            writer.stopWriting()
-            sender.setTitle("Record", for: UIControlState.normal)
-        } else {
-            writer.startWriting()
-            sender.setTitle("Stop", for: UIControlState.normal)
-        }
-    }
+//    @IBAction func recordToggle(_ sender:UIButton) {
+//        guard let writer = movieWriter else {
+//            return
+//        }
+//        
+//        if writer.isWriting {
+//            writer.stopWriting()
+//            sender.setTitle("Record", for: UIControlState.normal)
+//        } else {
+//            writer.startWriting()
+//            sender.setTitle("Stop", for: UIControlState.normal)
+//        }
+//    }
     
     var rectangleLocked = false
     
@@ -205,7 +205,17 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
         NotificationCenter.default.addObserver(self, selector: #selector(appWillResignActive), name: NSNotification.Name.UIApplicationWillResignActive, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(appWillTerminate), name: NSNotification.Name.UIApplicationWillTerminate, object: nil)
         
+        let doubleTapGestureRecognizer = UITapGestureRecognizer(target: self, action: #selector(doubleTapped))
+        doubleTapGestureRecognizer.numberOfTapsRequired = 2
+        self.view.addGestureRecognizer(doubleTapGestureRecognizer)
         //        setupVisionDetection()
+    }
+    
+    @objc func doubleTapped(recognizer:UITapGestureRecognizer) {
+        if recognizer.state == UIGestureRecognizerState.recognized {
+            rectangleLocked = !rectangleLocked
+            print("RectangleLock \(rectangleLocked)")
+        }
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -460,7 +470,7 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
             
             previewLayer.connection!.videoOrientation = .landscapeRight
             
-            previewLayer.frame = self.view.bounds.insetBy(dx: 0, dy: 100)
+            previewLayer.frame = self.view.frame
             previewLayer.videoGravity = AVLayerVideoGravity.resizeAspect
             weakSelf.view.layer.addSublayer(previewLayer)
             

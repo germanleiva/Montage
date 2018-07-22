@@ -592,7 +592,7 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
             let navigationController = segue.destination as? UINavigationController
             backgroundTimeline = navigationController?.topViewController as? TimelineViewController
             backgroundTimeline?.videoTrack = videoModel.backgroundTrack
-            prototypeTimeline?.canvasView = backgroundCanvasView
+            backgroundTimeline?.canvasView = backgroundCanvasView
         }
         if "PROTOTYPE_TIMELINE_SEGUE" == segue.identifier {
             let navigationController = segue.destination as? UINavigationController
@@ -1495,6 +1495,12 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
 //        guard let finalBackgroundFrameImage = scaleFilter.outputImage else {
 //            return
 //        }
+        
+//        CIFilter *cropFilter = [CIFilter filterWithName:@"CICrop"];
+//        CIVector *cropRect = [CIVector vectorWithX:rect.origin.x Y:rect.origin.y Z:rect.size.width W:rect.size.height];
+//        [cropFilter setValue:resizeFilter.outputImage forKey:@"inputImage"];
+//        [cropFilter setValue:cropRect forKey:@"inputRectangle"];
+//        CIImage *croppedImage = cropFilter.outputImage;
         
         let perspectiveTransformFilter = CIFilter(name: "CIPerspectiveTransform")!
         
@@ -2434,8 +2440,39 @@ extension CameraController: CanvasViewDelegate {
         }
     }
     
+    func canvasTierRemoved(_ canvas: CanvasView, tier: Tier) {
+        guard canvasControllerMode.isPlayingMode else {
+            return
+        }
+        
+        //I'm in playingMode
+//        let syncLayer = canvas.associatedSyncLayer
+        
+        //TODO: We need to eliminate the associated animations, the rest happen in Tier >> prepareForDeletion
+//        syncLayer?.removeAllAnimations()
+
+    }
+    
     func canvasTierAdded(_ canvas: CanvasView, tier: Tier) {
+        tier.videoTrack?.deselectAllTiers()
+        
+        switch canvas {
+        case prototypeCanvasView:
+            prototypeTimeline?.select(tier:tier)
+        case backgroundCanvasView:
+            backgroundTimeline?.select(tier:tier)
+        default:
+            print("timeline for \(canvas) not found")
+        }
+        
          guard canvasControllerMode.isPlayingMode else {
+            if canvasControllerMode.isRecording && canvasControllerMode.isPaused {
+                if tier.appearAtTimes.isEmpty {
+                    tier.appearAtTimes = [canvasControllerMode.currentTime]
+                } else {
+                    print("This is an error and it is happening because canvasTierAdded is called twice, check CanvasView >> touchesBegan/Ended")
+                }
+            }
             return
         }
         
@@ -2454,7 +2491,11 @@ extension CameraController: CanvasViewDelegate {
             tier.rebuildAnimations(forLayer:shapeLayer,totalRecordingTime: prototypePlayerItem.duration.seconds)
         case .paused:
             print("canvasTierAdded while paused: appearedAtTimes = [\(prototypePlayerItem.currentTime().seconds)]")
-            tier.appearedAtTimes = [NSNumber(value:prototypePlayerItem.currentTime().seconds)]
+            if tier.appearAtTimes.isEmpty {
+                tier.appearAtTimes = [prototypePlayerItem.currentTime().seconds]
+            } else {
+                print("This is another error and it is happening because canvasTierAdded is called twice, check CanvasView >> touchesBegan/Ended")
+            }
             
             tier.rebuildAnimations(forLayer:shapeLayer,totalRecordingTime: prototypePlayerItem.duration.seconds)
         default:
@@ -2462,16 +2503,24 @@ extension CameraController: CanvasViewDelegate {
         }
     }
     
-    func canvasTierModified(_ canvas: CanvasView, tier: Tier) {
-        guard canvasControllerMode.isPlayingMode else {
-            print("canvasTierModified while playing: ignoring")
-            return
+    func canvasTierModified(_ canvas: CanvasView, tier: Tier, type:TierModification) {
+        switch canvasControllerMode {
+        case is CanvasControllerLiveMode, is CanvasControllerRecordingMode:
+            switch type {
+                case .appear:
+                    tier.shapeLayer.opacity = 1
+                case .disappear:
+                    tier.shapeLayer.opacity = 0
+                default:
+                    print("nothing")
+            }
+        case is CanvasControllerPlayingMode:
+            //We redo the whole thing
+            tier.rebuildAnimations(forLayer:tier.shapeLayer,totalRecordingTime: prototypePlayerItem.duration.seconds)
+        default:
+            print("Unrecognized canvasControllerMode")
         }
         
-        //We redo the whole thing
-        let shapeLayer = tier.shapeLayer
-
-        tier.rebuildAnimations(forLayer:shapeLayer,totalRecordingTime: prototypePlayerItem.duration.seconds)
     }
     
     func canvasLongPressed(_ canvas:CanvasView,touchLocation:CGPoint) {
@@ -2513,8 +2562,12 @@ extension CameraController: CanvasViewDelegate {
             }
         }
     }
-    func normalizeTime1970(time: TimeInterval) -> TimeInterval? {
-        return canvasControllerMode.normalizedTime(time: time)
+    
+//    func normalizeTime1970(time: TimeInterval) -> TimeInterval? {
+//        return canvasControllerMode.normalizedTime
+//    }
+    var currentTime: TimeInterval {
+        return canvasControllerMode.currentTime
     }
     
     var shouldRecordInking: Bool {

@@ -19,9 +19,18 @@ enum Transformation {
     case changeStrokeStart(strokeStartPercentage:CGFloat)
 }
 
+enum TierModification {
+    case rotated
+    case moved
+    case scaled
+    case appear
+    case disappear
+    case strokeStart
+    case strokeEnd
+}
+
 @objc(Tier)
 public class Tier: NSManagedObject {
-
     var recordedPathInputs = [(TimeInterval,Transformation)]()
     var recordedStrokeStartInputs = [(TimeInterval,Transformation)]()
     var recordedStrokeEndInputs = [(TimeInterval,Transformation)]()
@@ -66,6 +75,33 @@ public class Tier: NSManagedObject {
         super.awakeFromInsert()
         
         sketch = Sketch(context: managedObjectContext!)
+    }
+    
+    var appearAtTimes:[TimeInterval] {
+        get {
+            if innerAppearAtTimes == nil {
+                innerAppearAtTimes = [NSNumber]()
+            }
+            return innerAppearAtTimes!.map { $0.doubleValue }
+        }
+        set(newValue) {
+            print("Setting appearAtTimes \(newValue) for \(objectID)")
+            innerAppearAtTimes = newValue.map { NSNumber(value:$0) }
+        }
+    }
+    
+    var disappearAtTimes:[TimeInterval] {
+        get {
+            if innerDisappearAtTimes == nil {
+                innerDisappearAtTimes = [NSNumber]()
+            }
+            return innerDisappearAtTimes!.map { $0.doubleValue }
+        }
+        set(newValue) {
+            print("Setting disappearAtTimes \(newValue) for \(objectID)")
+            innerDisappearAtTimes = newValue.map { NSNumber(value:$0) }
+        }
+
     }
     
     public override func prepareForDeletion() {
@@ -411,6 +447,11 @@ public class Tier: NSManagedObject {
     func rebuildAnimations(forLayer shapeLayer:CAShapeLayer, totalRecordingTime:TimeInterval) {
         let (appearAnimation,inkAnimation,strokeEndAnimation,strokeStartAnimation,transformationAnimation) = buildAnimations(totalRecordingTime:totalRecordingTime)
 
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        shapeLayer.opacity = 1 //When animations are active, the shape opacity should always start at 1 (visible)
+        CATransaction.commit()
+        
         shapeLayer.removeAnimation(forKey: "appearAnimation")
         if let appearAnimation = appearAnimation {
             shapeLayer.add(appearAnimation, forKey: "appearAnimation")
@@ -619,49 +660,44 @@ public class Tier: NSManagedObject {
         
         var toggleAnimation:CAKeyframeAnimation?
         
-        if appearedAtTimes == nil {
-            appearedAtTimes = [0]
-        }
-        if dissappearAtTimes == nil {
-            dissappearAtTimes = [NSNumber(value:0),NSNumber(value:totalRecordingTime)]
+        let animationDuration = totalRecordingTime
+        
+        var calculatedValues = [(Double,Int)]()
+        
+        let appearAtTimesToCheck:[TimeInterval]
+        
+        if appearAtTimes.isEmpty {
+            appearAtTimesToCheck = [animationDuration * 0.0001] //At the 0.01% of the animationDuration
+        } else {
+            appearAtTimesToCheck = appearAtTimes
         }
         
-        if let firstAppearanceTime = appearedAtTimes?.first?.doubleValue {
-            if firstAppearanceTime == 0, let firstDisappearanceTime = dissappearAtTimes?.first?.doubleValue, firstDisappearanceTime == 0 {
-                dissappearAtTimes?.removeFirst()
-            }
-            
-            let animationDuration = totalRecordingTime
-
-            var calculatedValues = [(Double,Int)]()
-            
-            for eachAppearanceTime in (appearedAtTimes!.map { $0.doubleValue }) {
-                let percentage = eachAppearanceTime / animationDuration
-                calculatedValues.append((percentage,1))
-            }
-
-            for eachDissappearanceTime in (dissappearAtTimes!.map { $0.doubleValue }) {
-                let percentage = eachDissappearanceTime / animationDuration
-                calculatedValues.append((percentage,0))
-            }
-            
-            calculatedValues.sort { $0.0 < $1.0 }
-            
-            let keyTimes = calculatedValues.map { NSNumber(value:$0.0) }
-            let opacityValues = calculatedValues.map { $0.1 }
-            
-            toggleAnimation = CAKeyframeAnimation()
-            toggleAnimation!.beginTime = AVCoreAnimationBeginTimeAtZero
-            toggleAnimation!.calculationMode = kCAAnimationDiscrete
-            toggleAnimation!.keyPath = "opacity"
-            toggleAnimation!.values = opacityValues
-            toggleAnimation!.keyTimes = keyTimes
-            toggleAnimation!.duration = animationDuration
-            toggleAnimation!.fillMode = kCAFillModeForwards //the changes caused by the animation will hang around
-            toggleAnimation!.isRemovedOnCompletion = false
-            
-            print("buildAnimations >> toggleAnimation: \(toggleAnimation!.debugDescription)")
+        for eachAppearanceTime in appearAtTimesToCheck {
+            let percentage = eachAppearanceTime / animationDuration
+            calculatedValues.append((percentage,1))
         }
+        
+        for eachDisappearanceTime in [0] + disappearAtTimes + [totalRecordingTime] {
+            let percentage = eachDisappearanceTime / animationDuration
+            calculatedValues.append((percentage,0))
+        }
+        
+        calculatedValues.sort { $0.0 < $1.0 }
+        
+        let keyTimes = calculatedValues.map { NSNumber(value:$0.0) }
+        let opacityValues = calculatedValues.map { $0.1 }
+        
+        toggleAnimation = CAKeyframeAnimation()
+        toggleAnimation!.beginTime = AVCoreAnimationBeginTimeAtZero
+        toggleAnimation!.calculationMode = kCAAnimationDiscrete
+        toggleAnimation!.keyPath = "opacity"
+        toggleAnimation!.values = opacityValues
+        toggleAnimation!.keyTimes = keyTimes
+        toggleAnimation!.duration = animationDuration
+        toggleAnimation!.fillMode = kCAFillModeForwards //the changes caused by the animation will hang around
+        toggleAnimation!.isRemovedOnCompletion = false
+        
+        print("buildAnimations >> toggleAnimation: \(toggleAnimation!.debugDescription)")
         //CAAnimationGroup do not work with AVSyncronizedLayer
         //        let strokeAndMove = CAAnimationGroup()
         //        strokeAndMove.animations = [strokeEndAnimation, transformAnimation]
@@ -669,7 +705,7 @@ public class Tier: NSManagedObject {
         //        strokeAndMove.duration = endedRecordingAt - startedRecordingAt
         
         //        print("-----> \(appearedAt)")
-        print("buildAnimations >> FINISH \(self)")
+        print("buildAnimations >> FINISH")
             
         return (toggleAnimation,inkAnimation,strokeEndAnimation,strokeStartAnimation,transformationAnimation)
     }

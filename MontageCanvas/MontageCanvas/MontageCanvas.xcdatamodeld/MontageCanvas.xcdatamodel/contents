@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="14133" systemVersion="17E202" minimumToolsVersion="Automatic" sourceLanguage="Swift" userDefinedModelVersionIdentifier="">
+<model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="14135" systemVersion="17F77" minimumToolsVersion="Automatic" sourceLanguage="Swift" userDefinedModelVersionIdentifier="">
     <entity name="Board" representedClassName="Board" syncable="YES" codeGenerationType="category">
         <attribute name="name" optional="YES" attributeType="String" syncable="YES"/>
         <attribute name="updatedAt" optional="YES" attributeType="Date" usesScalarValueType="NO" syncable="YES"/>
@@ -24,12 +24,12 @@
         <relationship name="tiers" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="Tier" inverseName="sketch" inverseEntity="Tier" syncable="YES"/>
     </entity>
     <entity name="Tier" representedClassName="Tier" syncable="YES" codeGenerationType="category">
-        <attribute name="appearedAtTimes" optional="YES" attributeType="Transformable" customClassName="Array&lt;NSNumber&gt;" syncable="YES"/>
         <attribute name="createdAt" optional="YES" attributeType="Date" usesScalarValueType="NO" syncable="YES"/>
-        <attribute name="dissappearAtTimes" optional="YES" attributeType="Transformable" customClassName="Array&lt;NSNumber&gt;" syncable="YES"/>
         <attribute name="end" optional="YES" attributeType="Float" defaultValueString="0.0" usesScalarValueType="YES" syncable="YES"/>
         <attribute name="fillColor" optional="YES" attributeType="Transformable" customClassName="UIColor" syncable="YES"/>
         <attribute name="hasDrawnPath" optional="YES" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="NO" syncable="YES"/>
+        <attribute name="innerAppearAtTimes" optional="YES" attributeType="Transformable" customClassName="Array&lt;NSNumber&gt;" syncable="YES"/>
+        <attribute name="innerDisappearAtTimes" optional="YES" attributeType="Transformable" customClassName="Array&lt;NSNumber&gt;" syncable="YES"/>
         <attribute name="lineWidth" optional="YES" attributeType="Float" defaultValueString="0.0" usesScalarValueType="YES" syncable="YES"/>
         <attribute name="rotationValue" optional="YES" attributeType="Float" defaultValueString="0.0" usesScalarValueType="YES" syncable="YES"/>
         <attribute name="scalingValue" optional="YES" attributeType="Transformable" customClassName="PointWrapper" syncable="YES"/>
@@ -63,7 +63,7 @@
         <element name="Board" positionX="261" positionY="198" width="128" height="103"/>
         <element name="Line" positionX="556" positionY="198" width="128" height="133"/>
         <element name="Sketch" positionX="603" positionY="536" width="128" height="150"/>
-        <element name="Tier" positionX="900" positionY="486" width="128" height="283"/>
+        <element name="Tier" positionX="900" positionY="486" width="128" height="285"/>
         <element name="Video" positionX="835" positionY="224" width="128" height="178"/>
         <element name="VideoTrack" positionX="1123" positionY="296" width="128" height="118"/>
     </elements>

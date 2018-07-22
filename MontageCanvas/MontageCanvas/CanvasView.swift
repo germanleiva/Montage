@@ -14,9 +14,12 @@ protocol CanvasViewDelegate:AnyObject {
     func canvasLongPressed(_ canvas:CanvasView,touchLocation:CGPoint)
 //    func canvasTouchBegan(_ canvas:CanvasView)
     func canvasTierAdded(_ canvas:CanvasView,tier:Tier)
-    func canvasTierModified(_ canvas:CanvasView,tier:Tier)
+    func canvasTierModified(_ canvas:CanvasView,tier:Tier, type:TierModification)
+    func canvasTierRemoved(_ canvas:CanvasView,tier:Tier)
+
     func playerItemOffset() -> TimeInterval
-    func normalizeTime1970(time:TimeInterval) -> TimeInterval?
+//    func normalizeTime1970(time:TimeInterval) -> TimeInterval?
+    var currentTime:TimeInterval { get }
     
     var shouldRecordInking:Bool { get }
 }
@@ -184,7 +187,8 @@ class CanvasView: UIView, UIGestureRecognizerDelegate {
 //    }
     
     func normalizeTime(_ aTime: TimeInterval? = nil) -> TimeInterval? {
-        return delegate?.normalizeTime1970(time: aTime == nil ? Date().timeIntervalSince1970 : aTime!)
+//        return delegate?.normalizeTime1970(time: aTime == nil ? Date().timeIntervalSince1970 : aTime!)
+        return delegate?.currentTime
     }
     
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
@@ -264,6 +268,7 @@ class CanvasView: UIView, UIGestureRecognizerDelegate {
                     fastDrawingTimer = Timer(fire: Date().addingTimeInterval(secondsBeforeConsiderNewSketh), interval: 0, repeats: false, block: { [unowned self] (aTimer) in
                         if let currentTier = self.currentlyDrawnSketch, lastTierDrawn == currentTier {
                             self.delegate?.canvasTierAdded(self, tier: lastTierDrawn)
+                            self.currentlyDrawnSketch = nil
                         }
                         aTimer.invalidate()
                     })
@@ -272,7 +277,7 @@ class CanvasView: UIView, UIGestureRecognizerDelegate {
                 
                 for selected in selectedSketches {
                     if Globals.outIsPressedDown {
-                        self.delegate?.canvasTierModified(self, tier: selected)
+                        self.delegate?.canvasTierModified(self, tier: selected, type:.strokeEnd)
                     }
                 }
             }
@@ -303,7 +308,7 @@ class CanvasView: UIView, UIGestureRecognizerDelegate {
             print("rotateDetected ended")
             
             for selectedSketch in selectedSketches {
-                self.delegate?.canvasTierModified(self, tier: selectedSketch)
+                self.delegate?.canvasTierModified(self, tier: selectedSketch, type:.rotated)
             }
             break
             
@@ -340,7 +345,7 @@ class CanvasView: UIView, UIGestureRecognizerDelegate {
         case .ended:
             print("pinchDetected ended")
             for selectedSketch in selectedSketches {
-                self.delegate?.canvasTierModified(self, tier: selectedSketch)
+                self.delegate?.canvasTierModified(self, tier: selectedSketch, type: .scaled)
             }
             break
             
@@ -390,7 +395,7 @@ class CanvasView: UIView, UIGestureRecognizerDelegate {
         case .ended:
             print("panDetected ended")
             for selectedSketch in selectedSketches {
-                self.delegate?.canvasTierModified(self, tier: selectedSketch)
+                self.delegate?.canvasTierModified(self, tier: selectedSketch, type: .moved)
             }
             break
             
