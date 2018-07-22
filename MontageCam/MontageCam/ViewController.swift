@@ -22,7 +22,7 @@ let captureOutputQueue = DispatchQueue(label: "fr.lri.ex-situ.Montage.serial_cap
 
 let fps = 30.0
 
-class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataOutputSampleBufferDelegate, MCSessionDelegate, MCNearbyServiceAdvertiserDelegate, VideoEncoderDelegate, OutputStreamerDelegate {
+class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataOutputSampleBufferDelegate, AVCaptureAudioDataOutputSampleBufferDelegate, MCSessionDelegate, MCNearbyServiceAdvertiserDelegate, VideoEncoderDelegate, OutputStreamerDelegate {
     
     var initialChunkSPS_PPS:Data? {
         didSet {
@@ -153,6 +153,19 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
     }()
     
     var movieWriter:MovieWriter!
+    var pausedTimeRanges = [CMTimeRange]()
+    
+    var finalOutputURL:URL {
+        let fileName = "final-movie-example.mov"
+        let filePath = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent(fileName)
+        do {
+            try FileManager.default.removeItem(at: filePath)
+            print("Cleaned \(fileName)")
+        } catch let error as NSError {
+            print("(not a problem) First usage of \(fileName): \(error.localizedDescription)")
+        }
+        return filePath
+    }
     
     // MARK: MC
     
@@ -412,6 +425,10 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
         captureSession.beginConfiguration()
         captureSession.sessionPreset = AVCaptureSession.Preset.hd1280x720
         
+        //Setup inputs
+
+        // Set up default camera device
+
         // get list of devices; connect to front-facing camera
         guard let videoDevice = AVCaptureDevice.default(for: AVMediaType.video) else {
             let alert = UIAlertController(title: "Fatal error", message: "This device cannot capture video", preferredStyle: UIAlertControllerStyle.alert)
@@ -422,34 +439,67 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
         self.configureCameraForHighestFrameRate(device: videoDevice)
         
         do {
-            let input = try AVCaptureDeviceInput(device: videoDevice)
-            if !captureSession.canAddInput(input) {
+            let videoInput = try AVCaptureDeviceInput(device: videoDevice)
+            if !captureSession.canAddInput(videoInput) {
                 return false
             }
             
-            captureSession.addInput(input)
+            captureSession.addInput(videoInput)
         } catch let error as NSError {
             let alert = UIAlertController(title: "Fatal error", message: "The video capture input is not working. \(error.localizedDescription)", preferredStyle: UIAlertControllerStyle.alert)
             self.present(alert, animated: true, completion: nil)
             return false
         }
         
-        let dataOutput = AVCaptureVideoDataOutput()
-        
-        dataOutput.alwaysDiscardsLateVideoFrames = true
-        dataOutput.videoSettings = [kCVPixelBufferPixelFormatTypeKey as String:kCVPixelFormatType_32BGRA]
-        dataOutput.setSampleBufferDelegate(self, queue: captureOutputQueue)
-        
-        if !captureSession.canAddOutput(dataOutput) {
+        // Setup default microphone
+        guard let audioDevice = AVCaptureDevice.default(for: AVMediaType.audio) else {
+            let alert = UIAlertController(title: "Fatal error", message: "This device cannot capture audio", preferredStyle: UIAlertControllerStyle.alert)
+            self.present(alert, animated: true, completion: nil)
             return false
         }
-        captureSession.addOutput(dataOutput)
+
+        do {
+            let audioInput = try AVCaptureDeviceInput(device: audioDevice)
+            if !captureSession.canAddInput(audioInput) {
+                return false
+            }
+            
+            captureSession.addInput(audioInput)
+        } catch let error as NSError {
+            let alert = UIAlertController(title: "Fatal error", message: "The audio capture input is not working. \(error.localizedDescription)", preferredStyle: UIAlertControllerStyle.alert)
+            self.present(alert, animated: true, completion: nil)
+            return false
+        }
+        
+        //setupSessionOutputs
+        
+        let videoDataOutput = AVCaptureVideoDataOutput()
+        
+        videoDataOutput.alwaysDiscardsLateVideoFrames = true //TODO: for recording maybe we want to put this is false
+        videoDataOutput.videoSettings = [kCVPixelBufferPixelFormatTypeKey as String:kCVPixelFormatType_32BGRA]
+        videoDataOutput.setSampleBufferDelegate(self, queue: captureOutputQueue)
+        
+        if !captureSession.canAddOutput(videoDataOutput) {
+            return false
+        }
+        captureSession.addOutput(videoDataOutput)
+        
+        let audioDataOutput = AVCaptureAudioDataOutput()
+        
+        audioDataOutput.setSampleBufferDelegate(self, queue: captureOutputQueue)
+        
+        if !captureSession.canAddOutput(audioDataOutput) {
+            return false
+        }
+        captureSession.addOutput(audioDataOutput)
+
         
         //Configure movie writer
         let fileType = AVFileType.mov
         
+        let audioSettings = audioDataOutput.recommendedAudioSettingsForAssetWriter(writingTo: .mov) as! [String:Any]
         
-        if let videoSettings = dataOutput.recommendedVideoSettings(forVideoCodecType: AVVideoCodecType.h264, assetWriterOutputFileType: fileType) as? [String:Any] {
+        if let videoSettings = videoDataOutput.recommendedVideoSettings(forVideoCodecType: AVVideoCodecType.h264, assetWriterOutputFileType: fileType) as? [String:Any] {
             let extendedVideoSettings = videoSettings
             //            extendedVideoSettings[AVVideoCompressionPropertiesKey] = [
             //                AVVideoAverageBitRateKey : ,
@@ -457,7 +507,7 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
             //                AVVideoMaxKeyFrameIntervalKey :
             //            ]
             
-            movieWriter = MovieWriter(extendedVideoSettings)
+            movieWriter = MovieWriter(videoSettings: extendedVideoSettings,audioSettings: audioSettings)
             movieWriter.delegate = self
         }
         
@@ -702,10 +752,17 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
                         RunLoop.main.add(timer, forMode: RunLoopMode.commonModes)
                     }
                 case "stopRecording":
-                    self.movieWriter.stopWriting()
+                    self.pausedTimeRanges.removeAll()
+                    
+                    for eachTimeRangeDictionary in value as! [NSDictionary] {
+                        self.pausedTimeRanges.append(CMTimeRangeMakeFromDictionary(eachTimeRangeDictionary))
+                    }
+
                     if let aRole = self.myRole, aRole == .userCam {
                         sendMessageToServer(dict: ["savedBoxes":savedBoxes])
                     }
+                    
+                    self.movieWriter.stopWriting()
                 case "mirrorMode":
                     mirrorPeer = value as? MCPeerID
                 case "ARE_YOU_WIZARD_CAM":
@@ -775,47 +832,115 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
         print("didWriteMovie \(outputURL)")
         isStreaming = false
         
-        let weakSelf = self
-        senderQueue.async {
-            guard let serverPeer = weakSelf._serverPeer else {
-                print("Cannot send movie, there is no server connected")
+        let asset = AVAsset(url: outputURL)
+        
+        asset.loadValuesAsynchronously(forKeys: ["duration"]) { [unowned self] in
+            //Let's remove the pausedTimeRanges
+            let finalComposition = AVMutableComposition()
+            guard let compositionVideoTrack = finalComposition.addMutableTrack(withMediaType: .video, preferredTrackID: kCMPersistentTrackID_Invalid) else {
+                self.alert(nil, title: "Playback error", message: "Could not create compositionVideoTrack for final video")
                 return
             }
-            weakSelf.multipeerSession.sendResource(at: outputURL, withName: "MONTAGE_CAM_MOVIE", toPeer: serverPeer) { (error) in
-                guard let error = error else {
-                    print("Movie sent succesfully!")
+            
+            guard let assetVideoTrack = asset.tracks(withMediaType: .video).first else {
+                self.alert(nil, title: "Playback error", message: "The prototype video file does not have any video track")
+                return
+            }
+            
+            var tracksToCompose = [(assetVideoTrack,compositionVideoTrack)]
+            if let role = self.myRole, .userCam == role {
+                //We only add audio from the userCam
+                guard let compositionAudioTrack = finalComposition.addMutableTrack(withMediaType: .audio, preferredTrackID: kCMPersistentTrackID_Invalid) else {
+                    self.alert(nil, title: "Playback error", message: "Could not create compositionAudioTrack for final video")
                     return
                 }
-                print("Failed to send movie \(outputURL): \(error.localizedDescription)")
                 
+                guard let assetAudioTrack = asset.tracks(withMediaType: .audio).first else {
+                    self.alert(nil, title: "Playback error", message: "The prototype video file does not have any audio track")
+                    return
+                }
+                
+                tracksToCompose.append((assetAudioTrack,compositionAudioTrack))
             }
+            
+            for (assetTrack,compositionTrack) in tracksToCompose {
+                let compositionTrackTimeRange = CMTimeRange(start: kCMTimeZero, duration: asset.duration)
+                
+                do {
+                    try compositionTrack.insertTimeRange(compositionTrackTimeRange, of: assetTrack, at: kCMTimeZero)
+                } catch {
+                    self.alert(nil, title: "Playback error", message: "Could not insert asset track in compositionTrack")
+                    return
+                }
+                
+                for pausedTimeRange in self.pausedTimeRanges.reversed() {
+                    print("Skipping \(pausedTimeRange)")
+                    compositionTrack.removeTimeRange(pausedTimeRange)
+                }
+            }
+            
+            guard let session = AVAssetExportSession(asset: finalComposition, presetName: AVAssetExportPreset1280x720) else {
+                self.alert(nil, title: "Playback error", message: "Could not create AVAssetExportSession")
+                return
+            }
+            
+            session.outputURL = self.finalOutputURL
+            session.outputFileType = AVFileType.mov
+            
+            session.exportAsynchronously {
+                switch session.status {
+                case .failed:
+                    print("Export failed: \(session.error?.localizedDescription ?? "unknown error")")
+                case .cancelled:
+                    print("Export canceled");
+                default:
+                    print("Export succeded");
+                    let weakSelf = self
+                    senderQueue.async {
+                        guard let serverPeer = weakSelf._serverPeer else {
+                            print("Cannot send movie, there is no server connected")
+                            return
+                        }
+                        
+                        weakSelf.multipeerSession.sendResource(at: outputURL, withName: "MONTAGE_CAM_MOVIE", toPeer: serverPeer) { (error) in
+                            guard let error = error else {
+                                print("Movie sent succesfully!")
+                                return
+                            }
+                            print("Failed to send movie \(outputURL): \(error.localizedDescription)")
+                        }
+                    }
+                    //        let cloudKitAsset = CKAsset(fileURL: outputURL)
+                    //
+                    //        publicDatabase.fetch(withRecordID: CKRecordID(recordName:"115")) { (result, error) in
+                    //            if let error = error {
+                    //                // Error handling for failed fetch from public database
+                    //                print("CloudKit could not fetch video: \(error.localizedDescription)")
+                    //                return
+                    //            }
+                    //
+                    //            guard let videoRecord = result else {
+                    //                print("CloudKit does not have a video with that recordName")
+                    //                return
+                    //            }
+                    //
+                    //            //We load the asset
+                    //            videoRecord["backgroundMovie"] = cloudKitAsset
+                    //
+                    //            self.publicDatabase.save(videoRecord) {
+                    //                (record, error) in
+                    //                if let error = error {
+                    //                    // Insert error handling
+                    //                    return
+                    //                }
+                    //                // Insert successfully saved record code
+                    //            }
+                    //        }
+                }
+            }
+            
         }
-        //        let cloudKitAsset = CKAsset(fileURL: outputURL)
-        //
-        //        publicDatabase.fetch(withRecordID: CKRecordID(recordName:"115")) { (result, error) in
-        //            if let error = error {
-        //                // Error handling for failed fetch from public database
-        //                print("CloudKit could not fetch video: \(error.localizedDescription)")
-        //                return
-        //            }
-        //
-        //            guard let videoRecord = result else {
-        //                print("CloudKit does not have a video with that recordName")
-        //                return
-        //            }
-        //
-        //            //We load the asset
-        //            videoRecord["backgroundMovie"] = cloudKitAsset
-        //
-        //            self.publicDatabase.save(videoRecord) {
-        //                (record, error) in
-        //                if let error = error {
-        //                    // Insert error handling
-        //                    return
-        //                }
-        //                // Insert successfully saved record code
-        //            }
-        //        }
+        
     }
     
     // MARK: Deinitialization of Streamers
@@ -1017,3 +1142,15 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
     
 }
 
+extension UIViewController {
+    func alert(_ error: Error?, title:String, message:String, completion: (()->Void)? = nil) {
+        let messageWithError:String
+        if let error = error {
+            messageWithError = "\(message) : \(error.localizedDescription)"
+        } else {
+            messageWithError = message
+        }
+        let alert = UIAlertController(title: title, message: messageWithError, preferredStyle: UIAlertControllerStyle.alert)
+        self.present(alert, animated: true, completion: completion)
+    }
+}

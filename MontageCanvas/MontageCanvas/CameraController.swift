@@ -1113,10 +1113,10 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
                 return
             }
             
-            for pausedTimeRange in self.videoModel.pausedTimeRanges!.reversed() {
-                print("Skipping \(pausedTimeRange)")
-                prototypeCompositionVideoTrack.removeTimeRange(pausedTimeRange)
-            }
+//            for pausedTimeRange in self.videoModel.pausedTimeRanges!.reversed() {
+//                print("Skipping \(pausedTimeRange)")
+//                prototypeCompositionVideoTrack.removeTimeRange(pausedTimeRange)
+//            }
             
             self.prototypePlayerItem = AVPlayerItem(asset: self.prototypeComposition!,automaticallyLoadedAssetKeys:["tracks","duration"])
             
@@ -1135,25 +1135,41 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
                 self.alert(nil, title: "Playback error", message: "Could not create compositionVideoTrack for background")
                 return
             }
-            //        let compositionAudioTrack = prototypeComposition.addMutableTrack(withMediaType: .audio, preferredTrackID: kCMPersistentTrackID_Invalid)
+            
+            guard let backgroundCompositionAudioTrack = self.backgroundComposition?.addMutableTrack(withMediaType: .audio, preferredTrackID: kCMPersistentTrackID_Invalid) else {
+                self.alert(nil, title: "Playback error", message: "Could not create compositionAudioTrack for background")
+                return
+            }
             
             guard let backgroundAssetVideoTrack = backgroundAsset.tracks(withMediaType: .video).first else {
                 self.alert(nil, title: "Playback error", message: "The background video file does not have any video track")
                 return
             }
             
-            let backgroundCompositionVideoTimeRange = CMTimeRange(start: kCMTimeZero, duration: smallestDuration)
-            
-            do {
-                try backgroundCompositionVideoTrack.insertTimeRange(backgroundCompositionVideoTimeRange, of: backgroundAssetVideoTrack, at: kCMTimeZero)
-            } catch {
-                self.alert(nil, title: "Playback error", message: "Could not insert video track in background  compositionVideoTrack")
+            guard let backgroundAssetAudioTrack = backgroundAsset.tracks(withMediaType: .audio).first else {
+                self.alert(nil, title: "Playback error", message: "The background video file does not have any audio track")
                 return
             }
             
-            for pausedTimeRange in self.videoModel.pausedTimeRanges!.reversed() {
-                backgroundCompositionVideoTrack.removeTimeRange(pausedTimeRange)
+            let backgroundCompositionTotalTimeRange = CMTimeRange(start: kCMTimeZero, duration: smallestDuration)
+            
+            do {
+                try backgroundCompositionVideoTrack.insertTimeRange(backgroundCompositionTotalTimeRange, of: backgroundAssetVideoTrack, at: kCMTimeZero)
+            } catch {
+                self.alert(nil, title: "Playback error", message: "Could not insert video track in background compositionVideoTrack")
+                return
             }
+            
+            do {
+                try backgroundCompositionAudioTrack.insertTimeRange(backgroundCompositionTotalTimeRange, of: backgroundAssetAudioTrack, at: kCMTimeZero)
+            } catch {
+                self.alert(nil, title: "Playback error", message: "Could not insert audio track in background compositionAudioTrack")
+                return
+            }
+            
+//            for pausedTimeRange in self.videoModel.pausedTimeRanges!.reversed() {
+//                backgroundCompositionVideoTrack.removeTimeRange(pausedTimeRange)
+//            }
             
             self.backgroundPlayerItem = AVPlayerItem(asset: self.backgroundComposition!,automaticallyLoadedAssetKeys:["tracks","duration"])
             self.backgroundPlayer = AVPlayer(playerItem: self.backgroundPlayerItem)
@@ -2376,7 +2392,17 @@ extension CameraController:CanvasControllerModeDelegate {
         self.videoModel.prototypeTrack?.stopRecording(time:Date().timeIntervalSince1970)
         self.videoModel.backgroundTrack?.stopRecording(time:Date().timeIntervalSince1970)
         
-        let dict = ["stopRecording":true]
+        var dictsOfPausedTimeRanges = [NSDictionary]()
+        
+        if let pausedTimeRanges = self.videoModel.pausedTimeRanges {
+            for eachPausedTimeRange in pausedTimeRanges {
+                if let dictPausedTimeRange = CMTimeRangeCopyAsDictionary(eachPausedTimeRange,kCFAllocatorDefault) {
+                    dictsOfPausedTimeRanges.append(dictPausedTimeRange)
+                }
+            }
+        }
+        
+        let dict = ["stopRecording":dictsOfPausedTimeRanges]
         let data = NSKeyedArchiver.archivedData(withRootObject: dict)
         
         do {

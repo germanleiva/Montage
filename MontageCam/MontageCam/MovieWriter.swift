@@ -18,13 +18,16 @@ class MovieWriter: NSObject {
     
     weak var delegate:MovieWriterDelegate?
     private let videoSettings:[String : Any]
+    private let audioSettings:[String : Any]
+
     private var writingDispatchQueue:DispatchQueue
     //    private var ciContex:CIContext
     private var colorSpace:CGColorSpace
     //    private var activeFilter:CIFilter
     private var firstSample = true
 
-    init(_ videoSettings:[String : Any]) {
+    init(videoSettings:[String : Any], audioSettings: [String : Any]) {
+        self.audioSettings = audioSettings
         self.videoSettings = videoSettings
         self.writingDispatchQueue = DispatchQueue(label: "fr.ex-situ.Montage.writingDispatchQueue")
         self.colorSpace = CGColorSpaceCreateDeviceRGB()
@@ -46,7 +49,7 @@ class MovieWriter: NSObject {
     
     private var assetWriter:AVAssetWriter!
     private var assetWriterVideoInput:AVAssetWriterInput!
-    private var assetWriterAudioInput:AVAssetWriterInput?
+    private var assetWriterAudioInput:AVAssetWriterInput!
     private var assetWriterInputPixelBufferAdaptor:AVAssetWriterInputPixelBufferAdaptor!
     
     func transformForDeviceOrientation(_ orientation:UIDeviceOrientation) -> CGAffineTransform {
@@ -109,17 +112,16 @@ class MovieWriter: NSObject {
                 return
             }
             
-            //We did not configure an audioInput
-//            self.assetWriterAudioInput =  AVAssetWriterInput(mediaType: AVMediaType.audio, outputSettings: self.audioSettings)
-//
-//            self.assetWriterAudioInput.expectsMediaDataInRealTime = true
-//
-//            if self.assetWriter.canAdd(self.assetWriterAudioInput) {
-//                self.assetWriter.add(self.assetWriterAudioInput)
-//            } else {
-//                print("Unable to add audio input to assetWriter")
-//                return
-//            }
+            self.assetWriterAudioInput =  AVAssetWriterInput(mediaType: AVMediaType.audio, outputSettings: self.audioSettings)
+
+            self.assetWriterAudioInput.expectsMediaDataInRealTime = true
+
+            if self.assetWriter.canAdd(self.assetWriterAudioInput) {
+                self.assetWriter.add(self.assetWriterAudioInput)
+            } else {
+                print("Unable to add audio input to assetWriter")
+                return
+            }
             
             self.isWriting = true
             self.firstSample = true
@@ -138,7 +140,8 @@ class MovieWriter: NSObject {
         
         let mediaType = CMFormatDescriptionGetMediaType(formatDesc)
         
-        if mediaType == kCMMediaType_Video {
+        switch mediaType {
+        case kCMMediaType_Video:
             
             let timestamp = CMSampleBufferGetPresentationTimeStamp(sampleBuffer)
             
@@ -151,50 +154,50 @@ class MovieWriter: NSObject {
                 self.firstSample = false
             }
             /*
-            var outputRenderBuffer:CVPixelBuffer? = nil
+             var outputRenderBuffer:CVPixelBuffer? = nil
+             
+             let pixelBufferPool = self.assetWriterInputPixelBufferAdaptor.pixelBufferPool
+             
+             let err = CVPixelBufferPoolCreatePixelBuffer(nil, pixelBufferPool!, &outputRenderBuffer)
+             
+             switch err {
+             case kCVReturnSuccess:
+             //                print("Function executed successfully without errors.")
+             break
+             default:
+             print("ERROR: Unable to obtain a pixel buffer from the pool.")
+             //                @constant   kCVReturnFirst Placeholder to mark the beginning of the range of CVReturn codes.
+             //                @constant   kCVReturnLast Placeholder to mark the end of the range of CVReturn codes.
+             //
+             //                @constant   kCVReturnInvalidArgument At least one of the arguments passed in is not valid. Either out of range or the wrong type.
+             //                @constant   kCVReturnAllocationFailed The allocation for a buffer or buffer pool failed. Most likely because of lack of resources.
+             //
+             //                @constant   kCVReturnInvalidDisplay A CVDisplayLink cannot be created for the given DisplayRef.
+             //                @constant   kCVReturnDisplayLinkAlreadyRunning The CVDisplayLink is already started and running.
+             //                @constant   kCVReturnDisplayLinkNotRunning The CVDisplayLink has not been started.
+             //                @constant   kCVReturnDisplayLinkCallbacksNotSet The output callback is not set.
+             //
+             //                @constant   kCVReturnInvalidPixelFormat The requested pixelformat is not supported for the CVBuffer type.
+             //                @constant   kCVReturnInvalidSize The requested size (most likely too big) is not supported for the CVBuffer type.
+             //                @constant   kCVReturnInvalidPixelBufferAttributes A CVBuffer cannot be created with the given attributes.
+             //                @constant   kCVReturnPixelBufferNotOpenGLCompatible The Buffer cannot be used with OpenGL as either its size, pixelformat or attributes are not supported by OpenGL.
+             //                @constant   kCVReturnPixelBufferNotMetalCompatible The Buffer cannot be used with Metal as either its size, pixelformat or attributes are not supported by Metal.
+             //
+             //                @constant   kCVReturnWouldExceedAllocationThreshold The allocation request failed because it would have exceeded a specified allocation threshold (see kCVPixelBufferPoolAllocationThresholdKey).
+             //                @constant   kCVReturnPoolAllocationFailed The allocation for the buffer pool failed. Most likely because of lack of resources. Check if your parameters are in range.
+             //                @constant   kCVReturnInvalidPoolAttributes A CVBufferPool cannot be created with the given attributes.
+             //                @constant   kCVReturnRetry a scan hasn't completely traversed the CVBufferPool due to a concurrent operation. The client can retry the scan.
+             return
+             }*/
             
-            let pixelBufferPool = self.assetWriterInputPixelBufferAdaptor.pixelBufferPool
-            
-            let err = CVPixelBufferPoolCreatePixelBuffer(nil, pixelBufferPool!, &outputRenderBuffer)
-
-            switch err {
-            case kCVReturnSuccess:
-//                print("Function executed successfully without errors.")
-                break
-            default:
-                print("ERROR: Unable to obtain a pixel buffer from the pool.")
-//                @constant   kCVReturnFirst Placeholder to mark the beginning of the range of CVReturn codes.
-//                @constant   kCVReturnLast Placeholder to mark the end of the range of CVReturn codes.
-//
-//                @constant   kCVReturnInvalidArgument At least one of the arguments passed in is not valid. Either out of range or the wrong type.
-//                @constant   kCVReturnAllocationFailed The allocation for a buffer or buffer pool failed. Most likely because of lack of resources.
-//
-//                @constant   kCVReturnInvalidDisplay A CVDisplayLink cannot be created for the given DisplayRef.
-//                @constant   kCVReturnDisplayLinkAlreadyRunning The CVDisplayLink is already started and running.
-//                @constant   kCVReturnDisplayLinkNotRunning The CVDisplayLink has not been started.
-//                @constant   kCVReturnDisplayLinkCallbacksNotSet The output callback is not set.
-//
-//                @constant   kCVReturnInvalidPixelFormat The requested pixelformat is not supported for the CVBuffer type.
-//                @constant   kCVReturnInvalidSize The requested size (most likely too big) is not supported for the CVBuffer type.
-//                @constant   kCVReturnInvalidPixelBufferAttributes A CVBuffer cannot be created with the given attributes.
-//                @constant   kCVReturnPixelBufferNotOpenGLCompatible The Buffer cannot be used with OpenGL as either its size, pixelformat or attributes are not supported by OpenGL.
-//                @constant   kCVReturnPixelBufferNotMetalCompatible The Buffer cannot be used with Metal as either its size, pixelformat or attributes are not supported by Metal.
-//
-//                @constant   kCVReturnWouldExceedAllocationThreshold The allocation request failed because it would have exceeded a specified allocation threshold (see kCVPixelBufferPoolAllocationThresholdKey).
-//                @constant   kCVReturnPoolAllocationFailed The allocation for the buffer pool failed. Most likely because of lack of resources. Check if your parameters are in range.
-//                @constant   kCVReturnInvalidPoolAttributes A CVBufferPool cannot be created with the given attributes.
-//                @constant   kCVReturnRetry a scan hasn't completely traversed the CVBufferPool due to a concurrent operation. The client can retry the scan.
-                return
-            }*/
-            
-//            let imageBuffer = CMSampleBufferGetImageBuffer(sampleBuffer)
-//            let sourceImage = CIImage(cvPixelBuffer: imageBuffer)
-//            self.activeFilter.setValue(sourceImage, forKey: kCIInputImageKey)
-//                let filteredImage = self.activeFilter.outputImage
-//            if !filteredImage {
-//                filteredImage = sourceImage
-//            }
-//            self.ciContext.render(filteredImage, to: outputRenderBuffer, bounds: filteredImage.extent, colorSpace: self.colorSpace)
+            //            let imageBuffer = CMSampleBufferGetImageBuffer(sampleBuffer)
+            //            let sourceImage = CIImage(cvPixelBuffer: imageBuffer)
+            //            self.activeFilter.setValue(sourceImage, forKey: kCIInputImageKey)
+            //                let filteredImage = self.activeFilter.outputImage
+            //            if !filteredImage {
+            //                filteredImage = sourceImage
+            //            }
+            //            self.ciContext.render(filteredImage, to: outputRenderBuffer, bounds: filteredImage.extent, colorSpace: self.colorSpace)
             
             if self.assetWriterVideoInput.isReadyForMoreMediaData {
                 if !self.assetWriterInputPixelBufferAdaptor.append(CMSampleBufferGetImageBuffer(sampleBuffer)!, withPresentationTime: timestamp) {
@@ -202,16 +205,18 @@ class MovieWriter: NSObject {
                 }
             }
             
-//            outputRenderBuffer = nil
-            
-        } //No audio yet
-        /*else if !self.firstSample && mediaType == kCMMediaType_Audio {
-            if self.assetWriterAudioInput.isReadyForMoreMediaData {
-                if !self.assetWriterAudioInput?.append(sampleBuffer) {
-                    print("Error appending audio sample buffer.")
+        //            outputRenderBuffer = nil
+        case kCMMediaType_Audio:
+            if !self.firstSample {
+                if self.assetWriterAudioInput.isReadyForMoreMediaData {
+                    if !self.assetWriterAudioInput.append(sampleBuffer) {
+                        print("Error appending audio sample buffer.")
+                    }
                 }
             }
-        }*/
+        default:
+            print("Unrecognized kCMMediaType")
+        }
     }
     
     func stopWriting() {
