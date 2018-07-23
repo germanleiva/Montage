@@ -68,13 +68,13 @@ class CanvasView: UIView, UIGestureRecognizerDelegate {
         return panRecognizer
     }()
     
-    lazy var swipeRecognizer:UISwipeGestureRecognizer = {
-        let swipeRecognizer = UISwipeGestureRecognizer(target: self, action: #selector(CanvasView.swipeDetected))
-        swipeRecognizer.delegate = self
-        swipeRecognizer.numberOfTouchesRequired = 2
-        swipeRecognizer.allowedTouchTypes = [NSNumber(value:UITouchType.direct.rawValue)]
-        return swipeRecognizer
-    }()
+//    lazy var swipeRecognizer:UISwipeGestureRecognizer = {
+//        let swipeRecognizer = UISwipeGestureRecognizer(target: self, action: #selector(CanvasView.swipeDetected))
+//        swipeRecognizer.delegate = self
+//        swipeRecognizer.numberOfTouchesRequired = 2
+//        swipeRecognizer.allowedTouchTypes = [NSNumber(value:UITouchType.direct.rawValue)]
+//        return swipeRecognizer
+//    }()
     
     lazy var longPressRecognizer:UILongPressGestureRecognizer = {
         let longPressRecognizer = UILongPressGestureRecognizer(target: self, action: #selector(CanvasView.longPressDetected))
@@ -122,7 +122,7 @@ class CanvasView: UIView, UIGestureRecognizerDelegate {
         addGestureRecognizer(rotationRecognizer)
         addGestureRecognizer(pinchRecognizer)
         addGestureRecognizer(panRecognizer)
-        addGestureRecognizer(swipeRecognizer)
+//        addGestureRecognizer(swipeRecognizer)
         addGestureRecognizer(longPressRecognizer)
     }
     
@@ -409,27 +409,27 @@ class CanvasView: UIView, UIGestureRecognizerDelegate {
         }
     }
     
-    @objc func swipeDetected(recognizer:UISwipeGestureRecognizer) {
-        switch recognizer.state {
-            
-        case .ended:
-            print("swipeDetected ended")
-            
-            let touchLocation = recognizer.location(in: self)
-            
-            for sketchLayerToDelete in (videoTrack.tiers!.filter { ($0 as! Tier).shapeLayer.path!.contains(touchLocation) }) {
-                let sketchLayerToDelete = sketchLayerToDelete as! Tier
-                let shapeLayer = sketchLayerToDelete.shapeLayer
-                shapeLayer.removeFromSuperlayer()
-                videoTrack.removeFromTiers(sketchLayerToDelete)
-                
-                //TODO: save in DB
-            }
-            break
-        default:
-            print("swipeDetected ignoring recognizer state")
-        }
-    }
+//    @objc func swipeDetected(recognizer:UISwipeGestureRecognizer) {
+//        switch recognizer.state {
+//
+//        case .ended:
+//            print("swipeDetected ended")
+//
+//            let touchLocation = recognizer.location(in: self)
+//
+//            for sketchLayerToDelete in (videoTrack.tiers!.filter { ($0 as! Tier).shapeLayer.path!.contains(touchLocation) }) {
+//                let sketchLayerToDelete = sketchLayerToDelete as! Tier
+//                let shapeLayer = sketchLayerToDelete.shapeLayer
+//                shapeLayer.removeFromSuperlayer()
+//                videoTrack.removeFromTiers(sketchLayerToDelete)
+//
+//                //TODO: save in DB
+//            }
+//            break
+//        default:
+//            print("swipeDetected ignoring recognizer state")
+//        }
+//    }
     
     @objc func longPressDetected(recognizer:UILongPressGestureRecognizer) {
         switch recognizer.state {
