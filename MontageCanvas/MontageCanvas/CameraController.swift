@@ -2495,7 +2495,7 @@ extension CameraController: CanvasViewDelegate {
          guard canvasControllerMode.isPlayingMode else {
             if canvasControllerMode.isRecording && canvasControllerMode.isPaused {
                 if tier.appearAtTimes.isEmpty {
-                    tier.appearAtTimes = [canvasControllerMode.currentTime]
+                    tier.shouldAppearAt(time:canvasControllerMode.currentTime)
                 } else {
                     print("This is an error and it is happening because canvasTierAdded is called twice, check CanvasView >> touchesBegan/Ended")
                 }
@@ -2519,7 +2519,7 @@ extension CameraController: CanvasViewDelegate {
         case .paused:
             print("canvasTierAdded while paused: appearedAtTimes = [\(prototypePlayerItem.currentTime().seconds)]")
             if tier.appearAtTimes.isEmpty {
-                tier.appearAtTimes = [prototypePlayerItem.currentTime().seconds]
+                tier.shouldAppearAt(time:prototypePlayerItem.currentTime().seconds)
             } else {
                 print("This is another error and it is happening because canvasTierAdded is called twice, check CanvasView >> touchesBegan/Ended")
             }

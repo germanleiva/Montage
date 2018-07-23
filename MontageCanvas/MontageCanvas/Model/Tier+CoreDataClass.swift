@@ -90,6 +90,40 @@ public class Tier: NSManagedObject {
         }
     }
     
+    func shouldAppearAt(time newAppearedAt:TimeInterval) {
+        
+        let firstTimeStamp:TimeInterval
+        
+        if let (firstRecordedInkingTimeStamp,_) = recordedPathInputs.first {
+            firstTimeStamp = firstRecordedInkingTimeStamp
+        } else {
+            guard let previousAppearAt = appearAtTimes.first else {
+                return
+            }
+            
+            firstTimeStamp = previousAppearAt
+        }
+        
+        let offset = newAppearedAt - firstTimeStamp
+        for (index,_) in recordedPathInputs.enumerated() {
+            recordedPathInputs[index].0 += offset
+        }
+        
+        for (index,_) in recordedStrokeStartInputs.enumerated() {
+            recordedStrokeStartInputs[index].0 += offset
+        }
+        
+        for (index,_) in recordedStrokeEndInputs.enumerated() {
+            recordedStrokeEndInputs[index].0 += offset
+        }
+        
+        for (index,_) in recordedTransformInputs.enumerated() {
+            recordedTransformInputs[index].0 += offset
+        }
+        
+        appearAtTimes = [newAppearedAt]
+    }
+    
     var disappearAtTimes:[TimeInterval] {
         get {
             if innerDisappearAtTimes == nil {

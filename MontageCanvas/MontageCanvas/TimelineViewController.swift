@@ -312,7 +312,7 @@ class TimelineViewController: UIViewController, NSFetchedResultsControllerDelega
     @IBAction func inButtonPressed(_ sender:AnyObject?) {
 //        Globals.inIsPressedDown = true
         for selectedTier in canvasView.selectedSketches {
-            selectedTier.appearAtTimes = [canvasView.delegate!.currentTime]
+            selectedTier.shouldAppearAt(time: canvasView.delegate!.currentTime)
             canvasView.delegate?.canvasTierModified(canvasView, tier: selectedTier, type: .appear)
         }
     }
