@@ -753,9 +753,11 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
                     }
                 case "stopRecording":
                     self.pausedTimeRanges.removeAll()
-                    
-                    for eachTimeRangeDictionary in value as! [NSDictionary] {
-                        self.pausedTimeRanges.append(CMTimeRangeMakeFromDictionary(eachTimeRangeDictionary))
+                    let receivedPausedTimeRanges = value as! [NSDictionary]
+                    for (index,eachTimeRangeDictionary) in receivedPausedTimeRanges.enumerated() {
+                        let obtainedTimeRange = CMTimeRangeMakeFromDictionary(eachTimeRangeDictionary)
+                        print("reading pausedTimeRange \(index): \(obtainedTimeRange)")
+                        self.pausedTimeRanges.append(obtainedTimeRange)
                     }
 
                     if let aRole = self.myRole, aRole == .userCam {
@@ -884,7 +886,8 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
                 return
             }
             
-            session.outputURL = self.finalOutputURL
+            let theFinalOutputURL = self.finalOutputURL
+            session.outputURL = theFinalOutputURL
             session.outputFileType = AVFileType.mov
             
             session.exportAsynchronously {
@@ -902,7 +905,7 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
                             return
                         }
                         
-                        weakSelf.multipeerSession.sendResource(at: outputURL, withName: "MONTAGE_CAM_MOVIE", toPeer: serverPeer) { (error) in
+                        weakSelf.multipeerSession.sendResource(at: theFinalOutputURL, withName: "MONTAGE_CAM_MOVIE", toPeer: serverPeer) { (error) in
                             guard let error = error else {
                                 print("Movie sent succesfully!")
                                 return

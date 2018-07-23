@@ -1247,7 +1247,7 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
         if let object = object, context! == &CameraController.observerContext {
             if prototypePlayerItem.isEqual(object) {
                 guard prototypePlayerItem.status == AVPlayerItemStatus.readyToPlay else {
-                    print("Error, failed to load video")
+                    print("Error, failed to load video") //TODO check why this is happening sometimes
                     return
                 }
                 let duration = prototypePlayerItem.duration
@@ -2392,17 +2392,18 @@ extension CameraController:CanvasControllerModeDelegate {
         self.videoModel.prototypeTrack?.stopRecording(time:Date().timeIntervalSince1970)
         self.videoModel.backgroundTrack?.stopRecording(time:Date().timeIntervalSince1970)
         
-        var dictsOfPausedTimeRanges = [NSDictionary]()
+        var pausedTimeRangesToSend = [NSDictionary]()
         
         if let pausedTimeRanges = self.videoModel.pausedTimeRanges {
-            for eachPausedTimeRange in pausedTimeRanges {
+            for (index, eachPausedTimeRange) in pausedTimeRanges.enumerated() {
+                print("\(index) pausedTimeRange \(eachPausedTimeRange)")
                 if let dictPausedTimeRange = CMTimeRangeCopyAsDictionary(eachPausedTimeRange,kCFAllocatorDefault) {
-                    dictsOfPausedTimeRanges.append(dictPausedTimeRange)
+                    pausedTimeRangesToSend.append(dictPausedTimeRange)
                 }
             }
         }
         
-        let dict = ["stopRecording":dictsOfPausedTimeRanges]
+        let dict = ["stopRecording":pausedTimeRangesToSend]
         let data = NSKeyedArchiver.archivedData(withRootObject: dict)
         
         do {

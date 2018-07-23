@@ -60,7 +60,7 @@ class CanvasControllerMode {
         delegate = controller
     }
     
-    var currentTime:TimeInterval = 0.0
+    var currentTime:TimeInterval = 0.0  //This does NOT count the paused ranges
     
 //    func normalizedTime(time:TimeInterval) -> TimeInterval? {
 //        return nil
@@ -89,7 +89,7 @@ class CanvasControllerLiveMode:CanvasControllerMode {
 }
 
 class CanvasControllerRecordingMode:CanvasControllerMode {
-    var timer:Timer?
+    var timer:RepeatingTimer?
     
     override var shouldRecordInking:Bool {
         return !isPaused
@@ -98,39 +98,31 @@ class CanvasControllerRecordingMode:CanvasControllerMode {
         return true
     }
     override var isPaused:Bool {
-        return timer == nil
+        return currentlyPausedAt != nil
     }
     
-    let timerInterval = 0.0001 //in seconds, this is 0.1 milliseconds
+    let timerInterval = 0.0001 //in seconds, this is 0.1 millisecond
     var currentlyPausedAt:TimeInterval?
     
+    var accumulatedTime:TimeInterval = 0.0 //This count the paused ranges
+    
     override init(controller:CameraController) {
-//        timer = Timer(fire: startRecordingDate, interval: 0, repeats: false, block: { (timer) in
-//            self.recordingIndicator.isHidden = false
-//
-//            self.videoModel.prototypeTrack?.startRecording(time:Date().timeIntervalSince1970)
-//            self.videoModel.backgroundTrack?.startRecording(time:Date().timeIntervalSince1970)
-//            print("START RECORDING!!!! NOW! \(Date().timeIntervalSince1970)")
-//            timer.invalidate()
-//        })
-
         super.init(controller: controller)
         
-        self.launchTimer()
-        controller.startedRecording(mode: self)
-    }
-    
-    func launchTimer() {
         currentlyPausedAt = nil
-        timer = Timer.scheduledTimer(timeInterval: timerInterval, target: self, selector: #selector(self.updateTimer), userInfo: nil, repeats: true)
-        timer?.fire()
-    }
-    
-    @objc func updateTimer() {
-        if !isPaused {
-            currentTime += timerInterval
-//            print("Current Recording time \(currentTime)")
+        
+        let weakSelf = self
+        timer = RepeatingTimer(timeInterval: 0.0001)
+        timer?.eventHandler = {
+            if !weakSelf.isPaused {
+                weakSelf.currentTime += weakSelf.timerInterval
+            }
+            
+            weakSelf.accumulatedTime += weakSelf.timerInterval
         }
+        timer?.resume()
+        
+        controller.startedRecording(mode: self)
     }
     
     override func startRecording(controller:CameraController) {
@@ -138,16 +130,16 @@ class CanvasControllerRecordingMode:CanvasControllerMode {
     }
     
     override func stopRecording(controller:CameraController) {
+        if isPaused {
+            //TODO:
+        }
         controller.stoppedRecording(mode: self)
         
-        timer?.invalidate()
         timer = nil
     }
     
     override func pause(controller:CameraController) {
         currentlyPausedAt = Date().timeIntervalSince1970
-        timer?.invalidate()
-        timer = nil
         controller.pausedRecording(mode: self)
     }
     
@@ -156,11 +148,11 @@ class CanvasControllerRecordingMode:CanvasControllerMode {
             return
         }
         
-        let startTime = CMTime(seconds: currentTime, preferredTimescale: DEFAULT_TIMESCALE)
-        let durationInSeconds = Date().timeIntervalSince1970 - recordingPauseStartedAt
-        let pausedTimeRange = CMTimeRange(start: startTime, duration: CMTimeMakeWithSeconds(durationInSeconds, DEFAULT_TIMESCALE))
+        currentlyPausedAt = nil
         
-        launchTimer()
+        let durationInSeconds = Date().timeIntervalSince1970 - recordingPauseStartedAt
+        let startTime = CMTime(seconds: accumulatedTime - durationInSeconds, preferredTimescale: DEFAULT_TIMESCALE)
+        let pausedTimeRange = CMTimeRange(start: startTime, duration: CMTimeMakeWithSeconds(durationInSeconds, DEFAULT_TIMESCALE))
         
         controller.resumedRecording(mode: self,pausedTimeRange:pausedTimeRange)
     }

@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		A44E5C8120A2E61000EBB09A /* CanvasControllerMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = A44E5C8020A2E61000EBB09A /* CanvasControllerMode.swift */; };
+		A48789C12105BF0C0006745F /* RepeatingTimer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A48789C02105BF0C0006745F /* RepeatingTimer.swift */; };
 		A4A049FA20850EA3003FDC6A /* Streamer.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A4A049F920850EA3003FDC6A /* Streamer.framework */; };
 		A4A049FB20850EA3003FDC6A /* Streamer.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = A4A049F920850EA3003FDC6A /* Streamer.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		A4D59B3E2084C436002350B5 /* MontageCanvas.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = A4D59B3C2084C436002350B5 /* MontageCanvas.xcdatamodeld */; };
@@ -80,6 +81,7 @@
 		80DFB655FFF91A45A1D3CE6B /* Pods_MontageCanvas.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_MontageCanvas.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		83981C27285E080024844C3A /* Pods-MontageCanvas.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-MontageCanvas.release.xcconfig"; path = "../Pods/Target Support Files/Pods-MontageCanvas/Pods-MontageCanvas.release.xcconfig"; sourceTree = "<group>"; };
 		A44E5C8020A2E61000EBB09A /* CanvasControllerMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasControllerMode.swift; sourceTree = "<group>"; };
+		A48789C02105BF0C0006745F /* RepeatingTimer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RepeatingTimer.swift; sourceTree = "<group>"; };
 		A4A049F920850EA3003FDC6A /* Streamer.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = Streamer.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		A4D59B322084C436002350B5 /* MontageCanvas.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MontageCanvas.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A4D59B3D2084C436002350B5 /* MontageCanvas.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = MontageCanvas.xcdatamodel; sourceTree = "<group>"; };
@@ -192,6 +194,7 @@
 				A4F50D3B2084CA2200E2E200 /* Brush.swift */,
 				A4F50D382084CA2200E2E200 /* CameraController.swift */,
 				A44E5C8020A2E61000EBB09A /* CanvasControllerMode.swift */,
+				A48789C02105BF0C0006745F /* RepeatingTimer.swift */,
 				A4F50D3C2084CA2200E2E200 /* CanvasView.swift */,
 				A4F50D412084CA2300E2E200 /* ChromaKeyFilter.swift */,
 				A4F50D302084CA2100E2E200 /* CircleButton.swift */,
@@ -467,6 +470,7 @@
 				A4F50D512084CA2400E2E200 /* Brush.swift in Sources */,
 				A4D59B3E2084C436002350B5 /* MontageCanvas.xcdatamodeld in Sources */,
 				A4F50D2B2084C9F400E2E200 /* Line+CoreDataClass.swift in Sources */,
+				A48789C12105BF0C0006745F /* RepeatingTimer.swift in Sources */,
 				A4F50D4E2084CA2400E2E200 /* CameraController.swift in Sources */,
 				A4F50D2E2084C9F400E2E200 /* Video+CoreDataClass.swift in Sources */,
 				A4F50D532084CA2400E2E200 /* VideoPlayerView.swift in Sources */,
@@ -641,7 +645,10 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 7HVPEZWBRD;
 				INFOPLIST_FILE = MontageCanvas/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = "ex-situ.lri.fr.MontageCanvas";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_OBJC_BRIDGING_HEADER = "MontageCanvas/MontageCanvas-Bridging-Header.h";
@@ -661,7 +668,10 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 7HVPEZWBRD;
 				INFOPLIST_FILE = MontageCanvas/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = "ex-situ.lri.fr.MontageCanvas";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_OBJC_BRIDGING_HEADER = "MontageCanvas/MontageCanvas-Bridging-Header.h";
@@ -678,7 +688,11 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 7HVPEZWBRD;
 				INFOPLIST_FILE = MontageCanvasTests/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = "ex-situ.lri.fr.MontageCanvasTests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 4.0;
@@ -695,7 +709,11 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 7HVPEZWBRD;
 				INFOPLIST_FILE = MontageCanvasTests/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = "ex-situ.lri.fr.MontageCanvasTests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 4.0;
@@ -711,7 +729,11 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 7HVPEZWBRD;
 				INFOPLIST_FILE = MontageCanvasUITests/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = "ex-situ.lri.fr.MontageCanvasUITests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 4.0;
@@ -727,7 +749,11 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 7HVPEZWBRD;
 				INFOPLIST_FILE = MontageCanvasUITests/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = "ex-situ.lri.fr.MontageCanvasUITests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 4.0;
