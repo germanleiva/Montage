@@ -14,7 +14,7 @@ import AVFoundation
 enum Transformation {
     case move(point:CGPoint)
     case addLine(point:CGPoint)
-    case transform(affineTransform:CGAffineTransform)
+    case transform(type:TierModification,affineTransform:CGAffineTransform)
     case changeStrokeEnd(strokeEndPercentage:CGFloat)
     case changeStrokeStart(strokeStartPercentage:CGFloat)
 }
@@ -208,7 +208,7 @@ public class Tier: NSManagedObject {
         
         if let timestamp = timestamp {
 //            recordedInputs.append((Date().timeIntervalSince1970,.translation(delta: delta)))
-            recordedTransformInputs.append((timestamp,.transform(affineTransform: currentTransformation)))
+            recordedTransformInputs.append((timestamp,.transform(type:.moved,affineTransform: currentTransformation)))
         }
     }
     
@@ -218,7 +218,7 @@ public class Tier: NSManagedObject {
         
         if let timestamp = timestamp {
 //            recordedInputs.append((Date().timeIntervalSince1970,.rotation(angle: delta)))
-            recordedTransformInputs.append((timestamp,.transform(affineTransform: currentTransformation)))
+            recordedTransformInputs.append((timestamp,.transform(type:.rotated,affineTransform: currentTransformation)))
         }
     }
     
@@ -228,7 +228,7 @@ public class Tier: NSManagedObject {
         
         if let timestamp = timestamp {
 //            recordedInputs.append((Date().timeIntervalSince1970,.scaling(delta: delta)))
-            recordedTransformInputs.append((timestamp,.transform(affineTransform: currentTransformation)))
+            recordedTransformInputs.append((timestamp,.transform(type:.scaled,affineTransform: currentTransformation)))
         }
     }
     
@@ -463,7 +463,7 @@ public class Tier: NSManagedObject {
             
             for (timestamp, transformTransformation) in recordedTransformInputs {
                 switch transformTransformation {
-                case let .transform(affineTransform):
+                case let .transform(_,affineTransform):
                     transformValues.append(CATransform3DMakeAffineTransform(affineTransform))
                     let percentage = timestamp / animationDuration
                     transformKeyTimes.append(NSNumber(value:percentage))

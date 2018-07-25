@@ -284,7 +284,7 @@ class CanvasView: UIView, UIGestureRecognizerDelegate {
         }
     }
     
-    func eraseFutureTransformations(modification:TierModification) {
+    func eraseFutureTransformations() {
         if let currentTime = delegate?.currentTime {
             for aSelectedSketch in selectedSketches {
                 aSelectedSketch.recordedTransformInputs = aSelectedSketch.recordedTransformInputs.filter {
@@ -292,38 +292,37 @@ class CanvasView: UIView, UIGestureRecognizerDelegate {
                     return timestamp < currentTime
                 }
                 
-                if let (_,transformation) = aSelectedSketch.recordedTransformInputs.last {
-                    var affineTransformation:CGAffineTransform?
-                    if case let .transform(t) = transformation {
-                        affineTransformation = t
+                func lastTransformation(withType aType:TierModification) -> CGAffineTransform? {
+                    if let (_,transformEnum) = aSelectedSketch.recordedTransformInputs.reversed().first(where: { (_,transformation) -> Bool in
+                        guard case let .transform(type,_) = transformation else {
+                            return false
+                        }
+                        return type == aType
+                    }) {
+                        if case let .transform(_,t) = transformEnum {
+                            return t
+                        }
                     }
-                    switch modification {
-                    case .moved:
-                        var newValue = CGPoint.zero
-                        
-                        if let t = affineTransformation {
-                            newValue = CGPoint(x: t.tx, y: t.ty)
-                        }
-                        aSelectedSketch.translation = newValue
-                    case .scaled:
-                        var newValue = CGPoint(x:1,y:1)
-                        
-                        if let t = affineTransformation {
-                            newValue = CGPoint(x: t.a, y: t.d)
-                        }
-                        aSelectedSketch.scaling = newValue
-                    case .rotated:
-                        var newValue = CGFloat(0)
-                        
-                        if let t = affineTransformation {
-                            newValue = atan2(t.b, t.a)
-                        }
-                        aSelectedSketch.rotation = newValue
-                    default:
-                        print("Ignore")
-                    }
+                    return nil
                 }
                 
+                var newTranslation = CGPoint.zero
+                if let t = lastTransformation(withType: .moved) {
+                    newTranslation = CGPoint(x: t.tx, y: t.ty)
+                }
+                aSelectedSketch.translation = newTranslation
+                
+                var newScaling = CGPoint(x:1,y:1)
+                if let t = lastTransformation(withType: .scaled) {
+                    newScaling = CGPoint(x: t.a, y: t.d)
+                }
+                aSelectedSketch.scaling = newScaling
+                
+                var newRotation = CGFloat(0)
+                if let t = lastTransformation(withType: .rotated) {
+                    newRotation = atan2(t.b, t.a)
+                }
+                aSelectedSketch.rotation = newRotation
             }
         }
     }
@@ -336,7 +335,7 @@ class CanvasView: UIView, UIGestureRecognizerDelegate {
             
         case .began:
             print("rotateDetected began")
-            eraseFutureTransformations(modification: .moved)
+            eraseFutureTransformations()
 
             break
             
@@ -387,7 +386,7 @@ class CanvasView: UIView, UIGestureRecognizerDelegate {
             
         case .began:
             print("pinchDetected began")
-            eraseFutureTransformations(modification: .moved)
+            eraseFutureTransformations()
 
             break
             
@@ -452,7 +451,7 @@ class CanvasView: UIView, UIGestureRecognizerDelegate {
                 }
             }
             
-            eraseFutureTransformations(modification: .moved)
+            eraseFutureTransformations()
             
             break
             
