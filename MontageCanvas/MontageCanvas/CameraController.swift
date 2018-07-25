@@ -1356,7 +1356,7 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
                     if let obtainedBox = weakSelf.videoModel.backgroundTrack?.box(forItemTime: prototypeItemTime, adjustment: 0.035) {
                         weakSelf.box = obtainedBox
                     } else {
-                        print("box(forItemTime: ...) returned nil")
+//                        print("box(forItemTime: ...) returned nil") //TODO:
                     }
                     weakSelf.applyFilterFromPrototypeToBackground(prototypePixelBuffer)
                 }
