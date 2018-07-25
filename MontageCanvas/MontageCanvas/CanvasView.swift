@@ -20,7 +20,7 @@ protocol CanvasViewDelegate:AnyObject {
     func playerItemOffset() -> TimeInterval
 //    func normalizeTime1970(time:TimeInterval) -> TimeInterval?
     var currentTime:TimeInterval { get }
-    
+
     var shouldRecordInking:Bool { get }
 }
 
@@ -284,6 +284,50 @@ class CanvasView: UIView, UIGestureRecognizerDelegate {
         }
     }
     
+    func eraseFutureTransformations(modification:TierModification) {
+        if let currentTime = delegate?.currentTime {
+            for aSelectedSketch in selectedSketches {
+                aSelectedSketch.recordedTransformInputs = aSelectedSketch.recordedTransformInputs.filter {
+                    let (timestamp,_) = $0
+                    return timestamp < currentTime
+                }
+                
+                if let (_,transformation) = aSelectedSketch.recordedTransformInputs.last {
+                    var affineTransformation:CGAffineTransform?
+                    if case let .transform(t) = transformation {
+                        affineTransformation = t
+                    }
+                    switch modification {
+                    case .moved:
+                        var newValue = CGPoint.zero
+                        
+                        if let t = affineTransformation {
+                            newValue = CGPoint(x: t.tx, y: t.ty)
+                        }
+                        aSelectedSketch.translation = newValue
+                    case .scaled:
+                        var newValue = CGPoint(x:1,y:1)
+                        
+                        if let t = affineTransformation {
+                            newValue = CGPoint(x: t.a, y: t.d)
+                        }
+                        aSelectedSketch.scaling = newValue
+                    case .rotated:
+                        var newValue = CGFloat(0)
+                        
+                        if let t = affineTransformation {
+                            newValue = atan2(t.b, t.a)
+                        }
+                        aSelectedSketch.rotation = newValue
+                    default:
+                        print("Ignore")
+                    }
+                }
+                
+            }
+        }
+    }
+    
     @objc func rotateDetected(recognizer:UIRotationGestureRecognizer) {
         switch recognizer.state {
         case .possible:
@@ -292,10 +336,17 @@ class CanvasView: UIView, UIGestureRecognizerDelegate {
             
         case .began:
             print("rotateDetected began")
+            eraseFutureTransformations(modification: .moved)
+
             break
             
         case .changed:
             print("rotateDetected changed")
+            
+            guard let _ = delegate?.shouldRecordInking else {
+                return
+            }
+            
             let rotationAngle = recognizer.rotation
             recognizer.rotation = 0
 
@@ -306,6 +357,13 @@ class CanvasView: UIView, UIGestureRecognizerDelegate {
             
         case .ended:
             print("rotateDetected ended")
+            
+            if let delegate = delegate, !delegate.shouldRecordInking {
+                let delta = recognizer.rotation
+                for aSelectedSketch in selectedSketches {
+                    aSelectedSketch.rotationDelta(delta,timestamp: normalizeTime())
+                }
+            }
             
             for selectedSketch in selectedSketches {
                 self.delegate?.canvasTierModified(self, tier: selectedSketch, type:.rotated)
@@ -329,10 +387,16 @@ class CanvasView: UIView, UIGestureRecognizerDelegate {
             
         case .began:
             print("pinchDetected began")
+            eraseFutureTransformations(modification: .moved)
+
             break
             
         case .changed:
             print("pinchDetected changed")
+            
+            guard let _ = delegate?.shouldRecordInking else {
+                return
+            }
             
             let scale = recognizer.scale
             recognizer.scale = 1
@@ -344,6 +408,14 @@ class CanvasView: UIView, UIGestureRecognizerDelegate {
             
         case .ended:
             print("pinchDetected ended")
+            
+            if let delegate = delegate, !delegate.shouldRecordInking {
+                let scale = recognizer.scale
+                for aSelectedSketch in selectedSketches {
+                    aSelectedSketch.scalingDelta(CGPoint(x: scale,y: scale),timestamp: normalizeTime())
+                }
+            }
+            
             for selectedSketch in selectedSketches {
                 self.delegate?.canvasTierModified(self, tier: selectedSketch, type: .scaled)
             }
@@ -380,10 +452,17 @@ class CanvasView: UIView, UIGestureRecognizerDelegate {
                 }
             }
             
+            eraseFutureTransformations(modification: .moved)
+            
             break
             
         case .changed:
             print("panDetected changed")
+            
+            guard let _ = delegate?.shouldRecordInking else {
+                return
+            }
+
             let delta = recognizer.translation(in: self)
             recognizer.setTranslation(CGPoint.zero, in: self)
             
@@ -394,6 +473,14 @@ class CanvasView: UIView, UIGestureRecognizerDelegate {
             
         case .ended:
             print("panDetected ended")
+            
+            if let delegate = delegate, !delegate.shouldRecordInking {
+                let delta = recognizer.translation(in: self)
+                for aSelectedSketch in selectedSketches {
+                    aSelectedSketch.translationDelta(delta,timestamp: normalizeTime())
+                }
+            }
+            
             for selectedSketch in selectedSketches {
                 self.delegate?.canvasTierModified(self, tier: selectedSketch, type: .moved)
             }
