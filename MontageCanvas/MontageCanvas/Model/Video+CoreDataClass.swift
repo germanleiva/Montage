@@ -31,7 +31,10 @@ public class Video: NSManagedObject {
         }
         
         backgroundTrack = VideoTrack(context: context)
+        backgroundTrack?.isBackground = true
+        
         prototypeTrack = VideoTrack(context: context)
+        prototypeTrack?.isPrototype = true
         
         pausedTimeRanges = [TimeRange]()
     }
@@ -41,13 +44,10 @@ public class Video: NSManagedObject {
     }
     
     public override func prepareForDeletion() {
-        if hasVideoFile {
-            do {
-                print("Deleting video file: \(file.absoluteString)")
-                try FileManager().removeItem(at: file)
-            } catch let error as NSError {
-                print("Could not delete video file: \(error.localizedDescription)")
-            }
+        do {
+            try FileManager.default.removeItem(at: videoDirectory)
+        } catch let error as NSError {
+            print("Could not delete the video directory \(videoDirectory): \(error.localizedDescription)")
         }
         super.prepareForDeletion()
     }

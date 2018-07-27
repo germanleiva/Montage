@@ -102,7 +102,7 @@ class VideoCatalogController: UIViewController, UICollectionViewDelegate, UIColl
         
         let fetchRequest: NSFetchRequest<VideoTrack> = VideoTrack.fetchRequest()
         
-        fetchRequest.predicate = NSPredicate(format: "self != %@",self.myVideoTrack)
+        fetchRequest.predicate = NSPredicate(format: "SELF != %@ AND isPrototype == TRUE",self.myVideoTrack.objectID)
         
         fetchRequest.sortDescriptors = [NSSortDescriptor(key: "name", ascending: true)]
         let resultsController = NSFetchedResultsController(fetchRequest: fetchRequest, managedObjectContext: coreDataContext, sectionNameKeyPath: nil, cacheName: nil)

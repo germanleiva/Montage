@@ -16,10 +16,6 @@ public class VideoTrack: NSManagedObject {
     var startedRecordingAt:TimeInterval = -1
     var endedRecordingAt:TimeInterval = -1
     
-    var isPrototype:Bool {
-        return inversePrototypeTrack != nil && inverseBackgroundTrack == nil
-    }
-    
     var video:Video {
         if inverseBackgroundTrack != nil {
             return inverseBackgroundTrack!
@@ -100,16 +96,6 @@ public class VideoTrack: NSManagedObject {
     }
     
     var loadedFileURL:URL? {
-//        do {
-//            if let url = fileURL {
-//                if try url.checkResourceIsReachable() {
-//                    return url
-//                }
-//            }
-//
-//        } catch {
-//            return nil
-//        }
         if FileManager.default.fileExists(atPath: fileURL.path) {
             return fileURL
         }
