@@ -1,32 +1,23 @@
 //
-//  DetailLineController.swift
-//  Montage
+//  VideoCatalogController.swift
+//  MontageCanvas
 //
-//  Created by Germán Leiva on 05/03/2018.
+//  Created by Germán Leiva on 25/07/2018.
 //  Copyright © 2018 ExSitu. All rights reserved.
 //
 
 import UIKit
 import CoreData
-import AVFoundation
 import AVKit
 
-class DetailLineController: UIViewController, UICollectionViewDelegate, UICollectionViewDataSource, NSFetchedResultsControllerDelegate, UINavigationControllerDelegate, UIImagePickerControllerDelegate {
-    let coreDataContext = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
+let CELL_VIDEO_CATALOG_IDENTIFIER = "CELL_VIDEO_CATALOG_IDENTIFIER"
 
-    var shouldReloadCollectionView = false
-    var line: Line? {
-        didSet {
-            reloadFetchResultsController()
-        }
-    }
-    var recordingVideo:Video?
+class VideoCatalogController: UIViewController, UICollectionViewDelegate, UICollectionViewDataSource, NSFetchedResultsControllerDelegate {
+    var myVideoTrack:VideoTrack!
     
+    let coreDataContext = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
     @IBOutlet weak var collectionView:UICollectionView!
-    
-    @IBOutlet weak var playButton:UIBarButtonItem!
-    @IBOutlet weak var compositionButton: UIBarButtonItem!
-    @IBOutlet weak var recordButton: UIBarButtonItem!
+    var shouldReloadCollectionView = false
     
     deinit {
         for operation: BlockOperation in blockOperations {
@@ -35,28 +26,10 @@ class DetailLineController: UIViewController, UICollectionViewDelegate, UICollec
         blockOperations.removeAll(keepingCapacity: false)
     }
     
-    func configureView() {
-        // Update the user interface for the detail item.
-        if let detail = line {
-            title = "Montage"
-            compositionButton.isEnabled = true
-            recordButton.isEnabled = true
-        }
-    }
-
     override func viewDidLoad() {
         super.viewDidLoad()
-        // Do any additional setup after loading the view, typically from a nib.
-        configureView()
-        
-        NotificationCenter.default.addObserver(forName: NSNotification.Name(rawValue: "DELETE_RECORDING_VIDEO"), object: nil, queue: OperationQueue.main) { (notif) in
-            self.deleteRecordingVideo()
-        }
-    }
-     
-    override func viewWillAppear(_ animated: Bool) {
-        //TODO instead of reloading the whole collection view, we need to reload only the added cell (notification or delegate from the CameraController)
-        collectionView.reloadData()
+
+        // Do any additional setup after loading the view.
     }
 
     override func didReceiveMemoryWarning() {
@@ -64,44 +37,21 @@ class DetailLineController: UIViewController, UICollectionViewDelegate, UICollec
         // Dispose of any resources that can be recreated.
     }
     
-    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-        let video:Video
-        switch segue.identifier {
-        case "SEGUE_NEW_COMPOSITION":
-            
-            video = Video(context: coreDataContext)
-            line?.addToElements(video)
-            video.sequenceNumber = Int32(line?.elements?.index(of: video) ?? 0)
-            recordingVideo = video
-            
-            do {
-                try coreDataContext.save()
-            } catch let error as NSError {
-                
-            }
-            
-        case "SEGUE_EXISTING_COMPOSITION":
-            guard let selectedIndexPath = collectionView.indexPathsForSelectedItems?.first else {
-                return
-            }
-            video = fetchedResultController.object(at: selectedIndexPath)
-        default:
-            print("Ignored segue \(segue.identifier!.description)")
-            return
-        }
-        
-        let controller = segue.destination as! CameraController
-        controller.videoModel = video
-    }
 
+    /*
+    // MARK: - Navigation
+
+    // In a storyboard-based application, you will often want to do a little preparation before navigation
+    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
+        // Get the new view controller using segue.destinationViewController.
+        // Pass the selected object to the new view controller.
+    }
+    */
+    
     // MARK: Collection View Data Source
     
     func numberOfSections(in collectionView: UICollectionView) -> Int {
-        if line == nil {
-            return 0
-        }
         return fetchedResultController.sections?.count ?? 0
-
     }
     
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
@@ -112,9 +62,9 @@ class DetailLineController: UIViewController, UICollectionViewDelegate, UICollec
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "VIDEO_CELL", for: indexPath) as! VideoCell
         
-        let video = fetchedResultController.object(at: indexPath)
+        let videoTrack = fetchedResultController.object(at: indexPath)
         
-        video.loadThumbnailImage { (anImage) in
+        videoTrack.video.loadThumbnailImage { (anImage) in
             if anImage != nil {
                 cell.imageView.image = anImage
                 cell.activityIndicator.stopAnimating()
@@ -125,123 +75,36 @@ class DetailLineController: UIViewController, UICollectionViewDelegate, UICollec
     }
     
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        let video = fetchedResultController.object(at: indexPath)
-
-//        guard let videoURL = video.file else {
-//            return
-//        }
-//
-//        let player = AVPlayer(url: videoURL)
-//        let playerViewController = AVPlayerViewController()
-//        playerViewController.player = player
-//        present(playerViewController, animated: true) {
-//            playerViewController.player!.play()
-//        }
-        performSegue(withIdentifier: "SEGUE_EXISTING_COMPOSITION", sender: nil)
-    }
-    
-    lazy var imagePickerController: UIImagePickerController = {
-        let imagePickerController = UIImagePickerController()
-        imagePickerController.sourceType = UIImagePickerControllerSourceType.camera
-        imagePickerController.mediaTypes = ["public.movie"]//UIImagePickerController.availableMediaTypes(for: UIImagePickerControllerSourceType.camera)!
-        imagePickerController.videoExportPreset = AVAssetExportPresetHighestQuality
-        //        imagePickerController.videoQuality = UIImagePickerControllerQualityType.typeIFrame960x540
-        imagePickerController.videoQuality = UIImagePickerControllerQualityType.typeIFrame1280x720
-        imagePickerController.cameraCaptureMode = .video
-        imagePickerController.allowsEditing = true
-        imagePickerController.delegate = self
-        return imagePickerController
-    }()
-    
-    // MARK: ImagePickerControllerDelegate
-    
-    func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [String : Any]) {
-        //Use the video that was just captured
-        // info example
-        //        - key : "UIImagePickerControllerMediaType"
-        //        - value : public.movie
-        //
-        //        - key : "UIImagePickerControllerMediaURL"
-        //        - value : file:///private/var/mobile/Containers/Data/Application/C8D59BEC-1C01-49FC-9DED-E642F04248BE/tmp/51879983279__A07D8DD8-7945-49B3-B2DE-0945ACB4393F.MOV
-        let tempVideoURL = info[UIImagePickerControllerMediaURL] as! URL
+        let selectedVideoTrack = fetchedResultController.object(at: indexPath)
         
-        recordingVideo!.saveVideoFile(tempVideoURL) {
-            self.collectionView.reloadData()
-        }
-        recordingVideo = nil
-        picker.dismiss(animated: true) {
-        }
-    }
-    
-    func deleteRecordingVideo() {
-        if let recordedVideo = self.recordingVideo {
-            //when recording is cancelled, we need to delete recordingVideo from the DB
-            line?.removeFromElements(recordedVideo)
-            coreDataContext.delete(recordedVideo)
-            do {
-                try coreDataContext.save()
-                self.recordingVideo = nil
-            } catch {
-                alert(error, title: "DB Error", message: "Could not delete cancelled recording video")
-            }
-        }
-    }
-    
-    func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
-        deleteRecordingVideo()
-        picker.dismiss(animated: true) {
-        }
-    }
-
-    
-    // MARK: Actions
-    
-    @IBAction func recordTapped(_ sender:AnyObject?) {
-        if line == nil{
-            //preventing the app from crashing while no storyLine is created
-            print("you need a storyLine")
-            return
-        }
-    
-        guard UIImagePickerController.isSourceTypeAvailable(UIImagePickerControllerSourceType.camera) else {
-            alert(nil, title: "Impossible to record", message: "This device does not have an available camera")
+        guard let videoURL = selectedVideoTrack.loadedFileURL else {
             return
         }
         
-        let newVideo = Video(context: coreDataContext)
-        line?.addToElements(newVideo)
-        newVideo.sequenceNumber = Int32(line?.elements?.index(of: newVideo) ?? 0)
-        
-        do {
-            try coreDataContext.save()
-            recordingVideo = newVideo
-        } catch let error as NSError {
-            print("Could not save new video: \(error.localizedDescription)")
+        let player = AVPlayer(url: videoURL)
+        let playerViewController = AVPlayerViewController()
+        playerViewController.player = player
+        present(playerViewController, animated: true) {
+            playerViewController.player!.play()
         }
         
-        present(imagePickerController, animated: true) {
-            //Something
-        }
+        //TODO: assign the corresponding properties from selectedVideoTrack to myVideoTrack
     }
     
     // MARK: Fetched Results Controller
-    func reloadFetchResultsController() {
-        _fetchedResultsController = nil
-    }
-    var _fetchedResultsController: NSFetchedResultsController<Video>? = nil
+    var _fetchedResultsController: NSFetchedResultsController<VideoTrack>? = nil
     var blockOperations: [BlockOperation] = []
     
-    var fetchedResultController: NSFetchedResultsController<Video> {
+    var fetchedResultController: NSFetchedResultsController<VideoTrack> {
         if _fetchedResultsController != nil {
             return _fetchedResultsController!
         }
         
-        let fetchRequest: NSFetchRequest<Video> = Video.fetchRequest()
+        let fetchRequest: NSFetchRequest<VideoTrack> = VideoTrack.fetchRequest()
         
-        fetchRequest.predicate = NSPredicate(format: "self.line == %@",self.line!)
+        fetchRequest.predicate = NSPredicate(format: "self != %@",self.myVideoTrack)
         
-        // sort by item text
-        fetchRequest.sortDescriptors = [NSSortDescriptor(key: "sequenceNumber", ascending: true)]
+        fetchRequest.sortDescriptors = [NSSortDescriptor(key: "name", ascending: true)]
         let resultsController = NSFetchedResultsController(fetchRequest: fetchRequest, managedObjectContext: coreDataContext, sectionNameKeyPath: nil, cacheName: nil)
         
         resultsController.delegate = self;
@@ -249,7 +112,7 @@ class DetailLineController: UIViewController, UICollectionViewDelegate, UICollec
         
         do {
             try _fetchedResultsController!.performFetch()
-        } catch {            
+        } catch {
             alert(error, title: "DB Error", message: "Could not performFetch in NSFetchedResultsController")
         }
         return _fetchedResultsController!
@@ -258,7 +121,7 @@ class DetailLineController: UIViewController, UICollectionViewDelegate, UICollec
     func controller(_ controller: NSFetchedResultsController<NSFetchRequestResult>, didChange anObject: Any, at indexPath: IndexPath?, for type: NSFetchedResultsChangeType, newIndexPath: IndexPath?) {
         
         if type == NSFetchedResultsChangeType.insert {
-            print("Insert Object: \(newIndexPath)")
+            print("Insert Object: \(newIndexPath?.description ?? "no index path")")
             
             if (collectionView?.numberOfSections)! > 0 {
                 
@@ -281,7 +144,7 @@ class DetailLineController: UIViewController, UICollectionViewDelegate, UICollec
             }
         }
         else if type == NSFetchedResultsChangeType.update {
-            print("Update Object: \(indexPath)")
+            print("Update Object: \(newIndexPath?.description ?? "no index path")")
             blockOperations.append(
                 BlockOperation(block: { [weak self] in
                     if let this = self {
@@ -294,7 +157,7 @@ class DetailLineController: UIViewController, UICollectionViewDelegate, UICollec
             )
         }
         else if type == NSFetchedResultsChangeType.move {
-            print("Move Object: \(indexPath)")
+            print("Move Object: \(newIndexPath?.description ?? "no index path")")
             
             blockOperations.append(
                 BlockOperation(block: { [weak self] in
@@ -307,7 +170,7 @@ class DetailLineController: UIViewController, UICollectionViewDelegate, UICollec
             )
         }
         else if type == NSFetchedResultsChangeType.delete {
-            print("Delete Object: \(indexPath)")
+            print("Delete Object: \(newIndexPath?.description ?? "no index path")")
             if collectionView?.numberOfItems( inSection: indexPath!.section ) == 1 {
                 self.shouldReloadCollectionView = true
             } else {
@@ -383,5 +246,14 @@ class DetailLineController: UIViewController, UICollectionViewDelegate, UICollec
         }
     }
 
-}
+    
+    //MARK: - Actions
+    @IBAction func cancelPressed(_ sender:UIBarButtonItem?) {
+        dismiss(animated: true, completion: nil)
+    }
+    
+    @IBAction func savePressed(_ sender:UIBarButtonItem?) {
+        dismiss(animated: true, completion: nil)
+    }
 
+}

@@ -23,6 +23,8 @@ class TimelineViewController: UIViewController, NSFetchedResultsControllerDelega
     
     var userReorderingCells = false
     
+    @IBOutlet weak var reuseButton:UIBarButtonItem!
+    
     @IBOutlet weak var tableView:UITableView! {
         didSet {
             tableView.delegate = self
@@ -34,6 +36,9 @@ class TimelineViewController: UIViewController, NSFetchedResultsControllerDelega
         super.viewDidLoad()
 
         // Do any additional setup after loading the view.
+        if videoTrack.isPrototype {
+            reuseButton.isEnabled = true
+        }
     }
 
     override func didReceiveMemoryWarning() {
@@ -42,16 +47,26 @@ class TimelineViewController: UIViewController, NSFetchedResultsControllerDelega
     }
     
 
-    /*
     // MARK: - Navigation
 
     // In a storyboard-based application, you will often want to do a little preparation before navigation
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
         // Get the new view controller using segue.destinationViewController.
         // Pass the selected object to the new view controller.
+        if segue.identifier == "VIDEO_CATALOG_NAVIGATION_SEGUE" {
+            
+            guard let videoCatalogNavigationController = segue.destination as? UINavigationController,
+                let videoCatalogController = videoCatalogNavigationController.topViewController as? VideoCatalogController else {
+                return
+            }
+            
+            videoCatalogController.myVideoTrack = videoTrack
+            
+//            present(videoCatalogNavigationController, animated: true, completion: nil)
+        }
+        
     }
-    */
-    
+ 
     // MARK: - Table View Data Source
 
     func numberOfSections(in tableView: UITableView) -> Int {
@@ -65,8 +80,6 @@ class TimelineViewController: UIViewController, NSFetchedResultsControllerDelega
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let tier = fetchedResultsController.object(at: indexPath)
-        
-//        let identifier = line.isAlternative ? "CELL_ALTERNATIVE_IDENTIFIER" : "CELL_LINE_IDENTIFIER"
         
         let cell = tableView.dequeueReusableCell(withIdentifier: "TIER_CELL", for: indexPath) as! TierTableCell
         configureCell(cell, withTier: tier)
@@ -356,5 +369,4 @@ class TimelineViewController: UIViewController, NSFetchedResultsControllerDelega
         }
         sender.value = 1
     }
-    
 }

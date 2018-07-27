@@ -1,16 +1,26 @@
 PODS:
+  - CocoaAsyncSocket (7.5.1):
+    - CocoaAsyncSocket/GCD (= 7.5.1)
+  - CocoaAsyncSocket/GCD (7.5.1)
   - MBProgressHUD (1.1.0)
+  - NHNetworkTime (1.7):
+    - CocoaAsyncSocket (~> 7.5.0)
 
 DEPENDENCIES:
   - MBProgressHUD
+  - NHNetworkTime
 
 SPEC REPOS:
   https://github.com/CocoaPods/Specs.git:
+    - CocoaAsyncSocket
     - MBProgressHUD
+    - NHNetworkTime
 
 SPEC CHECKSUMS:
+  CocoaAsyncSocket: e0a7e93b2ffa411592ff87e58524fbbc9b95b4fa
   MBProgressHUD: e7baa36a220447d8aeb12769bf0585582f3866d9
+  NHNetworkTime: b140ee21770aed41e7b8fd43647bce6349ad10f2
 
-PODFILE CHECKSUM: ee1881839962966ed6e2c5eca9ba2a5b57ca613b
+PODFILE CHECKSUM: da61e236b42577c636bbe6ce41a1405ca5d83623
 
 COCOAPODS: 1.5.0

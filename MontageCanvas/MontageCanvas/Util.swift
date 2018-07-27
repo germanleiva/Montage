@@ -27,6 +27,8 @@ struct Globals {
     static var outIsPressedDown = false
     static var inIsPressedDown = false
     static var documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+    static var temporaryDirectory = URL(fileURLWithPath: NSTemporaryDirectory())
+
 }
 
 

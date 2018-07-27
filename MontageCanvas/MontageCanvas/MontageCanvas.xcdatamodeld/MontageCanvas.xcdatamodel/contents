@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="14135" systemVersion="17F77" minimumToolsVersion="Automatic" sourceLanguage="Swift" userDefinedModelVersionIdentifier="">
+<model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="14135" systemVersion="17G65" minimumToolsVersion="Automatic" sourceLanguage="Swift" userDefinedModelVersionIdentifier="">
     <entity name="Board" representedClassName="Board" syncable="YES" codeGenerationType="category">
         <attribute name="name" optional="YES" attributeType="String" syncable="YES"/>
         <attribute name="updatedAt" optional="YES" attributeType="Date" usesScalarValueType="NO" syncable="YES"/>
@@ -43,7 +43,6 @@
     </entity>
     <entity name="Video" representedClassName="Video" syncable="YES" codeGenerationType="category">
         <attribute name="identifier" optional="YES" attributeType="UUID" usesScalarValueType="NO" syncable="YES"/>
-        <attribute name="isRecorded" optional="YES" attributeType="Boolean" usesScalarValueType="YES" syncable="YES"/>
         <attribute name="pausedTimeRanges" optional="YES" attributeType="Transformable" customClassName="Array&lt;TimeRange&gt;" syncable="YES"/>
         <attribute name="sequenceNumber" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="YES" syncable="YES"/>
         <attribute name="snapshot" optional="YES" attributeType="Transformable" customClassName="Data" syncable="YES"/>
@@ -53,7 +52,6 @@
         <relationship name="prototypeTrack" optional="YES" maxCount="1" deletionRule="Cascade" destinationEntity="VideoTrack" inverseName="inversePrototypeTrack" inverseEntity="VideoTrack" syncable="YES"/>
     </entity>
     <entity name="VideoTrack" representedClassName="VideoTrack" syncable="YES" codeGenerationType="category">
-        <attribute name="fileURL" optional="YES" attributeType="Transformable" customClassName="URL" syncable="YES"/>
         <attribute name="name" optional="YES" attributeType="String" syncable="YES"/>
         <relationship name="inverseBackgroundTrack" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Video" inverseName="backgroundTrack" inverseEntity="Video" syncable="YES"/>
         <relationship name="inversePrototypeTrack" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Video" inverseName="prototypeTrack" inverseEntity="Video" syncable="YES"/>
@@ -64,7 +62,7 @@
         <element name="Line" positionX="556" positionY="198" width="128" height="133"/>
         <element name="Sketch" positionX="603" positionY="536" width="128" height="150"/>
         <element name="Tier" positionX="900" positionY="486" width="128" height="285"/>
-        <element name="Video" positionX="835" positionY="224" width="128" height="178"/>
-        <element name="VideoTrack" positionX="1123" positionY="296" width="128" height="118"/>
+        <element name="Video" positionX="835" positionY="224" width="128" height="163"/>
+        <element name="VideoTrack" positionX="1123" positionY="296" width="128" height="103"/>
     </elements>
 </model>

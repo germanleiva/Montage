@@ -184,9 +184,6 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
     let coreDataContext = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
     var videoModel:Video!
     
-    var prototypeVideoFileURL:URL?
-    var backgroundVideoFileURL:URL?
-    
     //AVPlaying
     var prototypeComposition:AVMutableComposition?
     var backgroundComposition:AVMutableComposition?
@@ -268,6 +265,7 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
 //        return PlaybackCanvasViewManager(controller: self)
 //    }()
     
+    //POP
     lazy var canvasControllerMode:CanvasControllerMode = {
         CanvasControllerLiveMode(controller: self)
     }()
@@ -358,12 +356,7 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
     }
     
     // MARK: Properties
-//    lazy var videoAsset = {
-//        return AVAsset(url: outputURL)
-//    }()
-    
-    //    var catImage = UIImage(named:"cat")!
-//    var catCIImage = CIImage(image: UIImage(named:"cat")!)
+
     lazy var eaglContext:EAGLContext = {
         guard let context = EAGLContext(api: EAGLRenderingAPI.openGLES2) else {
             print("Fatal Error: could not create openGLContext")
@@ -378,30 +371,8 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
     }()
     var backgroundCameraFrame:CIImage?
     var prototypeCameraFrame:CIImage?
-
-    //    lazy var detector:CIDetector = {
-    //        return CIDetector(ofType: CIDetectorTypeRectangle,
-    //                              context: ciContext,
-    //                              options: [CIDetectorAccuracy: CIDetectorAccuracyHigh, CIDetectorAspectRatio: 16/9])!
-    //    }()
-    
-    // MARK: Vision.framework variables
-//    var requests = [VNRequest]()
     
     // MARK: AVFoundation variables
-//    var captureSession:AVCaptureSession
-    
-//    var syncLayer:AVSynchronizedLayer?
-    
-//    lazy var playerItem = {
-//        return AVPlayerItem(asset: videoAsset)
-//    }()
-//    lazy var player = {
-//        return AVPlayer(playerItem: playerItem)
-//    }()
-//    lazy var playerLayer = {
-//        return AVPlayerLayer(player: player)
-//    }()
     
     var isUserOverlayActive = false
 
@@ -454,7 +425,12 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
         super.viewDidLoad()
         
         //Let's initialize the mode
-        assert(canvasControllerMode.isPaused == false)
+         //POP
+         if !videoModel.isNew {
+//            canvasControllerMode = CanvasControllerLiveMode(controller: self)
+//        } else {
+            canvasControllerMode = CanvasControllerPlayingMode(controller: self)
+        }
         
         //Let's stretch the scrubber
         scrubberSlider.frame = CGRect(origin: scrubberSlider.frame.origin, size: CGSize(width:view!.frame.width - 165,height:scrubberSlider.frame.height))
@@ -462,10 +438,6 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
         // Do any additional setup after loading the view.
 //        cloudKitInitialize()
         
-        initializeCaptureSession()
-        
-//        let displayLink = CADisplayLink(target: self, selector: #selector(snapshotSketchOverlay))
-//        displayLink.add(to: RunLoop.current, forMode: RunLoopMode.defaultRunLoopMode)
         displayLink.isPaused = false
         
         NotificationCenter.default.addObserver(self, selector: #selector(appWillWillEnterForeground), name: NSNotification.Name.UIApplicationWillEnterForeground, object: nil)
@@ -475,9 +447,9 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        print("viewWillAppear")
-        browser.startBrowsingForPeers()
-        print("initial start browsing for peers")
+//        print("viewWillAppear")
+//        browser.startBrowsingForPeers()
+//        print("initial start browsing for peers")
     }
     
     func cloudKitInitialize() {
@@ -559,13 +531,6 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
         
         UIGraphicsEndImageContext()
     }
-    
-    func initializeCaptureSession() {
-//        configureCaptureSession()
-
-//        startCaptureSession()
-//        setupVisionDetection()
-    }
 
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
@@ -604,7 +569,6 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
     
     // MARK: - Actions
     
-    
     @IBAction func playPressed(_ sender:AnyObject?) {
         if canvasControllerMode.isPaused {
             playPlayer()
@@ -619,8 +583,6 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
             if let backgroundMutableComposition = backgroundComposition?.copy() as? AVComposition {
 
                 let exportSession = AVAssetExportSession(asset: backgroundMutableComposition, presetName: AVAssetExportPreset1280x720)
-
-                let filter = CIFilter(name: "CIGaussianBlur")!
                 
                 let weakSelf = self
                 
@@ -711,10 +673,18 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
                 })
 
                 exportSession?.outputFileType = AVFileType.mov
-//                var outputURL = Globals.documentsDirectory
-//                outputURL.appendPathComponent("prueba.mov")
-                var outputURL = videoModel.file!
-                exportSession?.outputURL = outputURL
+                let temporalOutputURL = Globals.temporaryDirectory.appendingPathComponent("currently_exported_movie.mov")
+                
+                if FileManager.default.fileExists(atPath: temporalOutputURL.path) {
+                    do {
+                        try FileManager.default.removeItem(at: temporalOutputURL)
+                    } catch let error as NSError {
+                        self.alert(error, title:"FileSystem Error", message:"Could not clean temporal video file location \(temporalOutputURL)")
+                        return
+                    }
+                }
+                
+                exportSession?.outputURL = temporalOutputURL
                 exportSession?.videoComposition = videoComposition
 
                 exportSession?.exportAsynchronously {
@@ -726,6 +696,40 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
                     }
                     if exportSession!.status == .completed {
                         DispatchQueue.main.async { [unowned self] in
+                            let finalOutputURL = self.videoModel.file
+                            
+                            //If the finalOutput exist, then I do a backup
+                            if FileManager.default.fileExists(atPath: finalOutputURL.path) {
+                                let backupFilePath = finalOutputURL.deletingPathExtension().lastPathComponent + "-backup." + finalOutputURL.pathExtension
+                                let backupOutputURL = finalOutputURL.deletingLastPathComponent().appendingPathComponent(backupFilePath)
+                                
+                                //I delete the last backup if there is one
+                                if FileManager.default.fileExists(atPath: backupOutputURL.path) {
+                                    do {
+                                        try FileManager.default.removeItem(at: backupOutputURL)
+                                    } catch let error as NSError {
+                                        self.alert(error, title:"FileSystem Error", message:"Could not delete previous backup file \(backupOutputURL)")
+                                        return
+                                    }
+                                }
+                                
+                                //Finally I move the finalOutput to the backupOutput
+                                do {
+                                    try FileManager.default.moveItem(at: finalOutputURL, to: backupOutputURL)
+                                } catch let error as NSError {
+                                    self.alert(error, title:"FileSystem Error", message:"Could not move existing final commposition video file to backup location \(backupOutputURL)")
+                                    return
+                                }
+                            }
+                            
+                            //Always at the end, I move the temporalOutput to the finalOutput (aka video.file)
+                            do {
+                                try FileManager.default.moveItem(at: temporalOutputURL, to: finalOutputURL)
+                            } catch let error as NSError {
+                                self.alert(error, title:"FileSystem Error", message:"Could not move recently exported final commposition video file to final location \(finalOutputURL)")
+                                return
+                            }
+                            
                             do {
                                 try self.coreDataContext.save()
                                 self.dismiss(animated: true, completion: nil)
@@ -741,8 +745,8 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
     }
     
     @IBAction func cancelPressed(_ sender: Any) {
-        NotificationCenter.default.post(Notification(name:Notification.Name(rawValue: "DELETE_RECORDING_VIDEO")))
-        stopRecordingPressed()
+        canvasControllerMode.cancelRecording(controller:self)
+        
         dismiss(animated: true, completion: nil)
     }
     
@@ -967,108 +971,10 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
         self.scrubbedToTime(Double(scrubberSlider.value))
     }
     
-    // MARK: Capture Session
-    
-//    func startCaptureSession() {
-//        let weakSelf = self
-//        sampleBufferQueue.async {
-//            weakSelf.captureSession.startRunning()
-//        }
-//    }
-    
-//    func stopSession() {
-//        //Because we call stopSession in deinit we need to retain the variable
-//        let captureSession = self.captureSession
-//        sampleBufferQueue.async {
-//            //In here, self is deallocated already
-//            captureSession.stopRunning()
-//        }
-//    }
-    
-//    func configureCaptureSession() {
-//        captureSession.sessionPreset = AVCaptureSession.Preset.medium
-//
-//        //Setup default video camera device
-//        guard let videoDevice = AVCaptureDevice.default(for: AVMediaType.video) else {
-//            let alertController = UIAlertController(title: "Video not available", message: "Could not access the video camera device", preferredStyle: UIAlertControllerStyle.alert)
-//            present(alertController, animated: true, completion: nil)
-//            return
-//        }
-//
-//        let videoInput:AVCaptureDeviceInput
-//
-//        do {
-//            videoInput = try AVCaptureDeviceInput(device: videoDevice)
-//        } catch let error as NSError {
-//            let alertController = UIAlertController(title: "Video not available", message: "Could not access the video camera input: \(error.localizedDescription)", preferredStyle: UIAlertControllerStyle.alert)
-//            present(alertController, animated: true, completion: nil)
-//            return
-//        }
-//
-//        videoDimensions = CMVideoFormatDescriptionGetDimensions(videoInput.device.activeFormat.formatDescription)
-//
-//        if captureSession.canAddInput(videoInput) {
-//            captureSession.addInput(videoInput)
-//            activeVideoInput = videoInput
-//        }
-//
-//        //Setup default microphone
-//        guard let audioDevice = AVCaptureDevice.default(for: AVMediaType.audio) else {
-//            let alertController = UIAlertController(title: "Audio not available", message: "Could not access the audio device", preferredStyle: UIAlertControllerStyle.alert)
-//            present(alertController, animated: true, completion: nil)
-//            return
-//        }
-//
-//        let audioInput:AVCaptureDeviceInput
-//
-//        do {
-//            audioInput = try AVCaptureDeviceInput(device: audioDevice)
-//        } catch let error as NSError {
-//            let alertController = UIAlertController(title: "Audio not available", message: "Could not access the audio input: \(error.localizedDescription)", preferredStyle: UIAlertControllerStyle.alert)
-//            present(alertController, animated: true, completion: nil)
-//            return
-//        }
-//
-//        if captureSession.canAddInput(audioInput) {
-//            captureSession.addInput(audioInput)
-//        }
-//
-//        //Setup the movie file output
-//
-//        //        if captureSession.canAddOutput(movieFileOutput) {
-//        //            captureSession.addOutput(movieFileOutput)
-//        //        }
-//
-//        //Setup the video data output
-//
-//        if captureSession.canAddOutput(videoDataOutput) {
-//            captureSession.addOutput(videoDataOutput)
-//        }
-//
-//        let fileType = AVFileType.mov
-//        if let videoSettings = videoDataOutput.recommendedVideoSettings(forVideoCodecType: AVVideoCodecType.h264, assetWriterOutputFileType: fileType) as? [String:Any] {
-//            var extendedVideoSettings = videoSettings
-//            //            extendedVideoSettings[AVVideoCompressionPropertiesKey] = [
-//            //                AVVideoAverageBitRateKey : ,
-//            //                AVVideoProfileLevelKey : AVVideoProfileLevelH264Main31, /* Or whatever profile & level you wish to use */
-//            //                AVVideoMaxKeyFrameIntervalKey :
-//            //            ]
-//
-//            movieWriter = MovieWriter(extendedVideoSettings)
-//            movieWriter?.delegate = self
-//        }
-//    }
-    
-    // MARK: Movie Writer Delegate
-    
-//    func didWriteMovie(atURL outputURL:URL) {
-//        print("Succesfuly created internal movie file at \(outputURL)")
-//        prototypeVideoFileURL = outputURL
-//    }
-    
     func startPlayback() {
-        //We should start showing the prototype AVPlayer and enabling the player controls
-        guard let prototypeVideoFileURL = prototypeVideoFileURL, let backgroundVideoFileURL = backgroundVideoFileURL else {
+        //We should start showing the prototype AVPlayer and enabling the player controls\
+        
+        guard let prototypeVideoFileURL = self.videoModel.prototypeTrack?.loadedFileURL, let backgroundVideoFileURL = self.videoModel.backgroundTrack?.loadedFileURL else {
             print("Cannot start playback, missing movie/s")
             return
         }
@@ -1237,7 +1143,6 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
             self.backgroundPlayer.play()
             self.prototypePlayer.play()
             
-            self.canvasControllerMode = CanvasControllerPlayingMode(controller:self)
         }
     }
     
@@ -1669,27 +1574,6 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
         return colorCube!
     }
     
-    /***
-    func visionDetection(_ sampleBuffer:CMSampleBuffer, outputImage:CIImage) {
-        var requestOptions:[VNImageOption : Any] = [:]
-        
-        if let camData = CMGetAttachment(sampleBuffer, kCMSampleBufferAttachmentKey_CameraIntrinsicMatrix, nil) {
-            //            requestOptions = [.cameraIntrinsics:camData,.ciContext:ciContext]
-            requestOptions = [.cameraIntrinsics:camData]
-            
-        }
-        
-        //        let imageRequestHandler = VNImageRequestHandler(cvPixelBuffer: outputImage.pixelBuffer!, orientation: CGImagePropertyOrientation.downMirrored, options: requestOptions)
-        
-        let imageRequestHandler = VNImageRequestHandler(ciImage: outputImage, orientation: CGImagePropertyOrientation.downMirrored, options: requestOptions)
-        
-        do {
-            try imageRequestHandler.perform(self.requests)
-        } catch let error as NSError {
-            print(error.localizedDescription)
-        }
-    }*/
-    
     func exifOrientation(orientation: UIDeviceOrientation) -> UInt32 {
         switch orientation {
         case .portraitUpsideDown:
@@ -1703,198 +1587,6 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
         }
     }
     
-    // MARK: Vision.framework
-    /***
-    func setupVisionDetection() {
-        //        let textRequest = VNDetectTextRectanglesRequest(completionHandler: self.detect)
-        //        textRequest.reportCharacterBoxes = true
-        
-        let rectangleRequest = VNDetectRectanglesRequest(completionHandler: self.detectRectanglesHandler)
-        rectangleRequest.quadratureTolerance = 45
-        rectangleRequest.minimumAspectRatio = 16/9
-        rectangleRequest.maximumAspectRatio = 16/9
-        //        rectangleRequest.minimumConfidence = 0 //default
-        
-        self.requests = [rectangleRequest]
-    }*/
-    /***
-    func detectRectanglesHandler(request: VNRequest, error: Error?) {
-        guard let observations = request.results else {
-            print("no result")
-            return
-        }
-        
-        let result = observations.map({$0 as? VNRectangleObservation})
-        
-        DispatchQueue.main.async() {
-            self.previewView.layer.sublayers?.removeSubrange(1...)
-            for region in result {
-                guard let detectedRectangle = region else {
-                    continue
-                }
-                
-                self.highlightRectangle(box:detectedRectangle)
-                
-            }
-        }
-    }*/
-    
-    //    func detectTextHandler(request: VNRequest, error: Error?) {
-    //        guard let observations = request.results else {
-    //            print("no result")
-    //            return
-    //        }
-    //
-    //        let result = observations.map({$0 as? VNTextObservation})
-    //
-    //        DispatchQueue.main.async() {
-    //            self.previewView.layer.sublayers?.removeSubrange(1...)
-    //            for region in result {
-    //                guard let rg = region else {
-    //                    continue
-    //                }
-    //
-    //                self.highlightWord(box: rg)
-    //
-    //                if let boxes = region?.characterBoxes {
-    //                    for characterBox in boxes {
-    //                        self.highlightLetters(box: characterBox)
-    //                    }
-    //                }
-    //            }
-    //        }
-    //    }
-    /***
-    func highlightRectangle(box: VNRectangleObservation) {
-        let path = CGMutablePath()
-        
-        let topLeft = previewView.videoLayer.layerPointConverted(fromCaptureDevicePoint: box.topLeft)
-        let topRight = previewView.videoLayer.layerPointConverted(fromCaptureDevicePoint: box.topRight)
-        let bottomLeft = previewView.videoLayer.layerPointConverted(fromCaptureDevicePoint: box.bottomLeft)
-        let bottomRight = previewView.videoLayer.layerPointConverted(fromCaptureDevicePoint: box.bottomRight)
-        
-        path.move(to: topLeft)
-        path.addLine(to: topLeft)
-        path.addLine(to: topRight)
-        path.addLine(to: bottomRight)
-        path.addLine(to: bottomLeft)
-        path.closeSubpath()
-        
-        let outline = CAShapeLayer()
-        
-        outline.path = path
-        //        outline.frame = CGRect(x: xCord, y: yCord, width: width, height: height)
-        outline.borderWidth = 10
-        outline.strokeColor = UIColor.red.cgColor
-        outline.fillColor = UIColor.orange.cgColor
-        
-        previewView.layer.addSublayer(outline)
-        
-        //        print("TopR \(topRight) \(box.topRight)")
-        //        print("TopL \(topLeft) \(box.topLeft)")
-        //        print("BotR \(bottomRight) \(box.bottomRight)")
-        //        print("BotL \(bottomLeft) \(box.bottomLeft)")
-        
-        //Core image points are in cartesian (y is going upwards insetead of downwards)
-        //        var t = CGAffineTransform(scaleX: 1, y: -1)
-        //        t = t.translatedBy(CGAffineTransform(translationX: 0, y: -box.boundingBox.size.height)
-        //        let pointUIKit = CGPointApplyAffineTransform(pointCI, t)
-        //        let rectUIKIT = CGRectApplyAffineTransform(rectCI, t)
-        
-        let perspectiveTransform = CIFilter(name: "CIPerspectiveTransform")!
-        
-        let w = self.catCIImage!.extent.size.width
-        let h = self.catCIImage!.extent.size.height
-        
-        perspectiveTransform.setValue(CIVector(cgPoint:CGPoint(x: box.topLeft.x * w, y: h * (1 - box.topLeft.y))), forKey: "inputTopLeft")
-        perspectiveTransform.setValue(CIVector(cgPoint:CGPoint(x: box.topRight.x * w, y: h * (1 - box.topRight.y))), forKey: "inputTopRight")
-        perspectiveTransform.setValue(CIVector(cgPoint:CGPoint(x: box.bottomRight.x * w, y: h * (1 - box.bottomRight.y))), forKey: "inputBottomRight")
-        perspectiveTransform.setValue(CIVector(cgPoint:CGPoint(x: box.bottomLeft.x * w, y: h * (1 - box.bottomLeft.y))), forKey: "inputBottomLeft")
-        //        perspectiveTransform.setValue(CIVector(cgPoint:box.topLeft.scaled(to: ciSize)), forKey: "inputTopLeft")
-        //        perspectiveTransform.setValue(CIVector(cgPoint:box.topRight.scaled(to: ciSize)), forKey: "inputTopRight")
-        //        perspectiveTransform.setValue(CIVector(cgPoint:box.bottomRight.scaled(to: ciSize)), forKey: "inputBottomRight")
-        //        perspectiveTransform.setValue(CIVector(cgPoint:box.bottomLeft.scaled(to: ciSize)), forKey: "inputBottomLeft")
-        perspectiveTransform.setValue(self.catCIImage!.oriented(CGImagePropertyOrientation.downMirrored),
-                                      forKey: kCIInputImageKey)
-        
-        if let currentFrame = self.currentFrame {
-            
-            let composite = ChromaKeyFilter()
-            composite.inputImage = currentFrame
-            composite.backgroundImage = perspectiveTransform.outputImage
-            composite.activeColor = CIColor(red: 0, green: 1, blue: 0)
-            
-            //Apple Chroma (not working)
-            //            let composite = CIFilter(name:"ChromaKey") as! ChromaKey
-            //
-            //            composite.setDefaults()
-            //            composite.setValue(perspectiveTransform.outputImage!, forKey: "inputBackgroundImage")
-            //            composite.setValue(currentFrame, forKey: "inputImage")
-            //
-            //            composite.inputCenterAngle = NSNumber(value:120 * Float.pi / 180)
-            //            composite.inputAngleWidth = NSNumber(value:45 * Float.pi / 180)
-            
-            if let compositeImage = composite.outputImage {
-                self.imageView.image = UIImage(ciImage:compositeImage)
-            }
-        }
-    }*/
-    
-    //    func highlightWord(box: VNTextObservation) {
-    //        guard let boxes = box.characterBoxes else {
-    //            return
-    //        }
-    //
-    //        var maxX: CGFloat = 9999.0
-    //        var minX: CGFloat = 0.0
-    //        var maxY: CGFloat = 9999.0
-    //        var minY: CGFloat = 0.0
-    //
-    //        for char in boxes {
-    //            if char.bottomLeft.x < maxX {
-    //                maxX = char.bottomLeft.x
-    //            }
-    //            if char.bottomRight.x > minX {
-    //                minX = char.bottomRight.x
-    //            }
-    //            if char.bottomRight.y < maxY {
-    //                maxY = char.bottomRight.y
-    //            }
-    //            if char.topRight.y > minY {
-    //                minY = char.topRight.y
-    //            }
-    //        }
-    //
-    //        let previewLayerContentRect = self.previewLayerContentRect()
-    //
-    //        let xCord = maxX * previewLayerContentRect.width
-    //        let yCord = (1 - minY) * previewLayerContentRect.height + previewLayerContentRect.origin.y
-    //        let width = (minX - maxX) * previewLayerContentRect.width
-    //        let height = (minY - maxY) * previewLayerContentRect.height
-    //
-    //        let outline = CALayer()
-    //        outline.frame = CGRect(x: xCord, y: yCord, width: width, height: height)
-    //        outline.borderWidth = 2.0
-    //        outline.borderColor = UIColor.red.cgColor
-    //
-    //        previewView.layer.addSublayer(outline)
-    //    }
-    
-    //    func highlightLetters(box: VNRectangleObservation) {
-    //        let previewLayerContentRect = self.previewLayerContentRect()
-    //
-    //        let xCord = box.topLeft.x * previewLayerContentRect.width
-    //        let yCord = (1 - box.topLeft.y) * previewLayerContentRect.height + previewLayerContentRect.origin.y
-    //        let width = (box.topRight.x - box.bottomLeft.x) * previewLayerContentRect.width
-    //        let height = (box.topLeft.y - box.bottomLeft.y) * previewLayerContentRect.height
-    //
-    //        let outline = CALayer()
-    //        outline.frame = CGRect(x: xCord, y: yCord, width: width, height: height)
-    //        outline.borderWidth = 1.0
-    //        outline.borderColor = UIColor.blue.cgColor
-    //
-    //        previewView.layer.addSublayer(outline)
-    //    }
     //MARK: MCSessionDelegate Methods
     func setRole(peerID:MCPeerID,role:MontageRole) {
         let dict = ["role":role.rawValue]
@@ -2117,13 +1809,11 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
             return
         }
         
-        DispatchQueue.main.async {[unowned self] in
-            let fileManager = FileManager()
+//        DispatchQueue.main.async {[unowned self] in
+            let fileManager = FileManager.default
+            
             if peerID.isEqual(self.wizardCamPeer) {
-                guard let currentPrototypeVideoFileURL = self.videoModel.prototypeTrack!.fileURL else {
-                    print("Cold not get fileURL of prototype")
-                    return
-                }
+                let currentPrototypeVideoFileURL = self.videoModel.prototypeTrack!.fileURL
 
                 if fileManager.fileExists(atPath: currentPrototypeVideoFileURL.path) {
                     do {
@@ -2136,7 +1826,7 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
                 
                 do {
                     try fileManager.copyItem(at: localURL, to: currentPrototypeVideoFileURL)
-                    self.prototypeVideoFileURL = currentPrototypeVideoFileURL
+//                    self.videoModel.prototypeTrack!.loadedFileURL = currentPrototypeVideoFileURL
                 } catch {
                     self.alert(error, title: "FileManager error", message: "Could not create prototype.mov")
                     return
@@ -2144,10 +1834,7 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
                 
             }
             if peerID.isEqual(self.userCamPeer) {
-                guard let currentBackgroundVideoFileURL = self.videoModel.backgroundTrack!.fileURL else {
-                    print("Cold not get fileURL of background")
-                    return
-                }
+                let currentBackgroundVideoFileURL = self.videoModel.backgroundTrack!.fileURL
                 
                 if fileManager.fileExists(atPath: currentBackgroundVideoFileURL.path) {
                     do {
@@ -2160,16 +1847,14 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
                 
                 do {
                     try fileManager.copyItem(at: localURL, to: currentBackgroundVideoFileURL)
-                    self.backgroundVideoFileURL = currentBackgroundVideoFileURL
+//                    self.videoModel.backgroundTrack!.loadedFileURL = currentBackgroundVideoFileURL
                 } catch {
                     self.alert(error, title: "FileManager error", message: "Could not create background.mov")
                     return
                 }
             }
-            
-            if self.prototypeVideoFileURL != nil && self.backgroundVideoFileURL != nil {
-                self.startPlayback()
-            }
+        DispatchQueue.main.async {[unowned self] in
+            self.canvasControllerMode = CanvasControllerPlayingMode(controller:self)
         }
     }
 
@@ -2371,6 +2056,10 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
 }
 
 extension CameraController:CanvasControllerModeDelegate {
+    func startedLiveMode(mode:CanvasControllerLiveMode) {
+        browser.startBrowsingForPeers()
+    }
+    
     func startedRecording(mode: CanvasControllerRecordingMode) {
         recordingIndicator.alpha = 0
         
@@ -2380,6 +2069,16 @@ extension CameraController:CanvasControllerModeDelegate {
         }, completion: nil)
         
         saveButton.isEnabled = false
+    }
+    
+    func cancelRecording(mode:CanvasControllerRecordingMode) {
+        recordingIndicator.layer.removeAllAnimations()
+        recordingIndicator.isHidden = true
+        saveButton.isEnabled = true
+        
+        recordingControls.isHidden = true
+        
+        NotificationCenter.default.post(Notification(name:Notification.Name(rawValue: "DELETE_RECORDING_VIDEO")))
     }
     
     func stoppedRecording(mode: CanvasControllerRecordingMode) {
@@ -2440,7 +2139,7 @@ extension CameraController:CanvasControllerModeDelegate {
     }
     
     func startedPlaying(mode:CanvasControllerPlayingMode) {
-        
+        self.startPlayback()
     }
     func pausedPlaying(mode:CanvasControllerPlayingMode){
         playButton.setImage(UIImage(named:"play-icon"), for: UIControlState.normal)
@@ -2590,9 +2289,6 @@ extension CameraController: CanvasViewDelegate {
         }
     }
     
-//    func normalizeTime1970(time: TimeInterval) -> TimeInterval? {
-//        return canvasControllerMode.normalizedTime
-//    }
     var currentTime: TimeInterval {
         return canvasControllerMode.currentTime
     }
@@ -2683,98 +2379,6 @@ class CalendarEvent {
     }
     
 }
-
-//class RecordingCanvasViewManager:CanvasViewManager {
-//    override func canvasTierAdded(_ canvas: CanvasView, tier: Tier) {
-//
-//    }
-//
-//    override func canvasTierModified(_ canvas: CanvasView, tier: Tier) {
-//
-//    }
-//
-//    override func playerItemOffset() -> TimeInterval {
-//        return 0
-//    }
-//}
-//
-//class PlaybackCanvasViewManager:CanvasViewManager {
-//
-//
-//
-//    override func canvasTierAdded(_ canvas: CanvasView, tier: Tier) {
-//        let shapeLayer = tier.shapeLayer
-//        canvas.removeAllSketches()
-//        let syncLayer = canvas.associatedSyncLayer
-//
-//        CATransaction.begin()
-//        CATransaction.setDisableActions(true)
-//        syncLayer?.addSublayer(shapeLayer)
-//        CATransaction.commit()
-//
-//        switch controller.prototypePlayer.timeControlStatus {
-//        case .playing:
-//            let (appearAnimation,strokeEndAnimation,transformationAnimation) = tier.buildAnimations2()
-//
-//            if let strokeEndAnimation = strokeEndAnimation {
-//                shapeLayer.strokeEnd = 0
-//                shapeLayer.add(strokeEndAnimation, forKey: strokeEndAnimation.keyPath!)
-//            }
-//
-//            if let transformationAnimation = transformationAnimation {
-//                shapeLayer.transform = CATransform3DIdentity
-//                shapeLayer.add(transformationAnimation, forKey: transformationAnimation.keyPath!)
-//            }
-//
-//            if let appearAnimation = appearAnimation {
-//                shapeLayer.add(appearAnimation, forKey: appearAnimation.keyPath!)
-//            }
-//        case .paused:
-//            let animationKeyTime = controller.prototypePlayerItem.currentTime().seconds
-//            let animationDuration = controller.prototypePlayerItem.duration.seconds
-//            let appearAnimation = CAKeyframeAnimation()
-//            appearAnimation.beginTime = AVCoreAnimationBeginTimeAtZero
-//            appearAnimation.calculationMode = kCAAnimationDiscrete
-//            appearAnimation.keyPath = "opacity"
-//            appearAnimation.values = [0,1,1]
-//            appearAnimation.keyTimes = [0,NSNumber(value:animationKeyTime/animationDuration),1]
-//            appearAnimation.duration = animationDuration
-//            appearAnimation.fillMode = kCAFillModeForwards //to keep opacity = 1 after completing the animation
-//            appearAnimation.isRemovedOnCompletion = false
-//
-//            shapeLayer.add(appearAnimation, forKey: appearAnimation.keyPath!)
-//        default:
-//            print("ignoring")
-//        }
-//
-//    }
-//
-//    override func canvasTierModified(_ canvas: CanvasView, tier: Tier) {
-//        //We redo the whole thing
-//        let shapeLayer = tier.shapeLayer
-//        shapeLayer.removeAllAnimations()
-//
-//        let (appearAnimation,strokeEndAnimation,transformationAnimation) = tier.buildAnimations()
-//
-//        if let strokeEndAnimation = strokeEndAnimation {
-//            shapeLayer.strokeEnd = 0
-//            shapeLayer.add(strokeEndAnimation, forKey: strokeEndAnimation.keyPath!)
-//        }
-//
-//        if let transformationAnimation = transformationAnimation {
-//            shapeLayer.transform = CATransform3DIdentity
-//            shapeLayer.add(transformationAnimation, forKey: transformationAnimation.keyPath!)
-//        }
-//
-//        if let appearAnimation = appearAnimation {
-//            shapeLayer.add(appearAnimation, forKey: appearAnimation.keyPath!)
-//        }
-//    }
-//
-//    override func playerItemOffset() -> TimeInterval {
-//        return controller.prototypePlayerItem.currentTime().seconds
-//    }
-//}
 
 //extension CameraController: TCMaskViewDelegate{
     //

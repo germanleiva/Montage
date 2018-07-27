@@ -19,6 +19,8 @@ protocol CanvasControllerModeDelegate:AnyObject {
     func pausedPlaying(mode:CanvasControllerPlayingMode)
     func resumedPlaying(mode:CanvasControllerPlayingMode)
     
+    func startedLiveMode(mode:CanvasControllerLiveMode)
+
     func playerItemOffset() -> TimeInterval
 }
 
@@ -44,6 +46,10 @@ class CanvasControllerMode {
         preconditionFailure("This method must be overridden")
     }
     
+    func cancelRecording(controller:CameraController) {
+        //Empty implementation
+    }
+    
     func stopRecording(controller:CameraController) {
         preconditionFailure("This method must be overridden")
     }
@@ -60,11 +66,7 @@ class CanvasControllerMode {
         delegate = controller
     }
     
-    var currentTime:TimeInterval = 0.0  //This does NOT count the paused ranges
-    
-//    func normalizedTime(time:TimeInterval) -> TimeInterval? {
-//        return nil
-//    }
+    var currentTime:TimeInterval = 0.0  //This does NOT count the paused ranges, check property accumulatedTime
 }
 
 class CanvasControllerLiveMode:CanvasControllerMode {
@@ -85,6 +87,12 @@ class CanvasControllerLiveMode:CanvasControllerMode {
     
     override func resume(controller:CameraController) {
         controller.alert(nil, title: "Cannot do", message: "Cannot resume when streaming")
+    }
+    
+    override init(controller:CameraController) {
+        super.init(controller: controller)
+        
+        delegate.startedLiveMode(mode: self)
     }
 }
 
@@ -129,6 +137,10 @@ class CanvasControllerRecordingMode:CanvasControllerMode {
         controller.alert(nil, title: "Cannot do", message: "I'm already recording")
     }
     
+    override func cancelRecording(controller: CameraController) {
+        controller.cancelRecording(mode: self)
+    }
+    
     override func stopRecording(controller:CameraController) {
         if isPaused {
             //TODO:
@@ -156,10 +168,6 @@ class CanvasControllerRecordingMode:CanvasControllerMode {
         
         controller.resumedRecording(mode: self,pausedTimeRange:pausedTimeRange)
     }
-    
-//    override func normalizedTime(time:TimeInterval) -> TimeInterval? {
-//        return time - startedRecordingAt
-//    }
 }
 
 class CanvasControllerPlayingMode:CanvasControllerMode {
@@ -176,12 +184,18 @@ class CanvasControllerPlayingMode:CanvasControllerMode {
     
     var currentlyPausedAt:TimeInterval?
 
+    override init(controller:CameraController) {
+        super.init(controller: controller)
+        
+        controller.startedPlaying(mode: self)
+    }
+    
     override func startRecording(controller:CameraController) {
         controller.alert(nil, title: "Cannot do", message: "Cannot start recording while in playback")
     }
     
     override func stopRecording(controller:CameraController) {
-        controller.alert(nil, title: "Cannot do", message: "Cannot stop recording while in playback")
+//        controller.alert(nil, title: "Cannot do", message: "Cannot stop recording while in playback")
     }
     
     override func pause(controller:CameraController) {
@@ -204,8 +218,4 @@ class CanvasControllerPlayingMode:CanvasControllerMode {
             preconditionFailure("CanvasControllerPlayingMode >> This method should never be called")
         }
     }
-    
-//    override func normalizedTime(time:TimeInterval) -> TimeInterval? {
-//        return delegate.playerItemOffset()
-//    }
 }

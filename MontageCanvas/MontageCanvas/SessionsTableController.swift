@@ -9,9 +9,6 @@
 import UIKit
 import CoreData
 
-import UIKit
-import CoreData
-
 let CELL_BOARD_IDENTIFIER = "CELL_BOARD_IDENTIFIER"
 let SEGUE_SESSIONS_TO_BOARD = "SEGUE_SESSIONS_TO_BOARD"
 

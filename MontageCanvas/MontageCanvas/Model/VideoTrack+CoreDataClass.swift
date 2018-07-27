@@ -16,6 +16,30 @@ public class VideoTrack: NSManagedObject {
     var startedRecordingAt:TimeInterval = -1
     var endedRecordingAt:TimeInterval = -1
     
+    var isPrototype:Bool {
+        return inversePrototypeTrack != nil && inverseBackgroundTrack == nil
+    }
+    
+    var video:Video {
+        if inverseBackgroundTrack != nil {
+            return inverseBackgroundTrack!
+        }
+        if inversePrototypeTrack != nil {
+            return inversePrototypeTrack!
+        }
+        fatalError("We should not have a VideoTrack without Video")
+    }
+    
+    var fileURL:URL {
+        let fileName:String
+        if isPrototype {
+            fileName = "prototype.mov"
+        } else {
+            fileName = "background.mov"
+        }
+        return video.videoDirectory.appendingPathComponent(fileName)
+    }
+    
     func startRecording(time:TimeInterval) {
         startedRecordingAt = time
         isRecordingInputs = true
@@ -35,11 +59,6 @@ public class VideoTrack: NSManagedObject {
     }
     
     var isRecordingInputs = false
-    
-    var video:Video? {
-        let video = inversePrototypeTrack ?? inverseBackgroundTrack ?? nil
-        return video
-    }
     
     var recordedBoxes = [(CMTime,VNRectangleObservation)]()
     
@@ -78,5 +97,22 @@ public class VideoTrack: NSManagedObject {
                 eachTier.isSelected = false
             }
         }
+    }
+    
+    var loadedFileURL:URL? {
+//        do {
+//            if let url = fileURL {
+//                if try url.checkResourceIsReachable() {
+//                    return url
+//                }
+//            }
+//
+//        } catch {
+//            return nil
+//        }
+        if FileManager.default.fileExists(atPath: fileURL.path) {
+            return fileURL
+        }
+        return nil
     }
 }

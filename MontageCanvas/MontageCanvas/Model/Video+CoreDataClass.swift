@@ -22,19 +22,26 @@ public class Video: NSManagedObject {
             return
         }
         
-        identifier = UUID()
-        
-        prototypeTrack = VideoTrack(context: context)
-        prototypeTrack?.fileURL = Globals.documentsDirectory.appendingPathComponent("\(self.name!)-prototype.mov")
+        //Let's create the videoDirectory
+        do {
+            //[.posixPermissions: 0777]
+            try FileManager.default.createDirectory(at: videoDirectory, withIntermediateDirectories: true, attributes: nil)
+        } catch let error as NSError {
+            fatalError("Could not create videoDirectory at \(videoDirectory): \(error.localizedDescription)")
+        }
         
         backgroundTrack = VideoTrack(context: context)
-        backgroundTrack?.fileURL = Globals.documentsDirectory.appendingPathComponent("\(self.name!)-background.mov")
+        prototypeTrack = VideoTrack(context: context)
         
         pausedTimeRanges = [TimeRange]()
     }
     
+    var isNew:Bool {
+        return backgroundTrack!.loadedFileURL == nil && prototypeTrack!.loadedFileURL == nil
+    }
+    
     public override func prepareForDeletion() {
-        if let file = self.file {
+        if hasVideoFile {
             do {
                 print("Deleting video file: \(file.absoluteString)")
                 try FileManager().removeItem(at: file)
@@ -46,10 +53,8 @@ public class Video: NSManagedObject {
     }
     
     func saveVideoFile(_ tempVideoFile:URL, completionBlock: @escaping () -> Void) {
-        self.isRecorded = true //isRecorded is used inside file, so it needs to be set to true before asking for the file
-        
         do {
-            try FileManager.default.copyItem(at: tempVideoFile, to: self.file!)
+            try FileManager.default.copyItem(at: tempVideoFile, to: file)
             try self.managedObjectContext!.save()
             DispatchQueue.main.async {
                 completionBlock()
@@ -59,7 +64,11 @@ public class Video: NSManagedObject {
         }
     }
         
-    func generateImageFromVideo(_ aFile:URL, compressionQuality:CGFloat) -> Data? {
+    func generateImageFromVideoFile(compressionQuality:CGFloat) -> Data? {
+        guard hasVideoFile else {
+            return nil
+        }
+        
         func generateImage(forUrl url: URL) -> UIImage? {
             let asset: AVAsset = AVAsset(url: url)
             let imageGenerator = AVAssetImageGenerator(asset: asset)
@@ -74,7 +83,7 @@ public class Video: NSManagedObject {
             return nil
         }
         
-        if let image = generateImage(forUrl: aFile) {
+        if let image = generateImage(forUrl: file) {
             guard let imageDataRepresentation = UIImageJPEGRepresentation(image, 1) else {
                 // handle failed conversion
                 print("jpg error")
@@ -90,13 +99,9 @@ public class Video: NSManagedObject {
             completionBlock(cachedThumbnailImage)
             return
         }
-        guard let file = self.file else {
-            print("I do not have a video file")
-            return
-        }
         
         DispatchQueue.global(qos: .default).async {
-            guard let aThumbnailData = self.generateImageFromVideo(file, compressionQuality: 0.3) else {
+            guard let aThumbnailData = self.generateImageFromVideoFile(compressionQuality: 0.3) else {
                 print("Could not generate image data for the thumbnail")
                 return
             }
@@ -116,13 +121,9 @@ public class Video: NSManagedObject {
             completionBlock(cachedSnapshotImage)
             return
         }
-        guard let file = self.file else {
-            print("I do not have a video file")
-            return
-        }
         
         DispatchQueue.global(qos: .default).async {
-            guard let aSnapshoptData = self.generateImageFromVideo(file, compressionQuality: 0.3) else {
+            guard let aSnapshoptData = self.generateImageFromVideoFile(compressionQuality: 0.3) else {
                 print("Could not generate image data for the snapshot")
                 return
             }
@@ -138,30 +139,40 @@ public class Video: NSManagedObject {
     }
     
     func loadAsset(completionBlock: @escaping ((AVAsset?) -> Void)) {
-        if let aFile = self.file {
-            completionBlock(AVAsset(url: aFile))
+        if hasVideoFile {
+            completionBlock(AVAsset(url: self.file))
         } else {
             completionBlock(nil)
         }
     }
     
-    var name:String? {
-        return self.identifier?.uuidString
+    var name:String {
+        let currentIdentifier:UUID
+        
+        if let anIdentifier = identifier {
+            currentIdentifier = anIdentifier
+        } else {
+            currentIdentifier = UUID()
+            identifier = currentIdentifier
+            do {
+                try managedObjectContext?.save()
+            } catch let error as NSError {
+                print("Couldn't force saving after initializing the identifier: \(error.localizedDescription)")
+            }
+        }
+        return currentIdentifier.uuidString
     }
     
-    var fileName:String? {
-        guard let aName = self.name else {
-            return nil
-        }
-        return aName + "-final.mov"
+    var videoDirectory:URL {
+        return Globals.documentsDirectory.appendingPathComponent(self.name, isDirectory: true)
     }
     
-    var file:URL? {
-        guard let aFileName = self.fileName else {
-            return nil
-        }
-        let documentsDirectory = Globals.documentsDirectory
-        return documentsDirectory.appendingPathComponent("\(aFileName)")
+    var hasVideoFile:Bool {
+        return FileManager.default.fileExists(atPath: file.path)
+    }
+    
+    var file:URL {
+        return videoDirectory.appendingPathComponent("final.mov")
     }
     
     var snapshotImage:UIImage?
