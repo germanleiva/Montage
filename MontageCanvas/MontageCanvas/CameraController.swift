@@ -315,7 +315,7 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
 //    let localPeerID = MCPeerID.reusableInstance(withDisplayName: UIDevice.current.name)
     let localPeerID = MCPeerID(displayName: UIDevice.current.name)
     lazy var multipeerSession:MCSession = {
-        let _session = MCSession(peer: localPeerID, securityIdentity: nil, encryptionPreference: MCEncryptionPreference.optional)
+        let _session = MCSession(peer: localPeerID, securityIdentity: nil, encryptionPreference: .none)
         _session.delegate = self
         return _session
     }()
@@ -339,6 +339,11 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
     func removeRole(forPeer peerID:MCPeerID) {
         _peersRoles.removeValue(forKey: peerID)
     }
+    
+    let countDownTimeInterval:TimeInterval = 3.0
+    var syncTime:Date?
+    var wizardCamDelay:TimeInterval?
+    var userCamDelay:TimeInterval?
     
     var userCamPeer:MCPeerID?
     var wizardCamPeer:MCPeerID?
@@ -384,9 +389,7 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
     }()
     
     var activeVideoInput:AVCaptureDeviceInput?
-    
-    let outputURL = FileManager.default.temporaryDirectory.appendingPathComponent("temp.mov")
-    
+        
     var videoDimensions = CMVideoDimensions(width: 1920, height: 1080)
     
     // MARK: Initializers
@@ -886,29 +889,28 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
     }
     
     func startRecordingPressed() {
-        let startRecordingDate = Date().addingTimeInterval(3)
+        syncTime = NSDate.network()
+            
+        let startRecordingDate = syncTime!.addingTimeInterval(countDownTimeInterval)
         
         recordingControls.isHidden = false
-        
-        countDownMethod()
         
         let timer = Timer(fire: startRecordingDate, interval: 0, repeats: false, block: { (timer) in
             self.recordingIndicator.isHidden = false
             
             self.videoModel.prototypeTrack?.startRecording(time:Date().timeIntervalSince1970)
             self.videoModel.backgroundTrack?.startRecording(time:Date().timeIntervalSince1970)
-            print("START RECORDING!!!! NOW! \(Date().timeIntervalSince1970)")
+            print("START RECORDING!!!! NOW! \(NSDate.network().timeIntervalSince1970)")
             timer.invalidate()
         })
         RunLoop.main.add(timer, forMode: RunLoopMode.commonModes)
         
-        let dict = ["startRecordingDate":startRecordingDate]
-        let data = NSKeyedArchiver.archivedData(withRootObject: dict)
-        
-        do {
-            try multipeerSession.send(data, toPeers: cams, with: .reliable)
-        } catch let error as NSError {
-            print("Could not send trigger to start recording the remote cams: \(error.localizedDescription)")
+        let syncDict:[String : Any?] = ["syncTime":nil]
+        if let wizardCam = wizardCamPeer {
+            sendMessage(peerID: wizardCam, dict: syncDict)
+        }
+        if let userCam = userCamPeer {
+            sendMessage(peerID: userCam, dict: syncDict)
         }
     }
     
@@ -1693,6 +1695,31 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
                                 let timeBox = CMTimeMakeFromDictionary(timeBoxDictionary)
                                 videoModel.backgroundTrack?.recordedBoxes.append((timeBox, box))
                             }
+                        }
+                    }
+                case "ACK":
+                    guard let syncTime = syncTime else {
+                        return
+                    }
+                    let delay = NSDate.network().timeIntervalSince(syncTime) / 2
+                    switch peerID {
+                    case wizardCamPeer:
+                        wizardCamDelay = delay
+                    case userCamPeer:
+                        userCamDelay = delay
+                    default:
+                        print("Ignored ACK from unkown peerID \(peerID.displayName)")
+                    }
+                    
+                    if let wizardCamDelay = wizardCamDelay, let userCamDelay = userCamDelay {
+                        print("wizardCamDelay \(wizardCamDelay)")
+                        print("userCamDelay \(userCamDelay)")
+                        for (camPeer, camDelay) in [(wizardCamPeer,wizardCamDelay),(userCamPeer,userCamDelay)] {
+                            sendMessage(peerID: camPeer!, dict:["startRecordingDate":syncTime.addingTimeInterval(countDownTimeInterval - camDelay)])
+                        }
+                        
+                        DispatchQueue.main.async { [unowned self] in
+                            self.countDownMethod()
                         }
                     }
                 default:

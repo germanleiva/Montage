@@ -13,12 +13,14 @@ import Vision
 import CloudKit
 import Streamer
 import VideoToolbox
+import NHNetworkTime
 
 let visionQueue = DispatchQueue.global(qos: .userInteractive) //concurrent
 let mirrorQueue = DispatchQueue(label: "fr.lri.ex-situ.Montage.serial_mirror_queue", qos: DispatchQoS.userInteractive)
 let streamerQueue = DispatchQueue(label: "fr.lri.ex-situ.Montage.serial_streamer_queue", qos: DispatchQoS.userInteractive)
 let senderQueue = DispatchQueue(label: "fr.lri.ex-situ.Montage.serial_sender_queue")
 let captureOutputQueue = DispatchQueue(label: "fr.lri.ex-situ.Montage.serial_capture-output_queue")
+let encodingQueue = DispatchQueue(label: "fr.lri.ex-situ.Montage.serial_encoding_queue")
 
 let fps = 30.0
 
@@ -103,6 +105,8 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
     @IBOutlet weak var slider3:UISlider!
     @IBOutlet weak var slider4:UISlider!
     
+//    @IBOutlet weak var timeLabel:UILabel!
+    
     let context = CIContext()
     var overlayImage:CIImage?
     
@@ -176,7 +180,7 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
     }()
     
     lazy var multipeerSession:MCSession = {
-        let session = MCSession(peer: localPeerID, securityIdentity: nil, encryptionPreference: MCEncryptionPreference.optional)
+        let session = MCSession(peer: localPeerID, securityIdentity: nil, encryptionPreference: .none)
         session.delegate = self
         return session
     }()
@@ -238,7 +242,14 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
             serviceAdvertiser.startAdvertisingPeer()
             print("initial startAdvertisingPeer")
         }
+//        let timer = Timer.scheduledTimer(timeInterval: 0.01, target: self, selector: #selector(self.updateTimerLabel), userInfo: nil, repeats: true)
+//        timer.fire()
     }
+    
+//    @objc func updateTimerLabel() {
+//        self.view.bringSubview(toFront: self.timeLabel)
+//        self.timeLabel.text = "\(NSDate.network().timeIntervalSince1970)"
+//    }
 
     func cloudKitInitialize() {
         //        publicDatabase.fetch(withRecordID: CKRecordID(recordName:"115")) { (videoRecord, error) in
@@ -585,7 +596,7 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
             //            presentationTimeStamp = fileFramePresentationTime + firstFrameCaptureTime
             let fileFramePresentationTime = CMSampleBufferGetPresentationTimeStamp(sampleBuffer)
             let presentationTimeStamp = CMTimeSubtract(fileFramePresentationTime, firstCaptureFrameTimeStamp!)
-            
+
             if let detectedTime = CMTimeCopyAsDictionary(presentationTimeStamp,kCFAllocatorDefault) {
                 savedBoxes.updateValue(detectedRectangle, forKey: detectedTime)
             }
@@ -619,11 +630,13 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
         }
         /*Vision*/
         
-        encoder.encodeImageBuffer(
-            imageBuffer,
-            presentationTimeStamp: sampleBuffer.presentationTimeStamp,
-            duration: sampleBuffer.duration
-        )
+        encodingQueue.async {[unowned self] in
+            self.encoder.encodeImageBuffer(
+                imageBuffer,
+                presentationTimeStamp: sampleBuffer.presentationTimeStamp,
+                duration: sampleBuffer.duration
+            )
+        }
         
         //    CGContextRelease(newContext);
         //    CGColorSpaceRelease(colorSpace);
@@ -739,14 +752,22 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
                 switch messageType {
                 case "role":
                     myRole = MontageRole(rawValue:value as! Int)
+                case "syncTime":
+                    sendMessageToServer(dict: ["ACK" : nil])
                 case "startRecordingDate":
-                    if let startRecordingDate = value as? Date {
-                        recordStartedAt = startRecordingDate.timeIntervalSince1970
-                        let timer = Timer(fire: startRecordingDate, interval: 0, repeats: false, block: { (timer) in
+                    if let localStartRecordingDate = value as? Date {
+//                        print("NHNetworkClock.shared().isSynchronized = \(NHNetworkClock.shared().isSynchronized)")
+//                        let localNetworkDate = NSDate.network()!
+//                        let localStartRecordingDate = Date(timeInterval: startRecordingDate.timeIntervalSince(localNetworkDate), since: localNetworkDate)
+                        
+                        recordStartedAt = localStartRecordingDate.timeIntervalSince1970
+                        print("********** I should start recording at timeIntervalSince1970: \(recordStartedAt!)")
+                        
+                        let timer = Timer(fire: localStartRecordingDate, interval: 0, repeats: false, block: { (timer) in
                             self.savedBoxes.removeAll()
                             self.firstCaptureFrameTimeStamp = nil
                             self.movieWriter.startWriting()
-                            print("START RECORDING!!!! NOW! \(Date().timeIntervalSince1970)")
+                            print("START RECORDING!!!! NOW! \(NSDate.network().timeIntervalSince1970)")
                             timer.invalidate()
                         })
                         RunLoop.main.add(timer, forMode: RunLoopMode.commonModes)
@@ -834,9 +855,10 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
         print("didWriteMovie \(outputURL)")
         isStreaming = false
         
-        let asset = AVAsset(url: outputURL)
-        
+        let asset = AVURLAsset(url: outputURL, options: [AVURLAssetPreferPreciseDurationAndTimingKey:true])
+
         asset.loadValuesAsynchronously(forKeys: ["duration"]) { [unowned self] in
+            print("\(UIDevice.current.name) asset duration \(asset.duration.seconds) seconds")
             //Let's remove the pausedTimeRanges
             let finalComposition = AVMutableComposition()
             guard let compositionVideoTrack = finalComposition.addMutableTrack(withMediaType: .video, preferredTrackID: kCMPersistentTrackID_Invalid) else {

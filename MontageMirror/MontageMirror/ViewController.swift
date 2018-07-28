@@ -128,7 +128,7 @@ class ViewController: UIViewController, MCSessionDelegate, InputStreamerDelegate
     var serverName:String?
     
     lazy var multipeerSession:MCSession = {
-        let _session = MCSession(peer: localPeerID, securityIdentity: nil, encryptionPreference: MCEncryptionPreference.optional)
+        let _session = MCSession(peer: localPeerID, securityIdentity: nil, encryptionPreference: .none)
         _session.delegate = self
         return _session
     }()

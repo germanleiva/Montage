@@ -33,6 +33,7 @@ class MovieWriter: NSObject {
         self.colorSpace = CGColorSpaceCreateDeviceRGB()
         
         super.init()
+        self.setupWriter()
     }
     
     var outputURL:URL {
@@ -76,56 +77,55 @@ class MovieWriter: NSObject {
         return result
     }
     
+    func setupWriter() {
+        let fileType = AVFileType.mov
+        
+        do {
+            assetWriter = try AVAssetWriter(url: outputURL, fileType: fileType)
+        } catch let error as NSError {
+            print("Could not create AVAssetWriter: \(error.localizedDescription)")
+            return
+        }
+        
+        assetWriterVideoInput = AVAssetWriterInput(mediaType: AVMediaType.video, outputSettings: videoSettings)
+        
+        //This it is recommended to be true when recording a movie file but false when processing the frames
+        assetWriterVideoInput.expectsMediaDataInRealTime = false
+        
+        assetWriterVideoInput.transform = transformForDeviceOrientation(UIDevice.current.orientation)
+        
+        //To ensure maximum efficiency, the values in this dictionary should correspond to the source pixel format used when configuring the AVCaptureVideoDataOutput
+        let attributes = [
+            kCVPixelBufferPixelFormatTypeKey : kCVPixelFormatType_32BGRA,
+            kCVPixelBufferWidthKey : videoSettings[AVVideoWidthKey] ?? 1920, //check recommendedVideoSettingsForAssetWriter
+            kCVPixelBufferHeightKey : videoSettings[AVVideoHeightKey] ?? 1080,
+            //                kCVPixelFormatOpenGLESCompatibility : kCFBooleanTrue
+            ] as [String : Any]
+        
+        assetWriterInputPixelBufferAdaptor = AVAssetWriterInputPixelBufferAdaptor(assetWriterInput: assetWriterVideoInput, sourcePixelBufferAttributes: attributes)
+        
+        if assetWriter.canAdd(assetWriterVideoInput) {
+            assetWriter.add(assetWriterVideoInput)
+        } else {
+            print("Unable to add video input to assetWriter")
+            return
+        }
+        
+        assetWriterAudioInput =  AVAssetWriterInput(mediaType: AVMediaType.audio, outputSettings: audioSettings)
+        
+        assetWriterAudioInput.expectsMediaDataInRealTime = true
+        
+        if assetWriter.canAdd(assetWriterAudioInput) {
+            assetWriter.add(assetWriterAudioInput)
+        } else {
+            print("Unable to add audio input to assetWriter")
+            return
+        }
+    }
     
     func startWriting() {
-        writingDispatchQueue.async {[unowned self] in
-            let fileType = AVFileType.mov
-            
-            do {
-                self.assetWriter = try AVAssetWriter(url: self.outputURL, fileType: fileType)
-            } catch let error as NSError {
-                print("Could not create AVAssetWriter: \(error.localizedDescription)")
-                return
-            }
-            
-            self.assetWriterVideoInput = AVAssetWriterInput(mediaType: AVMediaType.video, outputSettings: self.videoSettings)
-            
-            //This it is recommended to be true when recording a movie file but false when processing the frames
-            self.assetWriterVideoInput.expectsMediaDataInRealTime = true
-            
-            self.assetWriterVideoInput.transform = self.transformForDeviceOrientation(UIDevice.current.orientation)
-            
-            //To ensure maximum efficiency, the values in this dictionary should correspond to the source pixel format used when configuring the AVCaptureVideoDataOutput
-            let attributes = [
-                kCVPixelBufferPixelFormatTypeKey : kCVPixelFormatType_32BGRA,
-                kCVPixelBufferWidthKey : self.videoSettings[AVVideoWidthKey] ?? 1920, //check recommendedVideoSettingsForAssetWriter
-                kCVPixelBufferHeightKey : self.videoSettings[AVVideoHeightKey] ?? 1080,
-//                kCVPixelFormatOpenGLESCompatibility : kCFBooleanTrue
-            ] as [String : Any]
-            
-            self.assetWriterInputPixelBufferAdaptor = AVAssetWriterInputPixelBufferAdaptor(assetWriterInput: self.assetWriterVideoInput, sourcePixelBufferAttributes: attributes)
-            
-            if self.assetWriter.canAdd(self.assetWriterVideoInput) {
-                self.assetWriter.add(self.assetWriterVideoInput)
-            } else {
-                print("Unable to add video input to assetWriter")
-                return
-            }
-            
-            self.assetWriterAudioInput =  AVAssetWriterInput(mediaType: AVMediaType.audio, outputSettings: self.audioSettings)
-
-            self.assetWriterAudioInput.expectsMediaDataInRealTime = true
-
-            if self.assetWriter.canAdd(self.assetWriterAudioInput) {
-                self.assetWriter.add(self.assetWriterAudioInput)
-            } else {
-                print("Unable to add audio input to assetWriter")
-                return
-            }
-            
-            self.isWriting = true
-            self.firstSample = true
-        }
+        isWriting = true
+        firstSample = true
     }
     
     func process(sampleBuffer:CMSampleBuffer) {

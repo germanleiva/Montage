@@ -18,16 +18,17 @@
                         <rect key="frame" x="0.0" y="0.0" width="375" height="667"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
-                            <stackView opaque="NO" contentMode="scaleToFill" alignment="bottom" spacing="19" translatesAutoresizingMaskIntoConstraints="NO" id="EwJ-76-pU7">
+                            <stackView opaque="NO" contentMode="scaleToFill" fixedFrame="YES" alignment="bottom" spacing="19" translatesAutoresizingMaskIntoConstraints="NO" id="EwJ-76-pU7">
                                 <rect key="frame" x="135.5" y="20" width="104.5" height="31"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                 <subviews>
-                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Lock" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="ASa-C5-FcB">
+                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" ambiguous="YES" text="Lock" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="ASa-C5-FcB">
                                         <rect key="frame" x="0.0" y="10.5" width="36.5" height="20.5"/>
                                         <fontDescription key="fontDescription" type="system" pointSize="17"/>
                                         <color key="textColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                                         <nil key="highlightedColor"/>
                                     </label>
-                                    <switch opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" contentHorizontalAlignment="center" contentVerticalAlignment="center" translatesAutoresizingMaskIntoConstraints="NO" id="Isn-y3-Igv">
+                                    <switch opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" ambiguous="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" translatesAutoresizingMaskIntoConstraints="NO" id="Isn-y3-Igv">
                                         <rect key="frame" x="55.5" y="0.0" width="51" height="31"/>
                                         <connections>
                                             <action selector="lockPressed:" destination="BYZ-38-t0r" eventType="valueChanged" id="6Qi-er-zQQ"/>
@@ -35,35 +36,29 @@
                                     </switch>
                                 </subviews>
                             </stackView>
-                            <stackView hidden="YES" opaque="NO" contentMode="scaleToFill" distribution="fillEqually" spacing="10" translatesAutoresizingMaskIntoConstraints="NO" id="c1R-2E-mHZ">
-                                <rect key="frame" x="0.0" y="587" width="375" height="30"/>
+                            <stackView hidden="YES" opaque="NO" contentMode="scaleToFill" fixedFrame="YES" distribution="fillEqually" spacing="10" translatesAutoresizingMaskIntoConstraints="NO" id="c1R-2E-mHZ">
+                                <rect key="frame" x="0.0" y="587" width="515" height="30"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                 <subviews>
-                                    <slider opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" value="0.5" minValue="0.0" maxValue="1" translatesAutoresizingMaskIntoConstraints="NO" id="Owi-6w-ga9">
-                                        <rect key="frame" x="-2" y="0.0" width="71" height="31"/>
+                                    <slider opaque="NO" contentMode="scaleToFill" ambiguous="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" value="0.5" minValue="0.0" maxValue="1" translatesAutoresizingMaskIntoConstraints="NO" id="Owi-6w-ga9">
+                                        <rect key="frame" x="-2" y="0.0" width="99" height="31"/>
                                     </slider>
-                                    <slider opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" value="1" minValue="0.0" maxValue="1" translatesAutoresizingMaskIntoConstraints="NO" id="Rxo-kc-4Bg">
-                                        <rect key="frame" x="75" y="0.0" width="71" height="31"/>
+                                    <slider opaque="NO" contentMode="scaleToFill" ambiguous="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" value="1" minValue="0.0" maxValue="1" translatesAutoresizingMaskIntoConstraints="NO" id="Rxo-kc-4Bg">
+                                        <rect key="frame" x="103" y="0.0" width="99" height="31"/>
                                     </slider>
-                                    <slider opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" value="0.14999999999999999" minValue="0.0" maxValue="1" translatesAutoresizingMaskIntoConstraints="NO" id="Qhf-p0-Iv1">
-                                        <rect key="frame" x="152" y="0.0" width="71" height="31"/>
+                                    <slider opaque="NO" contentMode="scaleToFill" ambiguous="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" value="0.14999999999999999" minValue="0.0" maxValue="1" translatesAutoresizingMaskIntoConstraints="NO" id="Qhf-p0-Iv1">
+                                        <rect key="frame" x="208" y="0.0" width="99" height="31"/>
                                     </slider>
-                                    <slider opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" value="1" minValue="0.0" maxValue="1" translatesAutoresizingMaskIntoConstraints="NO" id="qCr-K4-KpP">
-                                        <rect key="frame" x="229" y="0.0" width="71" height="31"/>
+                                    <slider opaque="NO" contentMode="scaleToFill" ambiguous="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" value="1" minValue="0.0" maxValue="1" translatesAutoresizingMaskIntoConstraints="NO" id="qCr-K4-KpP">
+                                        <rect key="frame" x="313" y="0.0" width="99" height="31"/>
                                     </slider>
-                                    <slider opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" value="45" minValue="0.0" maxValue="45" translatesAutoresizingMaskIntoConstraints="NO" id="2qn-qF-qUW">
-                                        <rect key="frame" x="306" y="0.0" width="71" height="31"/>
+                                    <slider opaque="NO" contentMode="scaleToFill" ambiguous="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" value="45" minValue="0.0" maxValue="45" translatesAutoresizingMaskIntoConstraints="NO" id="2qn-qF-qUW">
+                                        <rect key="frame" x="418" y="0.0" width="99" height="31"/>
                                     </slider>
                                 </subviews>
                             </stackView>
                         </subviews>
                         <color key="backgroundColor" red="0.0" green="0.0" blue="0.0" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
-                        <constraints>
-                            <constraint firstItem="6Tk-OE-BBY" firstAttribute="trailing" secondItem="c1R-2E-mHZ" secondAttribute="trailing" id="DRa-EY-6GD"/>
-                            <constraint firstItem="c1R-2E-mHZ" firstAttribute="bottom" secondItem="6Tk-OE-BBY" secondAttribute="bottom" constant="-50" id="e8k-YV-Svm"/>
-                            <constraint firstItem="c1R-2E-mHZ" firstAttribute="leading" secondItem="6Tk-OE-BBY" secondAttribute="leading" id="q4K-7a-bGa"/>
-                            <constraint firstItem="EwJ-76-pU7" firstAttribute="centerX" secondItem="6Tk-OE-BBY" secondAttribute="centerX" id="veU-Lh-Htp"/>
-                            <constraint firstItem="EwJ-76-pU7" firstAttribute="top" secondItem="8bC-Xf-vdC" secondAttribute="top" constant="20" symbolic="YES" id="xFC-HG-Mss"/>
-                        </constraints>
                         <viewLayoutGuide key="safeArea" id="6Tk-OE-BBY"/>
                     </view>
                     <connections>
