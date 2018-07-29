@@ -31,7 +31,7 @@ struct Globals {
 
 }
 
-
+public typealias Time = CMTime
 public typealias TimeRange = CMTimeRange
 
 public enum MutablePathAction:Int {

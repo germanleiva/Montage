@@ -70,10 +70,9 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
     var myRole:MontageRole?
     
     var recordStartedAt:TimeInterval?
-    var currentDetectedRectangle:VNRectangleObservation?
-    var firstCaptureFrameTimeStamp:CMTime?
+    var firstRecordedFrameTimeStamp:CMTime?
     
-    var savedBoxes = [NSDictionary:VNRectangleObservation]()
+    var savedBoxes = [(CMTime,VNRectangleObservation)]()
     var mirrorPeer:MCPeerID? = nil
     var isStreaming:Bool = false {
         didSet {
@@ -137,16 +136,16 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
     }()
     
     // MARK: Vision.framework variables
-    lazy var requests:[VNRequest] = {
-        let rectangleRequest = VNDetectRectanglesRequest(completionHandler: self.detectRectanglesHandler)
-        rectangleRequest.minimumAspectRatio = 0.5 //16/9
-        rectangleRequest.maximumAspectRatio = 1 //16/9
-        rectangleRequest.minimumSize = 0.15
-        rectangleRequest.minimumConfidence = 1 //0 //default
-        rectangleRequest.quadratureTolerance = 45
-        
-        return [rectangleRequest]
-    }()
+//    lazy var requests:[VNRequest] = {
+//        let rectangleRequest = VNDetectRectanglesRequest(completionHandler: self.detectRectanglesHandler)
+//        rectangleRequest.minimumAspectRatio = 0.5 //16/9
+//        rectangleRequest.maximumAspectRatio = 1 //16/9
+//        rectangleRequest.minimumSize = 0.15
+//        rectangleRequest.minimumConfidence = 1 //0 //default
+//        rectangleRequest.quadratureTolerance = 45
+//
+//        return [rectangleRequest]
+//    }()
     
     // MARK: AV
     var outputStreamers = [OutputStreamer]()
@@ -288,13 +287,13 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
     
     // MARK: Vision.framework
     
-    func visionDetection(_ sampleBuffer:CMSampleBuffer, outputImage:CIImage) {
+    func visionDetection(_ camData:CFTypeRef?, outputImage:CIImage, presentationTimeStamp recordedPresentationTime: CMTime?) {
+
         var requestOptions:[VNImageOption : Any] = [:]
         
-        if let camData = CMGetAttachment(sampleBuffer, kCMSampleBufferAttachmentKey_CameraIntrinsicMatrix, nil) {
+        if let camData = camData {
             //            requestOptions = [.cameraIntrinsics:camData,.ciContext:ciContext]
             requestOptions = [.cameraIntrinsics:camData]
-            
         }
         
         //        let imageRequestHandler = VNImageRequestHandler(cvPixelBuffer: outputImage.pixelBuffer!, orientation: CGImagePropertyOrientation.downMirrored, options: requestOptions)
@@ -310,7 +309,45 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
         //            rectangleRequest.quadratureTolerance = self.slider4.value //45
         //        }
         do {
-            try imageRequestHandler.perform(self.requests)
+            let weakSelf = self
+
+            let rectangleRequest = VNDetectRectanglesRequest { (request, error) in
+                visionQueue.async {
+                    guard let observations = request.results else {
+                        //                print("no result")
+                        return
+                    }
+                    
+                    let result = observations.map({$0 as? VNRectangleObservation})
+                    
+                    for region in result {
+                        guard let detectedRectangle = region else {
+                            continue
+                        }
+
+                        //For live previews we send now
+                        if let aRole = weakSelf.myRole, aRole == .userCam {
+                            weakSelf.sendMessageToServer(dict: ["detectedRectangle":detectedRectangle])
+                            weakSelf.highlightRectangle(box:detectedRectangle)
+                        }
+                        
+                        //For saving to send later
+                        if let presentationTimeStamp = recordedPresentationTime {
+                            weakSelf.savedBoxes.append((presentationTimeStamp, detectedRectangle))
+                        }
+                        
+                    }
+                }
+            }
+            
+            rectangleRequest.minimumAspectRatio = 0.5 //16/9
+            rectangleRequest.maximumAspectRatio = 1 //16/9
+            rectangleRequest.minimumSize = 0.15
+            rectangleRequest.minimumConfidence = 1 //0 //default
+            rectangleRequest.quadratureTolerance = 45
+            
+//            try imageRequestHandler.perform(self.requests)
+            try imageRequestHandler.perform([rectangleRequest])
         } catch let error as NSError {
             print(error.localizedDescription)
         }
@@ -330,30 +367,30 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
     //        self.requests = [rectangleRequest]
     //    }
     
-    func detectRectanglesHandler(request: VNRequest, error: Error?) {
-        let weakSelf = self
-        visionQueue.async {
-            guard let observations = request.results else {
-                //                print("no result")
-                return
-            }
-            
-            let result = observations.map({$0 as? VNRectangleObservation})
-            
-            for region in result {
-                guard let detectedRectangle = region else {
-                    continue
-                }
-                weakSelf.currentDetectedRectangle = detectedRectangle
-                
-                if let aRole = weakSelf.myRole, aRole == .userCam {
-                    weakSelf.sendMessageToServer(dict: ["detectedRectangle":detectedRectangle])
-                    weakSelf.highlightRectangle(box:detectedRectangle)
-                }
-                
-            }
-        }
-    }
+//    func detectRectanglesHandler(request: VNRequest, error: Error?) {
+//        let weakSelf = self
+//        visionQueue.async {
+//            guard let observations = request.results else {
+//                //                print("no result")
+//                return
+//            }
+//
+//            let result = observations.map({$0 as? VNRectangleObservation})
+//
+//            for region in result {
+//                guard let detectedRectangle = region else {
+//                    continue
+//                }
+//                weakSelf.currentDetectedRectangle = detectedRectangle
+//
+//                if let aRole = weakSelf.myRole, aRole == .userCam {
+//                    weakSelf.sendMessageToServer(dict: ["detectedRectangle":detectedRectangle])
+//                    weakSelf.highlightRectangle(box:detectedRectangle)
+//                }
+//
+//            }
+//        }
+//    }
     
     func highlightRectangle(box: VNRectangleObservation) {
         if let videoLayer = videoLayer {
@@ -577,7 +614,7 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
                 device.activeFormat = bestFormat
                 device.focusMode = .autoFocus //.locked
                 device.activeVideoMinFrameDuration = bestFrameRateRange.minFrameDuration
-                device.activeVideoMaxFrameDuration = bestFrameRateRange.maxFrameDuration
+                device.activeVideoMaxFrameDuration = bestFrameRateRange.minFrameDuration
                 device.unlockForConfiguration()
             } catch {
                 print("We couldn't lock the device for configuration, keeping the default configuration")
@@ -588,27 +625,21 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
     // MARK: AVCaptureVideoDataOutputSampleBufferDelegate
     
     func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
+        let currentPesentationTime = CMSampleBufferGetPresentationTimeStamp(sampleBuffer)
         
-        if movieWriter.isWriting, let detectedRectangle = self.currentDetectedRectangle {
-            if firstCaptureFrameTimeStamp == nil {
-                firstCaptureFrameTimeStamp = CMSampleBufferGetPresentationTimeStamp(sampleBuffer)
-            }
-            //            presentationTimeStamp = fileFramePresentationTime + firstFrameCaptureTime
-            let fileFramePresentationTime = CMSampleBufferGetPresentationTimeStamp(sampleBuffer)
-            let presentationTimeStamp = CMTimeSubtract(fileFramePresentationTime, firstCaptureFrameTimeStamp!)
-
-            if let detectedTime = CMTimeCopyAsDictionary(presentationTimeStamp,kCFAllocatorDefault) {
-                savedBoxes.updateValue(detectedRectangle, forKey: detectedTime)
-            }
-        }
-        
-        movieWriter.process(sampleBuffer: sampleBuffer)
-        
-        guard let imageBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else {
+        guard let imageBuffer = movieWriter.process(sampleBuffer: sampleBuffer, timestamp: currentPesentationTime) else {
             return
         }
         
         /*Vision*/
+        var presentationTime:CMTime?
+        
+        if let startedWritingAtPresentationTime = firstRecordedFrameTimeStamp {
+            presentationTime = CMTimeSubtract(currentPesentationTime, startedWritingAtPresentationTime)
+        }
+        
+        let sampleBufferCameraIntrinsicMatrix = CMGetAttachment(sampleBuffer, kCMSampleBufferAttachmentKey_CameraIntrinsicMatrix, nil)
+        
         if !rectangleLocked {
             visionQueue.async {[unowned self] in
                 let ciImage = CIImage(cvImageBuffer: imageBuffer)
@@ -625,7 +656,7 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
                 
                 let outputImage = colorMatrixEffect.outputImage!
                 
-                self.visionDetection(sampleBuffer, outputImage: outputImage)
+                self.visionDetection(sampleBufferCameraIntrinsicMatrix, outputImage: outputImage, presentationTimeStamp: presentationTime)
             }
         }
         /*Vision*/
@@ -765,7 +796,7 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
                         
                         let timer = Timer(fire: localStartRecordingDate, interval: 0, repeats: false, block: { (timer) in
                             self.savedBoxes.removeAll()
-                            self.firstCaptureFrameTimeStamp = nil
+                            self.firstRecordedFrameTimeStamp = nil
                             self.movieWriter.startWriting()
                             print("START RECORDING!!!! NOW! \(NSDate.network().timeIntervalSince1970)")
                             timer.invalidate()
@@ -774,15 +805,29 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
                     }
                 case "stopRecording":
                     self.pausedTimeRanges.removeAll()
+                    
                     let receivedPausedTimeRanges = value as! [NSDictionary]
                     for (index,eachTimeRangeDictionary) in receivedPausedTimeRanges.enumerated() {
                         let obtainedTimeRange = CMTimeRangeMakeFromDictionary(eachTimeRangeDictionary)
                         print("reading pausedTimeRange \(index): \(obtainedTimeRange)")
+                        for (index,(boxTime,_)) in Array(savedBoxes).enumerated() {
+                            if obtainedTimeRange.containsTime(boxTime) {
+                                savedBoxes.remove(at: index)
+                            }
+                        }
                         self.pausedTimeRanges.append(obtainedTimeRange)
                     }
 
                     if let aRole = self.myRole, aRole == .userCam {
-                        sendMessageToServer(dict: ["savedBoxes":savedBoxes])
+                        var savedBoxesDictionaryWithCMTimeToDictionary = [NSDictionary:VNRectangleObservation]()
+
+                        for (presentationTimeStamp,detectedRectangle) in savedBoxes {
+                            if let detectedTime = CMTimeCopyAsDictionary(presentationTimeStamp,kCFAllocatorDefault) {
+                                savedBoxesDictionaryWithCMTimeToDictionary.updateValue(detectedRectangle, forKey: detectedTime)
+                            }
+                        }
+                        
+                        sendMessageToServer(dict: ["savedBoxes":savedBoxesDictionaryWithCMTimeToDictionary])
                     }
                     
                     self.movieWriter.stopWriting()
@@ -850,6 +895,10 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
     }
     
     // MARK: MovieWriterDelegate
+    
+    func didStartWritingMovie(atSourceTime: CMTime) {
+        firstRecordedFrameTimeStamp = atSourceTime
+    }
     
     func didWriteMovie(atURL outputURL: URL) {
         print("didWriteMovie \(outputURL)")
@@ -1157,7 +1206,7 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
                 weakSelf.outputStreamers.remove(at: disconnectedStreamerIndex)
                 
                 if weakSelf.outputStreamers.isEmpty {
-                    captureOutputQueue.async {
+                    encodingQueue.async {
                         weakSelf.encoder.stopRunning()
                     }
                 }

@@ -10,6 +10,7 @@ import UIKit
 import AVFoundation
 
 protocol MovieWriterDelegate:class {
+    func didStartWritingMovie(atSourceTime: CMTime)
     func didWriteMovie(atURL outputURL:URL)
 }
 
@@ -128,14 +129,22 @@ class MovieWriter: NSObject {
         firstSample = true
     }
     
-    func process(sampleBuffer:CMSampleBuffer) {
-        if !self.isWriting {
-            return
-        }
-        
+    func process(sampleBuffer:CMSampleBuffer, timestamp:CMTime) -> CVImageBuffer? {
         guard let formatDesc = CMSampleBufferGetFormatDescription(sampleBuffer) else {
             print("Could not extract the FormatDescription fom the sample buffer")
-            return
+            return nil
+        }
+        
+        if !self.isWriting {
+            guard CMFormatDescriptionGetMediaType(formatDesc) == kCMMediaType_Video else {
+                return nil
+            }
+            
+            guard let imageBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else {
+                print("Couldn't get CMSampleBufferGetImageBuffer")
+                return nil
+            }
+            return imageBuffer
         }
         
         let mediaType = CMFormatDescriptionGetMediaType(formatDesc)
@@ -143,11 +152,10 @@ class MovieWriter: NSObject {
         switch mediaType {
         case kCMMediaType_Video:
             
-            let timestamp = CMSampleBufferGetPresentationTimeStamp(sampleBuffer)
-            
             if (self.firstSample) {
                 if self.assetWriter.startWriting() {
                     self.assetWriter.startSession(atSourceTime: timestamp)
+                    delegate?.didStartWritingMovie(atSourceTime: timestamp)
                 } else {
                     print("Failed to start writing.")
                 }
@@ -200,9 +208,14 @@ class MovieWriter: NSObject {
             //            self.ciContext.render(filteredImage, to: outputRenderBuffer, bounds: filteredImage.extent, colorSpace: self.colorSpace)
             
             if self.assetWriterVideoInput.isReadyForMoreMediaData {
-                if !self.assetWriterInputPixelBufferAdaptor.append(CMSampleBufferGetImageBuffer(sampleBuffer)!, withPresentationTime: timestamp) {
-                    print("Error appending pixel buffer.")
+                guard let imageBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else {
+                    print("Couldn't get CMSampleBufferGetImageBuffer")
+                    return nil
                 }
+                if self.assetWriterInputPixelBufferAdaptor.append(imageBuffer, withPresentationTime: timestamp) {
+                    return imageBuffer
+                }
+                print("Error appending pixel buffer.")
             }
             
         //            outputRenderBuffer = nil
@@ -217,6 +230,8 @@ class MovieWriter: NSObject {
         default:
             print("Unrecognized kCMMediaType")
         }
+        
+        return nil
     }
     
     func stopWriting() {

@@ -58,22 +58,53 @@ public class VideoTrack: NSManagedObject {
     
     var recordedBoxes = [(CMTime,VNRectangleObservation)]()
     
-    func box(forItemTime time:CMTime,adjustment:Double) -> VNRectangleObservation? {
+    func box(forItemTime lookUpTime:CMTime) -> VNRectangleObservation? {
+        if recordedBoxes.isEmpty {
+            return nil
+        }
+        for (index,(time,box)) in recordedBoxes.enumerated() {
+            switch CMTimeCompare(time, lookUpTime) {
+            //-1 is returned if time is less than lookUpTime.
+            case -1:
+                continue
+            //1 is returned if time is greater than lookUpTime.
+            case 1:
+                if index > 0 {
+                    let (previousTime,previousBox) = recordedBoxes[index - 1]
+                    let differenceWithCurrent = CMTimeSubtract(time, lookUpTime)
+                    let differenceWithPrevious = CMTimeSubtract(lookUpTime, previousTime)
+                    
+                    if CMTimeCompare(differenceWithPrevious, differenceWithCurrent) < 0 {
+                        return previousBox
+                    }
+                }
+                return box
+            //0 is returned if time and lookUpTime are equal.
+            default:
+                return box
+            }
+        }
+        
+        //I passed the whole array so the lookUpTime is the greatest, the closest it is the last one
+        return recordedBoxes.last?.1    }
+    
+    /*
+    func box(forItemTime lookUpTime:CMTime) -> VNRectangleObservation? {
         if recordedBoxes.isEmpty {
             return nil
         }
 
 //        print("Looking for time \(time)")
-        let lookUpTime = CMTimeAdd(time, CMTime(seconds: adjustment, preferredTimescale: time.timescale))
         var bestBox = recordedBoxes.first!.1
         var shortestDifference = Double.greatestFiniteMagnitude
         for (timeBox,box) in recordedBoxes {
             let diff = abs(CMTimeSubtract(timeBox, lookUpTime).seconds)
 //            print("Comparing with \(timeBox)")
 
-            if diff <= 0.015 { //15ms
-                return box
-            }
+//            if diff <= 0.015 { //15ms
+//            if diff <= 0.001 { //1ms
+//                return box
+//            }
             
             if diff < shortestDifference {
                 shortestDifference = diff
@@ -83,7 +114,7 @@ public class VideoTrack: NSManagedObject {
         }
 //        print("--- Returned ---")
         return bestBox
-    }
+    }*/
     func deselectAllTiers() {
         guard let allTiers = tiers?.array as? [Tier] else {
             return

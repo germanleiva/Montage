@@ -231,7 +231,7 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
     
     lazy var displayLink:CADisplayLink = {
         let displayLink = CADisplayLink(target: self, selector: #selector(self.displayLinkDidRefresh(displayLink:)))
-        displayLink.preferredFramesPerSecond = 30
+        displayLink.preferredFramesPerSecond = Int(fps)
         displayLink.isPaused = true
         displayLink.add(to: RunLoop.main, forMode: RunLoopMode.commonModes)
         return displayLink
@@ -595,7 +595,9 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
                             
                             let backgroundFrameImage = request.sourceImage
                             
-                            let currentMediaTime = CACurrentMediaTime()
+//                            let currentMediaTime = CACurrentMediaTime()
+                            let currentMediaTime = weakSelf.displayLink.timestamp + weakSelf.displayLink.duration
+
                             let prototypeItemTime = weakSelf.prototypeVideoOutput.itemTime(forHostTime: currentMediaTime)
                             if let prototypePixelBuffer = weakSelf.prototypeVideoOutput.copyPixelBuffer(forItemTime: prototypeItemTime, itemTimeForDisplay: nil) {
                                 
@@ -608,7 +610,7 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
                                         
                                         weakSelf.snapshotSketchOverlay(layers:[copiedSyncLayer,copiedCanvasLayer],size:weakSelf.prototypePlayerView.frame.size)
                                         
-                                        if let currentBox = weakSelf.videoModel.backgroundTrack?.box(forItemTime: prototypeItemTime, adjustment: 0.035) {
+                                        if let currentBox = weakSelf.videoModel.backgroundTrack?.box(forItemTime: prototypeItemTime) {
                                             let currentPrototypeAndOverlayFrame:CIImage
                                             
                                             if let overlay = weakSelf.sketchOverlay {
@@ -1000,6 +1002,9 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
             print("Background duration \(backgroundAsset.duration.seconds)")
             let smallestDuration = CMTimeCompare(backgroundAsset.duration, prototypeAsset.duration) < 0 ? backgroundAsset.duration : prototypeAsset.duration
 
+            self.videoModel.backgroundTrack?.durationInSeconds = smallestDuration.seconds //backgroundAsset.duration.seconds
+            self.videoModel.prototypeTrack?.durationInSeconds = smallestDuration.seconds //prototypeAsset.duration.seconds
+            
             self.prototypeComposition = AVMutableComposition()
             guard let prototypeCompositionVideoTrack = self.prototypeComposition?.addMutableTrack(withMediaType: .video, preferredTrackID: kCMPersistentTrackID_Invalid) else {
                 self.alert(nil, title: "Playback error", message: "Could not create compositionVideoTrack for prototype")
@@ -1224,10 +1229,19 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
     }
     
     func getFramesForPlayback() {
-        let currentMediaTime = CACurrentMediaTime()
-
-        let prototypeItemTime = prototypeVideoOutput.itemTime(forHostTime: currentMediaTime)
-        let backgroundItemTime = backgroundVideoOutput.itemTime(forHostTime: currentMediaTime)
+//        let currentMediaTime = CACurrentMediaTime()
+//
+//        let prototypeItemTime = prototypeVideoOutput.itemTime(forHostTime: currentMediaTime)
+//        let backgroundItemTime = backgroundVideoOutput.itemTime(forHostTime: currentMediaTime)
+//        var prototypeItemTime = kCMTimeInvalid
+//        var backgroundItemTime = kCMTimeInvalid
+        
+        // Calculate the nextVsync time which is when the screen will be refreshed next.
+        let nextVSync = displayLink.timestamp + displayLink.duration
+//        let nextVSync = CACurrentMediaTime() + displayLink.duration
+        
+        let prototypeItemTime = prototypeVideoOutput.itemTime(forHostTime: nextVSync)
+        let backgroundItemTime = backgroundVideoOutput.itemTime(forHostTime: nextVSync)
         
         let weakSelf = self
         DispatchQueue.main.async {
@@ -1260,10 +1274,10 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
                 let weakSelf = self
                 
                 streamerQueue.async {
-                    if let obtainedBox = weakSelf.videoModel.backgroundTrack?.box(forItemTime: prototypeItemTime, adjustment: 0.035) {
+                    if let obtainedBox = weakSelf.videoModel.backgroundTrack?.box(forItemTime: backgroundItemTime) {
                         weakSelf.box = obtainedBox
                     } else {
-//                        print("box(forItemTime: ...) returned nil") //TODO:
+                        print("box(forItemTime: ...) returned nil") //TODO:
                     }
                     weakSelf.applyFilterFromPrototypeToBackground(prototypePixelBuffer)
                 }
@@ -1695,6 +1709,12 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
                                 let timeBox = CMTimeMakeFromDictionary(timeBoxDictionary)
                                 videoModel.backgroundTrack?.recordedBoxes.append((timeBox, box))
                             }
+                            
+                            videoModel.backgroundTrack?.recordedBoxes.sort(by: { (a, b) -> Bool in
+                                return CMTimeCompare(a.0, b.0) == -1
+                            })
+                            
+                            print("Tengo duration en backgroundTrack? \(videoModel.backgroundTrack!.durationInSeconds)")
                         }
                     }
                 case "ACK":
@@ -2032,7 +2052,7 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
         weak var weakSelf:CameraController! = self
 
         self.itemEndObserver = NotificationCenter.default.addObserver(forName: NSNotification.Name.AVPlayerItemDidPlayToEndTime, object: prototypePlayerItem, queue: OperationQueue.main, using: { (notification) -> Void in
-            weakSelf.prototypePlayer.seek(to: kCMTimeZero, completionHandler: { (finished) -> Void in
+            weakSelf.prototypePlayer.seek(to: kCMTimeZero, toleranceBefore: kCMTimeZero, toleranceAfter: kCMTimeZero, completionHandler: { (finished) in
                 weakSelf.playBackComplete()
             })
         })
