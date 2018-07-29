@@ -10,6 +10,7 @@ import UIKit
 import CoreData
 import AVFoundation
 import AVKit
+import MBProgressHUD
 
 class DetailLineController: UIViewController, UICollectionViewDelegate, UICollectionViewDataSource, NSFetchedResultsControllerDelegate, UINavigationControllerDelegate, UIImagePickerControllerDelegate {
     let coreDataContext = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
@@ -222,6 +223,38 @@ class DetailLineController: UIViewController, UICollectionViewDelegate, UICollec
         present(imagePickerController, animated: true) {
             //Something
         }
+    }
+    
+    @IBAction func playLineTapped(_ sender:AnyObject?) {
+        guard let currentLineVideos = line?.videos else {
+            return
+        }
+        
+        guard let window = UIApplication.shared.keyWindow else {
+            return
+        }
+        
+        let progressBar = MBProgressHUD.showAdded(to: window, animated: true)
+        progressBar.show(animated: true)
+        UIApplication.shared.beginIgnoringInteractionEvents()
+        
+        Line.createComposition(currentLineVideos) { (composition, videoComposition) in
+            let item = AVPlayerItem(asset: composition.copy() as! AVAsset)
+            item.videoComposition = videoComposition
+            let player = AVPlayer(playerItem: item)
+            
+//            item.addObserver(self, forKeyPath: "status", options: NSKeyValueObservingOptions(rawValue: 0), context: nil)
+            
+            let playerVC = AVPlayerViewController()
+            playerVC.player = player
+            
+            UIApplication.shared.endIgnoringInteractionEvents()
+            progressBar.hide(animated: true)
+            self.present(playerVC, animated: true, completion: { () -> Void in
+                playerVC.player?.play()
+            })
+        }
+        
     }
     
     // MARK: Fetched Results Controller

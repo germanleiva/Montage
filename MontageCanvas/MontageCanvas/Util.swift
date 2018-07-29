@@ -29,6 +29,7 @@ struct Globals {
     static var inIsPressedDown = false
     static var documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
     static var temporaryDirectory = URL(fileURLWithPath: NSTemporaryDirectory())
+    static var defaultRenderSize = CGSize(width: 1280,height: 720)
 
 }
 

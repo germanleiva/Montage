@@ -117,7 +117,11 @@
                     </view>
                     <toolbarItems/>
                     <navigationItem key="navigationItem" title="Detail" id="mOI-FS-AaM">
-                        <barButtonItem key="rightBarButtonItem" systemItem="play" id="Dex-nr-y2P"/>
+                        <barButtonItem key="rightBarButtonItem" systemItem="play" id="Dex-nr-y2P">
+                            <connections>
+                                <action selector="playLineTapped:" destination="JEX-9P-axG" id="0WN-XX-4aD"/>
+                            </connections>
+                        </barButtonItem>
                     </navigationItem>
                     <connections>
                         <outlet property="collectionView" destination="kbb-vo-vNK" id="qiD-ZL-UWY"/>
@@ -155,7 +159,7 @@
                                                 <action selector="cancelPressed:" destination="Ck6-q5-ZZf" id="m3v-7h-TfV"/>
                                             </connections>
                                         </barButtonItem>
-                                        <segmentedControl key="titleView" opaque="NO" contentMode="scaleToFill" misplaced="YES" contentHorizontalAlignment="left" contentVerticalAlignment="top" segmentControlStyle="bar" id="fE2-5E-p5y">
+                                        <segmentedControl key="titleView" opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="top" segmentControlStyle="bar" id="fE2-5E-p5y">
                                             <rect key="frame" x="460.5" y="7.5" width="103" height="29"/>
                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                             <segments>
@@ -813,7 +817,7 @@
     </resources>
     <inferredMetricsTieBreakers>
         <segue reference="gMa-nQ-tt9"/>
-        <segue reference="Tll-UG-LXB"/>
+        <segue reference="ewd-hm-Jcq"/>
         <segue reference="B0G-Jg-6es"/>
     </inferredMetricsTieBreakers>
 </document>

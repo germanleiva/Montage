@@ -43,6 +43,14 @@ public class Video: NSManagedObject {
         return backgroundTrack!.loadedFileURL == nil && prototypeTrack!.loadedFileURL == nil
     }
     
+    var isVideo:Bool {
+        return true
+    }
+    
+    var isTitleCard:Bool {
+        return false
+    }
+    
     public override func prepareForDeletion() {
         do {
             try FileManager.default.removeItem(at: videoDirectory)
@@ -177,14 +185,6 @@ public class Video: NSManagedObject {
     
     var snapshotImage:UIImage?
     internal var thumbnailImage:UIImage?
-    
-    var isVideo: Bool {
-        return false
-    }
-    
-    var isTitleCard: Bool {
-        return false
-    }
     
     var snapshotData:Data? {
         get {

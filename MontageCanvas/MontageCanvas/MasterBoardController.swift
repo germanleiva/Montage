@@ -17,7 +17,11 @@ class MasterBoardController: UIViewController, NSFetchedResultsControllerDelegat
     //TODO: We sould change the implementation to use gesture recognizers instead of didSelectRowAtIndexPath
     var selectedRow:IndexPath? = nil
     
-    var board:Board? = nil
+    var board:Board? = nil {
+        didSet {
+            title = board?.name
+        }
+    }
     
     var userReorderingCells = false
     

@@ -62,13 +62,13 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
     var outputStreamerForMirror:SimpleOutputStreamer?
     
     // MARK: InputStreamerDelegate
-    var inputStreamer1:InputStreamer?
-    var inputStreamer2:InputStreamer?
+    var userCamStreamer:InputStreamer?
+    var wizardCamStreamer:InputStreamer?
     
     func inputStreamer(_ streamer: InputStreamer, decodedImage ciImage: CIImage) {
         let weakSelf = self
         
-        if streamer.isEqual(inputStreamer1) {
+        if streamer.isEqual(userCamStreamer) {
 //            print("inputStreamer1")
 //            let shouldDrawDirectly = inputStreamer2 == nil
             streamerQueue.async {
@@ -84,7 +84,7 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
             
             return
         }
-        if streamer.isEqual(inputStreamer2) {
+        if streamer.isEqual(wizardCamStreamer) {
 //            print("inputStreamer2")
             
             DispatchQueue.main.async {
@@ -171,14 +171,14 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
 //        if let index = inputStreamers.index(of: streamer) {
 //            inputStreamers.remove(at: index)
 //        }
-        if streamer.isEqual(inputStreamer1) {
-            inputStreamer1 = nil
+        if streamer.isEqual(userCamStreamer) {
+            userCamStreamer = nil
             print("didClose InputStreamer 1")
 
         }
         
-        if streamer.isEqual(inputStreamer2) {
-            inputStreamer2 = nil
+        if streamer.isEqual(wizardCamStreamer) {
+            wizardCamStreamer = nil
             print("didClose InputStreamer 2")
         }
     }
@@ -804,11 +804,11 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
                 swap(&self.userCamPeer, &self.wizardCamPeer)
                 self.setRole(peerID: newUserCam, role: .userCam)
                 self.setRole(peerID: newWizardCam, role: .wizardCam)
-                swap(&self.inputStreamer1, &self.inputStreamer2)
+                swap(&self.userCamStreamer, &self.wizardCamStreamer)
             }
         })
         
-        swapCamsAction.isEnabled = inputStreamer1 != nil && inputStreamer2 != nil
+        swapCamsAction.isEnabled = userCamStreamer != nil && wizardCamStreamer != nil
         maskAction.isEnabled = !canvasControllerMode.isRecording
         
         alertController.addAction(goLiveAction)
@@ -1776,8 +1776,8 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
 //                let elapsedTimeSinceCreation = Date().timeIntervalSince1970 - createAt
 //                print("connectedCamBackgroundPeer elapsedTimeSinceCreation: \(elapsedTimeSinceCreation * 1000)ms")
 //            }
-            inputStreamer1 = InputStreamer(peerID,stream:stream)
-            inputStreamer1?.delegate = self
+            userCamStreamer = InputStreamer(peerID,stream:stream)
+            userCamStreamer?.delegate = self
         }
         if peerID.isEqual(wizardCamPeer) {
 //            if let createAt = Double(streamName) {
@@ -1785,8 +1785,8 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
 //                print("connectedCamPrototypePeer elapsedTimeSinceCreation: \(elapsedTimeSinceCreation * 1000)ms")
 //            }
             
-            inputStreamer2 = InputStreamer(peerID,stream:stream)
-            inputStreamer2?.delegate = self
+            wizardCamStreamer = InputStreamer(peerID,stream:stream)
+            wizardCamStreamer?.delegate = self
         }
 
     }
@@ -2089,8 +2089,8 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
 //        for streamer in inputStreamers {
 //            streamer.close()
 //        }
-        inputStreamer1?.close()
-        inputStreamer2?.close()
+        userCamStreamer?.close()
+        wizardCamStreamer?.close()
         browser.stopBrowsingForPeers()
         print("stop browsing for peers")
     }
@@ -2101,8 +2101,8 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
         //            streamer.close()
         //        }
         
-        inputStreamer1?.close()
-        inputStreamer2?.close()
+        userCamStreamer?.close()
+        wizardCamStreamer?.close()
         browser.stopBrowsingForPeers()
         print("stop browsing for peers")
     }
@@ -2113,8 +2113,8 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
         //        for streamer in inputStreamers {
         //            streamer.close()
         //        }
-        inputStreamer1?.close()
-        inputStreamer2?.close()
+        userCamStreamer?.close()
+        wizardCamStreamer?.close()
         browser.stopBrowsingForPeers()
         print("stop browsing for peers")
     }
