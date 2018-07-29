@@ -56,13 +56,21 @@ public class VideoTrack: NSManagedObject {
     
     var isRecordingInputs = false
     
-    var recordedBoxes = [(CMTime,VNRectangleObservation)]()
+    var recordedBoxes:[BoxObservation] {
+        if let savedBoxes = boxes {
+            return savedBoxes.array as! [BoxObservation]
+        }
+        return []
+    }
     
     func box(forItemTime lookUpTime:CMTime) -> VNRectangleObservation? {
         if recordedBoxes.isEmpty {
             return nil
         }
-        for (index,(time,box)) in recordedBoxes.enumerated() {
+        for (index,boxObservation) in recordedBoxes.enumerated() {
+            let time = boxObservation.time
+            let box = boxObservation.observation
+            
             switch CMTimeCompare(time, lookUpTime) {
             //-1 is returned if time is less than lookUpTime.
             case -1:
@@ -70,12 +78,12 @@ public class VideoTrack: NSManagedObject {
             //1 is returned if time is greater than lookUpTime.
             case 1:
                 if index > 0 {
-                    let (previousTime,previousBox) = recordedBoxes[index - 1]
+                    let previousBoxObservation = recordedBoxes[index - 1]
                     let differenceWithCurrent = CMTimeSubtract(time, lookUpTime)
-                    let differenceWithPrevious = CMTimeSubtract(lookUpTime, previousTime)
+                    let differenceWithPrevious = CMTimeSubtract(lookUpTime, previousBoxObservation.time)
                     
                     if CMTimeCompare(differenceWithPrevious, differenceWithCurrent) < 0 {
-                        return previousBox
+                        return previousBoxObservation.observation
                     }
                 }
                 return box
@@ -86,7 +94,8 @@ public class VideoTrack: NSManagedObject {
         }
         
         //I passed the whole array so the lookUpTime is the greatest, the closest it is the last one
-        return recordedBoxes.last?.1    }
+        return recordedBoxes.last?.observation
+    }
     
     /*
     func box(forItemTime lookUpTime:CMTime) -> VNRectangleObservation? {

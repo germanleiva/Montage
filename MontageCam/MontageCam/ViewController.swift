@@ -751,9 +751,6 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
                     weakSelf.mirrorPeer = nil
                 }
             }
-            
-            
-            
         }
     }
     
@@ -895,16 +892,17 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
     }
     
     // MARK: MovieWriterDelegate
-    
-    func didStartWritingMovie(atSourceTime: CMTime) {
+    func movieWriter(didStartedWriting atSourceTime: CMTime) {
         firstRecordedFrameTimeStamp = atSourceTime
     }
-    
-    func didWriteMovie(atURL outputURL: URL) {
-        print("didWriteMovie \(outputURL)")
+    func movieWriter(didFinishedWriting temporalURL:URL,error:Error?) {
         isStreaming = false
         
-        let asset = AVURLAsset(url: outputURL, options: [AVURLAssetPreferPreciseDurationAndTimingKey:true])
+        guard error == nil else {
+            return
+        }
+        
+        let asset = AVURLAsset(url: temporalURL, options: [AVURLAssetPreferPreciseDurationAndTimingKey:true])
 
         asset.loadValuesAsynchronously(forKeys: ["duration"]) { [unowned self] in
             print("\(UIDevice.current.name) asset duration \(asset.duration.seconds) seconds")
@@ -981,7 +979,7 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
                                 print("Movie sent succesfully!")
                                 return
                             }
-                            print("Failed to send movie \(outputURL): \(error.localizedDescription)")
+                            print("Failed to send movie \(theFinalOutputURL): \(error.localizedDescription)")
                         }
                     }
                     //        let cloudKitAsset = CKAsset(fileURL: outputURL)

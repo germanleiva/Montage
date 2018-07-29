@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		A4145D602108E9D600388CAA /* VideoCatalogController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4145D5F2108E9D600388CAA /* VideoCatalogController.swift */; };
+		A442E032210E2EF5001ECB6E /* BoxObservation+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = A442E031210E2EF5001ECB6E /* BoxObservation+CoreDataClass.swift */; };
 		A44E5C8120A2E61000EBB09A /* CanvasControllerMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = A44E5C8020A2E61000EBB09A /* CanvasControllerMode.swift */; };
 		A48789C12105BF0C0006745F /* RepeatingTimer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A48789C02105BF0C0006745F /* RepeatingTimer.swift */; };
 		A4A049FA20850EA3003FDC6A /* Streamer.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A4A049F920850EA3003FDC6A /* Streamer.framework */; };
@@ -81,6 +82,7 @@
 		80DFB655FFF91A45A1D3CE6B /* Pods_MontageCanvas.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_MontageCanvas.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		83981C27285E080024844C3A /* Pods-MontageCanvas.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-MontageCanvas.release.xcconfig"; path = "../Pods/Target Support Files/Pods-MontageCanvas/Pods-MontageCanvas.release.xcconfig"; sourceTree = "<group>"; };
 		A4145D5F2108E9D600388CAA /* VideoCatalogController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoCatalogController.swift; sourceTree = "<group>"; };
+		A442E031210E2EF5001ECB6E /* BoxObservation+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "BoxObservation+CoreDataClass.swift"; path = "/Users/psycrow/Documents/Development/Montage/MontageCanvas/MontageCanvas/Model/BoxObservation+CoreDataClass.swift"; sourceTree = "<absolute>"; };
 		A44E5C8020A2E61000EBB09A /* CanvasControllerMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasControllerMode.swift; sourceTree = "<group>"; };
 		A48789C02105BF0C0006745F /* RepeatingTimer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RepeatingTimer.swift; sourceTree = "<group>"; };
 		A4A049F920850EA3003FDC6A /* Streamer.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = Streamer.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -249,6 +251,7 @@
 				A4F50D272084C9F400E2E200 /* Tier+CoreDataClass.swift */,
 				A4F50D282084C9F400E2E200 /* Video+CoreDataClass.swift */,
 				A4F50D292084C9F400E2E200 /* VideoTrack+CoreDataClass.swift */,
+				A442E031210E2EF5001ECB6E /* BoxObservation+CoreDataClass.swift */,
 			);
 			path = Model;
 			sourceTree = "<group>";
@@ -476,6 +479,7 @@
 				A4F50D2B2084C9F400E2E200 /* Line+CoreDataClass.swift in Sources */,
 				A48789C12105BF0C0006745F /* RepeatingTimer.swift in Sources */,
 				A4F50D4E2084CA2400E2E200 /* CameraController.swift in Sources */,
+				A442E032210E2EF5001ECB6E /* BoxObservation+CoreDataClass.swift in Sources */,
 				A4F50D2E2084C9F400E2E200 /* Video+CoreDataClass.swift in Sources */,
 				A4F50D532084CA2400E2E200 /* VideoPlayerView.swift in Sources */,
 				A4F50D562084CA2400E2E200 /* AppDelegate.swift in Sources */,

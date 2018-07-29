@@ -10,6 +10,7 @@ import Foundation
 import UIKit
 import AVFoundation
 import CoreData
+import Vision
 
 let offsetUptimeTo1970 = Date().timeIntervalSince1970 - ProcessInfo.processInfo.systemUptime
 let DEFAULT_TIMESCALE = Int32(600)
@@ -31,6 +32,7 @@ struct Globals {
 
 }
 
+public typealias RectangleObservation = VNRectangleObservation
 public typealias Time = CMTime
 public typealias TimeRange = CMTimeRange
 

@@ -17,6 +17,8 @@ import Streamer
 import GLKit
 
 let STATUS_KEYPATH  = "status"
+let RATE_KEYPATH  = "rate"
+
 let REFRESH_INTERVAL = Float64(0.5)
 let fps = 30.0
 
@@ -405,20 +407,22 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
     }
     
     deinit {
+        multipeerSession.disconnect()
+        
         NotificationCenter.default.removeObserver(self)
         
         //TODO: revise
-        /*
         prototypePlayerItem.removeObserver(self, forKeyPath: STATUS_KEYPATH, context: &CameraController.observerContext)
-        if let observer = self.timeObserver {
-            self.prototypePlayer.removeTimeObserver(observer)
-            self.timeObserver = nil
+
+        if let observer = self.periodicTimeObserver {
+            prototypePlayer.removeTimeObserver(observer)
+            self.periodicTimeObserver = nil
         }
         if let observer = self.itemEndObserver {
             NotificationCenter.default.removeObserver(observer)
             self.itemEndObserver = nil
         }
-         */
+
     }
 
     
@@ -1033,7 +1037,7 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
             
             self.prototypePlayerItem = AVPlayerItem(asset: self.prototypeComposition!,automaticallyLoadedAssetKeys:["tracks","duration"])
             
-            self.prototypePlayerItem.addObserver(self, forKeyPath: "rate", options: NSKeyValueObservingOptions.initial, context: &CameraController.observerContext)
+            self.prototypePlayerItem.addObserver(self, forKeyPath: RATE_KEYPATH, options: NSKeyValueObservingOptions.initial, context: &CameraController.observerContext)
             
             self.prototypePlayer = AVPlayer(playerItem: self.prototypePlayerItem)
             self.prototypePlayerView.player = self.prototypePlayer
@@ -1146,10 +1150,8 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
             self.prototypePlayerItem.addObserver(self, forKeyPath: STATUS_KEYPATH, options: NSKeyValueObservingOptions(rawValue: 0), context: &CameraController.observerContext)
 //            self.prototypePlayer.addObserver(self, forKeyPath: "rate", options: NSKeyValueObservingOptions.initial, context: &CameraController.observerContext)
 
-            
             self.backgroundPlayer.play()
             self.prototypePlayer.play()
-            
         }
     }
     
@@ -1158,19 +1160,29 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
 
         if let object = object, context! == &CameraController.observerContext {
             if prototypePlayerItem.isEqual(object) {
-                guard prototypePlayerItem.status == AVPlayerItemStatus.readyToPlay else {
-                    print("Error, failed to load video") //TODO check why this is happening sometimes
+                guard let keyPath = keyPath else {
                     return
                 }
-                let duration = prototypePlayerItem.duration
-                
-                let weakSelf = self
-                DispatchQueue.main.async(execute: { () -> Void in
-                    weakSelf.setCurrentTime(CMTimeGetSeconds(kCMTimeZero),duration:CMTimeGetSeconds(duration))
-//                    weakSelf.displayLink.isPaused = false
-                    weakSelf.addPlayerItemPeriodicTimeObserver()
-                    weakSelf.addDidPlayToEndItemEndObserverForPlayerItem()
-                })
+                switch keyPath {
+                case STATUS_KEYPATH:
+                    guard prototypePlayerItem.status == AVPlayerItemStatus.readyToPlay else {
+                        print("Error, failed to load video") //TODO check why this is happening sometimes
+                        return
+                    }
+                    let duration = prototypePlayerItem.duration
+                    
+                    let weakSelf = self
+                    DispatchQueue.main.async(execute: { () -> Void in
+                        weakSelf.setCurrentTime(CMTimeGetSeconds(kCMTimeZero),duration:CMTimeGetSeconds(duration))
+                        //                    weakSelf.displayLink.isPaused = false
+                        weakSelf.addPlayerItemPeriodicTimeObserver()
+                        weakSelf.addDidPlayToEndItemEndObserverForPlayerItem()
+                    })
+                case RATE_KEYPATH:
+                    print("Not doing anyhting for RATE_KEYPATH")
+                default:
+                    print("Unkown observeValue forKeyPath \(keyPath)")
+                }
             }
 //            if prototypePlayer.isEqual(object) {
 //                if let player = object as? AVPlayer {
@@ -1681,7 +1693,7 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
                 
                 outputStreamerForMirror?.close()
                 outputStreamerForMirror = nil
-                
+
                 if let connectedWizardCam = wizardCamPeer {
                     sendMessage(peerID:connectedWizardCam,dict:["mirrorMode":nil])
                 }
@@ -1704,17 +1716,23 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
                 case "savedBoxes":
                     if peerID.isEqual(userCamPeer) {
                         if let savedBoxes = value as? [NSDictionary:VNRectangleObservation] {
-                            videoModel.backgroundTrack?.recordedBoxes.removeAll()
+                            var orderedTemporalBoxes = [BoxObservation]()
                             for (timeBoxDictionary,box) in savedBoxes {
                                 let timeBox = CMTimeMakeFromDictionary(timeBoxDictionary)
-                                videoModel.backgroundTrack?.recordedBoxes.append((timeBox, box))
+                                
+                                let newBoxObservation = BoxObservation(moc: coreDataContext, time: timeBox, rectangleObservation: box)
+                                
+                                orderedTemporalBoxes.append(newBoxObservation)
                             }
                             
-                            videoModel.backgroundTrack?.recordedBoxes.sort(by: { (a, b) -> Bool in
-                                return CMTimeCompare(a.0, b.0) == -1
+                            orderedTemporalBoxes.sort(by: { (a, b) -> Bool in
+                                return CMTimeCompare(a.time, b.time) == -1
                             })
                             
-                            print("Tengo duration en backgroundTrack? \(videoModel.backgroundTrack!.durationInSeconds)")
+                            videoModel.backgroundTrack?.boxes = NSMutableOrderedSet(array: [BoxObservation]())
+                            for boxObservation in orderedTemporalBoxes {
+                                videoModel.backgroundTrack?.addToBoxes(boxObservation)
+                            }
                         }
                     }
                 case "ACK":
@@ -2186,6 +2204,9 @@ extension CameraController:CanvasControllerModeDelegate {
     }
     
     func startedPlaying(mode:CanvasControllerPlayingMode) {
+        for eachCam in cams {
+            sendMessage(peerID: eachCam, dict: ["streaming":false])
+        }
         self.startPlayback()
     }
     func pausedPlaying(mode:CanvasControllerPlayingMode){

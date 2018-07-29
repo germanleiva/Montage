@@ -10,8 +10,8 @@ import UIKit
 import AVFoundation
 
 protocol MovieWriterDelegate:class {
-    func didStartWritingMovie(atSourceTime: CMTime)
-    func didWriteMovie(atURL outputURL:URL)
+    func movieWriter(didStartedWriting atSourceTime: CMTime)
+    func movieWriter(didFinishedWriting temporalURL:URL,error:Error?)
 }
 
 class MovieWriter: NSObject {
@@ -155,7 +155,7 @@ class MovieWriter: NSObject {
             if (self.firstSample) {
                 if self.assetWriter.startWriting() {
                     self.assetWriter.startSession(atSourceTime: timestamp)
-                    delegate?.didStartWritingMovie(atSourceTime: timestamp)
+                    delegate?.movieWriter(didStartedWriting: timestamp)
                 } else {
                     print("Failed to start writing.")
                 }
@@ -249,12 +249,17 @@ class MovieWriter: NSObject {
                 print("Asset writer in weird state after stopWriting(): \(assetWriter.error!.localizedDescription)")
             }
             assetWriter.finishWriting {
+                let assetWriterError:Error?
+                
                 if assetWriter.status == AVAssetWriterStatus.completed {
-                    DispatchQueue.main.async {
-                        delegate?.didWriteMovie(atURL: assetWriter.outputURL)
-                    }
+                    assetWriterError = nil
                 } else {
                     print("Failed to write movie: \(assetWriter.error!.localizedDescription)")
+                    assetWriterError = assetWriter.error
+                }
+                
+                DispatchQueue.main.async {
+                    delegate?.movieWriter(didFinishedWriting: assetWriter.outputURL,error:assetWriterError)
                 }
             }
         }
