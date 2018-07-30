@@ -23,7 +23,7 @@ public class Line: NSManagedObject {
         return elements!.array as! [Video]
     }
     
-    class func createComposition(_ elements:[Video],completionHandler:((AVMutableComposition,AVMutableVideoComposition) -> Void)?) {
+    class func createComposition(_ elements:[Video],completionHandler:((NSError?,AVMutableComposition?,AVMutableVideoComposition?) -> Void)?) {
         let composition = AVMutableComposition()
         guard let compositionVideoTrack = composition.addMutableTrack(withMediaType: .video, preferredTrackID: kCMPersistentTrackID_Invalid) else {
             print("Couldn't addMutableTrack withMediaType video in AVMutableComposition")
@@ -63,7 +63,9 @@ public class Line: NSManagedObject {
             //                compositionMetadataTrack = composition.addMutableTrackWithMediaType(AVMediaTypeMetadata, preferredTrackID: kCMPersistentTrackID_Invalid)
             //            }
             guard eachElement.hasVideoFile else {
-                print("Missing video") //TODO:
+                let videoIdentifier = eachElement.identifier?.uuidString ?? "Unkown"
+                let error = NSError(domain: "File Manager", code: 666, userInfo: [NSLocalizedDescriptionKey : "Video \(videoIdentifier) does not have a video file"])
+                completionHandler?(error,nil,nil)
                 return
             }
             
@@ -134,7 +136,8 @@ public class Line: NSManagedObject {
                     //                    }
                     
                 } catch let error as NSError {
-                    print("Couldn't create composition: \(error.localizedDescription)")
+                    completionHandler?(error,nil,nil)
+                    return
                 }
                 
                 
@@ -183,7 +186,7 @@ public class Line: NSManagedObject {
             //            videoComposition.renderSize = CGSize(width: 1920,height: 1080)
             videoComposition.renderSize = Globals.defaultRenderSize
             
-            completionHandler?(composition,videoComposition)
+            completionHandler?(nil,composition,videoComposition)
         })
     }
 }

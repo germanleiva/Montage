@@ -108,6 +108,9 @@ extension UIViewController {
             messageWithError = message
         }
         let alert = UIAlertController(title: title, message: messageWithError, preferredStyle: UIAlertControllerStyle.alert)
+        alert.addAction(UIAlertAction(title: "OK", style: UIAlertActionStyle.default, handler: { (action) in
+            alert.dismiss(animated: true, completion: nil)
+        }))
         self.present(alert, animated: true, completion: completion)
     }
 }

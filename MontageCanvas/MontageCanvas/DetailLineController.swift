@@ -295,18 +295,24 @@ class DetailLineController: UIViewController, UICollectionViewDelegate, UICollec
         progressBar.show(animated: true)
         UIApplication.shared.beginIgnoringInteractionEvents()
         
-        Line.createComposition(currentLineVideos) { (composition, videoComposition) in
+        Line.createComposition(currentLineVideos) { (error, composition, videoComposition) in
+            UIApplication.shared.endIgnoringInteractionEvents()
+            progressBar.hide(animated: true)
+
+            guard error == nil, let composition = composition, let videoComposition = videoComposition else {
+                self.alert(error, title: "Create Composition Failed", message: "")
+                return
+            }
+            
             let item = AVPlayerItem(asset: composition.copy() as! AVAsset)
             item.videoComposition = videoComposition
             let player = AVPlayer(playerItem: item)
             
-//            item.addObserver(self, forKeyPath: "status", options: NSKeyValueObservingOptions(rawValue: 0), context: nil)
+            //            item.addObserver(self, forKeyPath: "status", options: NSKeyValueObservingOptions(rawValue: 0), context: nil)
             
             let playerVC = AVPlayerViewController()
             playerVC.player = player
             
-            UIApplication.shared.endIgnoringInteractionEvents()
-            progressBar.hide(animated: true)
             self.present(playerVC, animated: true, completion: { () -> Void in
                 playerVC.player?.play()
             })
