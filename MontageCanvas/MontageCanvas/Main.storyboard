@@ -287,6 +287,14 @@
                                 <rect key="frame" x="512" y="20" width="512" height="288"/>
                                 <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                             </view>
+                            <view hidden="YES" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="jvH-Aw-mmI" customClass="CanvasView" customModule="MontageCanvas" customModuleProvider="target">
+                                <rect key="frame" x="0.0" y="20" width="512" height="288"/>
+                                <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                            </view>
+                            <view hidden="YES" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="unk-ku-CSg" customClass="CanvasView" customModule="MontageCanvas" customModuleProvider="target">
+                                <rect key="frame" x="512" y="20" width="512" height="288"/>
+                                <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                            </view>
                             <label hidden="YES" opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="●" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="OAp-JD-AgL">
                                 <rect key="frame" x="704.5" y="10" width="15" height="20.5"/>
                                 <fontDescription key="fontDescription" type="system" pointSize="17"/>
@@ -301,18 +309,26 @@
                             <constraint firstItem="w2x-1I-HgC" firstAttribute="centerX" secondItem="oOj-9G-3da" secondAttribute="centerX" id="5Rg-Un-UD2"/>
                             <constraint firstItem="Jrk-vG-HRJ" firstAttribute="trailing" secondItem="h0k-xm-trO" secondAttribute="trailing" id="5e9-wg-5Yg"/>
                             <constraint firstItem="TJM-M8-WW1" firstAttribute="bottom" secondItem="h0k-xm-trO" secondAttribute="bottom" id="6Jd-Sk-xIp"/>
+                            <constraint firstItem="jvH-Aw-mmI" firstAttribute="top" secondItem="Zak-NP-4Pv" secondAttribute="top" id="7O6-rN-kYC"/>
                             <constraint firstItem="TJM-M8-WW1" firstAttribute="top" secondItem="oOj-9G-3da" secondAttribute="top" id="Dh5-yk-0re"/>
+                            <constraint firstItem="jvH-Aw-mmI" firstAttribute="bottom" secondItem="Zak-NP-4Pv" secondAttribute="bottom" id="LD4-ao-qOS"/>
                             <constraint firstItem="oOj-9G-3da" firstAttribute="trailing" secondItem="qhY-Si-why" secondAttribute="trailing" id="PDr-gd-5NF"/>
                             <constraint firstItem="oOj-9G-3da" firstAttribute="bottom" secondItem="qhY-Si-why" secondAttribute="bottom" id="Pbr-bR-ilD"/>
+                            <constraint firstItem="unk-ku-CSg" firstAttribute="bottom" secondItem="w2x-1I-HgC" secondAttribute="bottom" id="VIf-bG-shb"/>
                             <constraint firstItem="TJM-M8-WW1" firstAttribute="trailing" secondItem="edM-MM-v5B" secondAttribute="trailing" id="ZGN-31-UY4"/>
                             <constraint firstItem="edM-MM-v5B" firstAttribute="leading" secondItem="h0k-xm-trO" secondAttribute="leading" id="ZJ6-wy-jb5"/>
                             <constraint firstItem="edM-MM-v5B" firstAttribute="trailing" secondItem="h0k-xm-trO" secondAttribute="trailing" id="adi-xQ-gOh"/>
+                            <constraint firstItem="unk-ku-CSg" firstAttribute="top" secondItem="w2x-1I-HgC" secondAttribute="top" id="ahI-pU-rqL"/>
                             <constraint firstItem="Jrk-vG-HRJ" firstAttribute="leading" secondItem="h0k-xm-trO" secondAttribute="leading" id="b2t-El-xLS"/>
+                            <constraint firstItem="unk-ku-CSg" firstAttribute="trailing" secondItem="w2x-1I-HgC" secondAttribute="trailing" id="cN0-qH-qWQ"/>
                             <constraint firstItem="w2x-1I-HgC" firstAttribute="centerY" secondItem="oOj-9G-3da" secondAttribute="centerY" id="efp-N7-jpH"/>
                             <constraint firstAttribute="bottom" secondItem="edM-MM-v5B" secondAttribute="bottom" id="exn-OD-eI9"/>
                             <constraint firstItem="oOj-9G-3da" firstAttribute="leading" secondItem="qhY-Si-why" secondAttribute="leading" id="fK2-gw-0Hg"/>
                             <constraint firstItem="TJM-M8-WW1" firstAttribute="leading" secondItem="edM-MM-v5B" secondAttribute="leading" id="h1q-rx-RhG"/>
+                            <constraint firstItem="unk-ku-CSg" firstAttribute="leading" secondItem="w2x-1I-HgC" secondAttribute="leading" id="h4a-fv-gji"/>
+                            <constraint firstItem="jvH-Aw-mmI" firstAttribute="trailing" secondItem="Zak-NP-4Pv" secondAttribute="trailing" id="hyK-0T-gmf"/>
                             <constraint firstItem="oOj-9G-3da" firstAttribute="top" secondItem="qhY-Si-why" secondAttribute="top" id="lLw-OU-jXA"/>
+                            <constraint firstItem="jvH-Aw-mmI" firstAttribute="leading" secondItem="Zak-NP-4Pv" secondAttribute="leading" id="oY0-Xe-lAu"/>
                             <constraint firstItem="OAp-JD-AgL" firstAttribute="centerY" secondItem="Jrk-vG-HRJ" secondAttribute="centerY" id="pv7-55-wRL"/>
                             <constraint firstItem="w2x-1I-HgC" firstAttribute="leading" secondItem="oOj-9G-3da" secondAttribute="leading" id="sER-dZ-7Uc"/>
                             <constraint firstItem="Jrk-vG-HRJ" firstAttribute="top" secondItem="h0k-xm-trO" secondAttribute="top" id="uVK-ur-dGZ"/>
@@ -323,12 +339,14 @@
                     <connections>
                         <outlet property="backgroundCanvasView" destination="Zak-NP-4Pv" id="bbS-CM-ood"/>
                         <outlet property="backgroundFrameImageView" destination="tZL-xy-cfS" id="QTy-nC-4wK"/>
+                        <outlet property="backgroundPlayerCanvasView" destination="jvH-Aw-mmI" id="hPz-hR-87Y"/>
                         <outlet property="backgroundProgressBar" destination="mcf-ht-3jB" id="wkm-5A-SAZ"/>
                         <outlet property="modalNavigationItem" destination="jxk-CX-eBe" id="QCj-5i-KRb"/>
                         <outlet property="playButton" destination="Xj0-UZ-8b8" id="oG6-Pk-W8d"/>
                         <outlet property="playButtonContainer" destination="W5e-UR-BFw" id="46I-SL-Jmu"/>
                         <outlet property="prototypeCanvasView" destination="w2x-1I-HgC" id="IHb-1a-POs"/>
                         <outlet property="prototypeFrameImageView" destination="qhY-Si-why" id="S21-be-Pfd"/>
+                        <outlet property="prototypePlayerCanvasView" destination="unk-ku-CSg" id="0DF-w8-Ql2"/>
                         <outlet property="prototypePlayerView" destination="oOj-9G-3da" id="bgh-M6-sMJ"/>
                         <outlet property="prototypeProgressBar" destination="fXY-A1-Hdn" id="c97-Ua-kEz"/>
                         <outlet property="recordingControls" destination="fE2-5E-p5y" id="45Z-1d-pEq"/>
@@ -341,7 +359,7 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="KSD-qv-Tes" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="2796" y="305"/>
+            <point key="canvasLocation" x="2795.5078125" y="304.6875"/>
         </scene>
         <!--Split View Controller-->
         <scene sceneID="Nki-YV-4Qg">

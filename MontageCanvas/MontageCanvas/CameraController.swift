@@ -41,6 +41,55 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
     lazy var removeGreenFilter = {
         return colorCubeFilterForChromaKey(hueAngle: 120)
     }()
+    
+    func RGBtoHSV(r : Float, g : Float, b : Float) -> (h : Float, s : Float, v : Float) {
+        var h : CGFloat = 0
+        var s : CGFloat = 0
+        var v : CGFloat = 0
+        let col = UIColor(red: CGFloat(r), green: CGFloat(g), blue: CGFloat(b), alpha: 1.0)
+        col.getHue(&h, saturation: &s, brightness: &v, alpha: nil)
+        return (Float(h), Float(s), Float(v))
+    }
+    
+    func colorCubeFilterForChromaKey(hueAngle: Float) -> CIFilter {
+        
+        let hueRange: Float = 60 // degrees size pie shape that we want to replace
+        let minHueAngle: Float = (hueAngle - hueRange/2.0) / 360
+        let maxHueAngle: Float = (hueAngle + hueRange/2.0) / 360
+        
+        let size = 64
+        var cubeData = [Float](repeating: 0, count: size * size * size * 4)
+        var rgb: [Float] = [0, 0, 0]
+        var hsv: (h : Float, s : Float, v : Float)
+        var offset = 0
+        
+        for z in 0 ..< size {
+            rgb[2] = Float(z) / Float(size) // blue value
+            for y in 0 ..< size {
+                rgb[1] = Float(y) / Float(size) // green value
+                for x in 0 ..< size {
+                    
+                    rgb[0] = Float(x) / Float(size) // red value
+                    hsv = RGBtoHSV(r: rgb[0], g: rgb[1], b: rgb[2])
+                    // the condition checking hsv.s may need to be removed for your use-case
+                    let alpha: Float = (hsv.h > minHueAngle && hsv.h < maxHueAngle && hsv.s > 0.5) ? 0 : 1.0
+                    
+                    cubeData[offset] = rgb[0] * alpha
+                    cubeData[offset + 1] = rgb[1] * alpha
+                    cubeData[offset + 2] = rgb[2] * alpha
+                    cubeData[offset + 3] = alpha
+                    offset += 4
+                }
+            }
+        }
+        let data = cubeData.withUnsafeBufferPointer { Data(buffer: $0) }
+        
+        let colorCube = CIFilter(name: "CIColorCube", withInputParameters: [
+            "inputCubeDimension": size,
+            "inputCubeData": data as NSData
+            ])
+        return colorCube!
+    }
 
     var prototypeTimeline:TimelineViewController?
     var backgroundTimeline:TimelineViewController?
@@ -239,13 +288,23 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
         return displayLink
     }()
     
-    var prototypePlayerItem:AVPlayerItem!
+    var prototypePlayerItem:AVPlayerItem! {
+        get {
+            return prototypePlayer.currentItem
+        }
+    }
     var prototypePlayer:AVPlayer!
     
     @IBOutlet weak var prototypePlayerView:VideoPlayerView!
 
-    var backgroundPlayerItem:AVPlayerItem!
+    var backgroundPlayerItem:AVPlayerItem! {
+        get {
+            return backgroundPlayer.currentItem
+        }
+    }
     var backgroundPlayer:AVPlayer!
+    
+    var lastPrototypePixelBuffer:CVPixelBuffer?
     let prototypeVideoOutput = AVPlayerItemVideoOutput(pixelBufferAttributes: [String(kCVPixelBufferPixelFormatTypeKey): NSNumber(value: kCVPixelFormatType_32BGRA)])
     let backgroundVideoOutput = AVPlayerItemVideoOutput(pixelBufferAttributes: [String(kCVPixelBufferPixelFormatTypeKey): NSNumber(value: kCVPixelFormatType_32BGRA)])
     
@@ -278,10 +337,10 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
             prototypeCanvasView.delegate = self
         }
     }
-    var prototypePlayerCanvasView:CanvasView? {
+    @IBOutlet weak var prototypePlayerCanvasView:CanvasView! {
         didSet {
-            prototypePlayerCanvasView?.videoTrack = videoModel.prototypeTrack!
-            prototypePlayerCanvasView?.delegate = self
+            prototypePlayerCanvasView.videoTrack = videoModel.prototypeTrack!
+            prototypePlayerCanvasView.delegate = self
         }
     }
     
@@ -291,10 +350,10 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
             backgroundCanvasView.delegate = self
         }
     }
-    var backgroundPlayerCanvasView:CanvasView? {
+    @IBOutlet weak var backgroundPlayerCanvasView:CanvasView! {
         didSet {
-            backgroundPlayerCanvasView?.videoTrack = videoModel.backgroundTrack!
-            backgroundPlayerCanvasView?.delegate = self
+            backgroundPlayerCanvasView.videoTrack = videoModel.backgroundTrack!
+            backgroundPlayerCanvasView.delegate = self
         }
     }
     var backgroundPlayerSyncLayer:AVSynchronizedLayer?
@@ -410,16 +469,20 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
         multipeerSession.disconnect()
         multipeerSession.delegate = nil
 
-        
-        
-        
-        
-        
         NotificationCenter.default.removeObserver(self)
         
         //TODO: revise
-        prototypePlayerItem.removeObserver(self, forKeyPath: STATUS_KEYPATH, context: &CameraController.observerContext)
+        deinitPlaybackObjects()
 
+    }
+
+    func deinitPlaybackObjects() {
+        prototypePlayerItem.removeObserver(self, forKeyPath: STATUS_KEYPATH, context: &CameraController.observerContext)
+        prototypePlayerItem.removeObserver(self, forKeyPath: RATE_KEYPATH, context: &CameraController.observerContext)
+        
+        prototypePlayerItem.remove(self.prototypeVideoOutput)
+        backgroundPlayerItem.remove(self.backgroundVideoOutput)
+        
         if let observer = self.periodicTimeObserver {
             prototypePlayer.removeTimeObserver(observer)
             self.periodicTimeObserver = nil
@@ -428,9 +491,10 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
             NotificationCenter.default.removeObserver(observer)
             self.itemEndObserver = nil
         }
-
+        
+        self.prototypePlayerView.syncLayer?.removeFromSuperlayer()
+        self.backgroundPlayerSyncLayer?.removeFromSuperlayer()
     }
-
     
     // MARK: View Life Cycle
 
@@ -603,8 +667,8 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
                 let weakSelf = self
                 
                 let videoComposition = AVVideoComposition(asset: backgroundMutableComposition, applyingCIFiltersWithHandler: { request in
-                    self.backgroundPlayerItem.seek(to: request.compositionTime, toleranceBefore: kCMTimeZero, toleranceAfter: kCMTimeZero, completionHandler: { (finishedBackgroundPlayerItem) in
-                        self.prototypePlayerItem.seek(to: request.compositionTime, toleranceBefore: kCMTimeZero, toleranceAfter: kCMTimeZero, completionHandler: { (finishedPrototypePlayerItem) in
+                    self.backgroundPlayerItem?.seek(to: request.compositionTime, toleranceBefore: kCMTimeZero, toleranceAfter: kCMTimeZero, completionHandler: { (finishedBackgroundPlayerItem) in
+                        self.prototypePlayerItem?.seek(to: request.compositionTime, toleranceBefore: kCMTimeZero, toleranceAfter: kCMTimeZero, completionHandler: { (finishedPrototypePlayerItem) in
                             
                             let backgroundFrameImage = request.sourceImage
                             
@@ -840,14 +904,9 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
         if !canvasControllerMode.isRecording {
             prototypePlayerView.isHidden = true
             
-            prototypePlayerCanvasView?.removeFromSuperview() //TODO discard properly?
-            prototypePlayerCanvasView = nil
-            
             prototypeCanvasView.isHidden = false
             prototypeCanvasView.isUserInteractionEnabled = true
             
-            backgroundPlayerCanvasView?.removeFromSuperview() //TODO discard properly?
-            backgroundPlayerCanvasView = nil
             backgroundPlayerSyncLayer?.removeFromSuperlayer()
             backgroundPlayerSyncLayer = nil
             
@@ -988,7 +1047,7 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
         self.scrubbedToTime(Double(scrubberSlider.value))
     }
     
-    func startPlayback() {
+    func startPlayback(shouldUseSmallestDuration:Bool = true) {
         //We should start showing the prototype AVPlayer and enabling the player controls\
         
         guard let prototypeVideoFileURL = self.videoModel.prototypeTrack?.loadedFileURL, let backgroundVideoFileURL = self.videoModel.backgroundTrack?.loadedFileURL else {
@@ -1013,24 +1072,26 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
         assetLoadingGroup.notify(queue: DispatchQueue.main) {[unowned self] in
             print("Prototype duration \(prototypeAsset.duration.seconds)")
             print("Background duration \(backgroundAsset.duration.seconds)")
-            let smallestDuration = CMTimeCompare(backgroundAsset.duration, prototypeAsset.duration) < 0 ? backgroundAsset.duration : prototypeAsset.duration
-
-            self.videoModel.backgroundTrack?.durationInSeconds = smallestDuration.seconds //backgroundAsset.duration.seconds
-            self.videoModel.prototypeTrack?.durationInSeconds = smallestDuration.seconds //prototypeAsset.duration.seconds
+            let compositionTotalDuration:CMTime
             
+            if shouldUseSmallestDuration {
+                compositionTotalDuration = CMTimeCompare(backgroundAsset.duration, prototypeAsset.duration) < 0 ? backgroundAsset.duration : prototypeAsset.duration
+            } else {
+                compositionTotalDuration = backgroundAsset.duration
+            }
+
             self.prototypeComposition = AVMutableComposition()
             guard let prototypeCompositionVideoTrack = self.prototypeComposition?.addMutableTrack(withMediaType: .video, preferredTrackID: kCMPersistentTrackID_Invalid) else {
                 self.alert(nil, title: "Playback error", message: "Could not create compositionVideoTrack for prototype")
                 return
             }
-            //        let compositionAudioTrack = prototypeComposition.addMutableTrack(withMediaType: .audio, preferredTrackID: kCMPersistentTrackID_Invalid)
             
             guard let prototypeAssetVideoTrack = prototypeAsset.tracks(withMediaType: .video).first else {
                 self.alert(nil, title: "Playback error", message: "The prototype video file does not have any video track")
                 return
             }
             
-            let prototypeCompositionVideoTimeRange = CMTimeRange(start: kCMTimeZero, duration: smallestDuration)
+            let prototypeCompositionVideoTimeRange = CMTimeRange(start: kCMTimeZero, duration: compositionTotalDuration)
             
             do {
                 try prototypeCompositionVideoTrack.insertTimeRange(prototypeCompositionVideoTimeRange, of: prototypeAssetVideoTrack, at: kCMTimeZero)
@@ -1039,22 +1100,15 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
                 return
             }
             
-//            for pausedTimeRange in self.videoModel.pausedTimeRanges!.reversed() {
-//                print("Skipping \(pausedTimeRange)")
-//                prototypeCompositionVideoTrack.removeTimeRange(pausedTimeRange)
-//            }
+            let aPrototypePlayerItem = AVPlayerItem(asset: self.prototypeComposition!,automaticallyLoadedAssetKeys:["tracks","duration"])
             
-            self.prototypePlayerItem = AVPlayerItem(asset: self.prototypeComposition!,automaticallyLoadedAssetKeys:["tracks","duration"])
-            
-            self.prototypePlayerItem.addObserver(self, forKeyPath: RATE_KEYPATH, options: NSKeyValueObservingOptions.initial, context: &CameraController.observerContext)
-            
-            self.prototypePlayer = AVPlayer(playerItem: self.prototypePlayerItem)
+            self.prototypePlayer = AVPlayer(playerItem: aPrototypePlayerItem)
             self.prototypePlayerView.player = self.prototypePlayer
             self.prototypePlayerView.isHidden = false
             self.prototypeCanvasView.isHidden = true
             self.prototypeCanvasView.isUserInteractionEnabled = false
             
-            self.prototypePlayerItem.add(self.prototypeVideoOutput)
+            aPrototypePlayerItem.add(self.prototypeVideoOutput)
             
             self.backgroundComposition = AVMutableComposition()
             guard let backgroundCompositionVideoTrack = self.backgroundComposition?.addMutableTrack(withMediaType: .video, preferredTrackID: kCMPersistentTrackID_Invalid) else {
@@ -1077,7 +1131,7 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
                 return
             }
             
-            let backgroundCompositionTotalTimeRange = CMTimeRange(start: kCMTimeZero, duration: smallestDuration)
+            let backgroundCompositionTotalTimeRange = CMTimeRange(start: kCMTimeZero, duration: compositionTotalDuration)
             
             do {
                 try backgroundCompositionVideoTrack.insertTimeRange(backgroundCompositionTotalTimeRange, of: backgroundAssetVideoTrack, at: kCMTimeZero)
@@ -1093,12 +1147,9 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
                 return
             }
             
-//            for pausedTimeRange in self.videoModel.pausedTimeRanges!.reversed() {
-//                backgroundCompositionVideoTrack.removeTimeRange(pausedTimeRange)
-//            }
-            
-            self.backgroundPlayerItem = AVPlayerItem(asset: self.backgroundComposition!,automaticallyLoadedAssetKeys:["tracks","duration"])
-            self.backgroundPlayer = AVPlayer(playerItem: self.backgroundPlayerItem)
+            let aBackgroundPlayerItem = AVPlayerItem(asset: self.backgroundComposition!,automaticallyLoadedAssetKeys:["tracks","duration"])
+            self.backgroundPlayer = AVPlayer(playerItem: aBackgroundPlayerItem)
+
             self.backgroundCanvasView.isHidden = true
             self.backgroundCanvasView.isUserInteractionEnabled = false
             
@@ -1108,17 +1159,13 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
             //        backgroundPlayerView.frame = CGRect(x: 0, y: 500, width: 480, height: 360)
             //        view.addSubview(backgroundPlayerView)
             
-            self.backgroundPlayerItem.add(self.backgroundVideoOutput)
+            aBackgroundPlayerItem.add(self.backgroundVideoOutput)
             self.backgroundVideoOutput.suppressesPlayerRendering = true
             
             //Prototype Player Canvas View
-            self.prototypePlayerCanvasView = CanvasView(frame: self.view.convert(CGRect(origin:CGPoint.zero,size:self.prototypeCanvasView.frame.size), from: self.prototypeCanvasView))
-            self.prototypePlayerCanvasView?.videoTrack = self.videoModel.prototypeTrack
-            self.prototypePlayerCanvasView!.translatesAutoresizingMaskIntoConstraints = false
-            self.view.addSubview(self.prototypePlayerCanvasView!)
-            
-            self.prototypePlayerView.syncLayer = AVSynchronizedLayer(playerItem: self.prototypePlayerItem)
-            
+            self.prototypePlayerCanvasView.isHidden = false
+            self.prototypePlayerView.syncLayer = AVSynchronizedLayer(playerItem: aPrototypePlayerItem)
+
             self.prototypePlayerCanvasView?.associatedSyncLayer = self.prototypePlayerView.syncLayer
             
             for tier in self.prototypePlayerCanvasView?.videoTrack.tiers!.array as! [Tier] {
@@ -1133,12 +1180,9 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
             }
             
             //Background Player Canvas View
-            self.backgroundPlayerCanvasView = CanvasView(frame: self.view.convert(CGRect(origin:CGPoint.zero,size:self.backgroundCanvasView.frame.size), from: self.backgroundCanvasView))
-            self.backgroundPlayerCanvasView?.videoTrack = self.videoModel.backgroundTrack
-            self.backgroundPlayerCanvasView!.translatesAutoresizingMaskIntoConstraints = false
-            self.view.addSubview(self.backgroundPlayerCanvasView!)
+            self.backgroundPlayerCanvasView.isHidden = false
             
-            self.backgroundPlayerSyncLayer = AVSynchronizedLayer(playerItem: self.backgroundPlayerItem)
+            self.backgroundPlayerSyncLayer = AVSynchronizedLayer(playerItem: aBackgroundPlayerItem)
             self.backgroundFrameImageView.layer.addSublayer(self.backgroundPlayerSyncLayer!)
             
             self.backgroundPlayerCanvasView?.associatedSyncLayer = self.backgroundPlayerSyncLayer
@@ -1156,9 +1200,9 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
             self.scrubberSlider.isEnabled = true
             self.scrubberButtonItem.isEnabled = true
             
-            self.prototypePlayerItem.addObserver(self, forKeyPath: STATUS_KEYPATH, options: NSKeyValueObservingOptions(rawValue: 0), context: &CameraController.observerContext)
-//            self.prototypePlayer.addObserver(self, forKeyPath: "rate", options: NSKeyValueObservingOptions.initial, context: &CameraController.observerContext)
-
+            aPrototypePlayerItem.addObserver(self, forKeyPath: STATUS_KEYPATH, options: NSKeyValueObservingOptions(rawValue: 0), context: &CameraController.observerContext)
+            aPrototypePlayerItem.addObserver(self, forKeyPath: RATE_KEYPATH, options: NSKeyValueObservingOptions.initial, context: &CameraController.observerContext)
+            
             self.backgroundPlayer.play()
             self.prototypePlayer.play()
         }
@@ -1167,8 +1211,8 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
     override func observeValue(forKeyPath keyPath: String?, of object: Any?, change:
         [NSKeyValueChangeKey : Any]?, context: UnsafeMutableRawPointer?) {
 
-        if let object = object, context! == &CameraController.observerContext {
-            if prototypePlayerItem.isEqual(object) {
+        if let object = object as? AVPlayerItem, context! == &CameraController.observerContext {
+            if prototypePlayerItem == object {
                 guard let keyPath = keyPath else {
                     return
                 }
@@ -1288,26 +1332,28 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
         
         if prototypeVideoOutput.hasNewPixelBuffer(forItemTime: prototypeItemTime) {
             //            print("prototypeVideoOutput hasNewPixelBuffer")
-            
             if let prototypePixelBuffer = prototypeVideoOutput.copyPixelBuffer(forItemTime: prototypeItemTime, itemTimeForDisplay: nil) {
                 //                print("prototypePixelBuffer SUCCESS")
-                
-                let weakSelf = self
-                
-                streamerQueue.async {
-                    if let obtainedBox = weakSelf.videoModel.backgroundTrack?.box(forItemTime: backgroundItemTime) {
-                        weakSelf.box = obtainedBox
-                    } else {
-                        print("box(forItemTime: ...) returned nil") //TODO:
-                    }
-                    weakSelf.applyFilterFromPrototypeToBackground(prototypePixelBuffer)
-                }
+                lastPrototypePixelBuffer = prototypePixelBuffer
             } else {
                 print("prototypePixelBuffer FAIL")
             }
-        }// else {
-        //            print("prototypeVideoOutput NOT hasNewPixelBuffer")
-        //        }
+        } else {
+//            print("prototypeVideoOutput NOT hasNewPixelBuffer")
+        }
+        
+        if let prototypePixelBuffer = lastPrototypePixelBuffer {
+            let weakSelf = self
+            
+            streamerQueue.async {
+                if let obtainedBox = weakSelf.videoModel.backgroundTrack?.box(forItemTime: backgroundItemTime) {
+                    weakSelf.box = obtainedBox
+                } else {
+                    print("box(forItemTime: ...) returned nil") //TODO:
+                }
+                weakSelf.applyFilterFromPrototypeToBackground(prototypePixelBuffer)
+            }
+        }
         
         //        print("---")
         //        if let backgroundPixelBuffer = backgroundPixelBuffer {
@@ -1318,73 +1364,6 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
         //            applyFilterFromPrototypeToBackground(prototypePixelBuffer,ignoreSketchOverlay: true)
         //        }
     }
-    
-    // MARK: Video Output Sample Buffer Delegate
-    
-//    func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
-//
-//        movieWriter?.process(sampleBuffer: sampleBuffer)
-//
-//        guard let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else {
-//            return
-//        }
-//
-//        // VERSION CORE IMAGE
-//        /*
-//         let monaLisa = CIImage(image: catImage)!
-//         let backgroundImage = CIImage(cvPixelBuffer: pixelBuffer)
-//
-//         let colorMatrix = CIFilter(name:"CIColorMatrix")!
-//
-//         colorMatrix.setDefaults()
-//         colorMatrix.setValue(backgroundImage, forKey: kCIInputImageKey)
-//
-//         colorMatrix.setValue(CIVector(x: 0, y: 0, z: 0, w: 0), forKey: "inputRVector")
-//         colorMatrix.setValue(CIVector(x: -5, y: 5, z: -5, w: 0), forKey: "inputGVector")
-//         colorMatrix.setValue(CIVector(x: 0, y: 0, z: 0, w: 0), forKey: "inputBVector")
-//         colorMatrix.setValue(CIVector(x: 0, y: 0, z: 0, w: 1), forKey: "inputAVector")
-//         colorMatrix.setValue(CIVector(x: 0, y: 0, z: 0, w: 0), forKey: "inputBiasVector")
-//
-//         let onlyGreenBackgroundImage = colorMatrix.outputImage!
-//
-//         if let rect = detector.features(in: onlyGreenBackgroundImage).first as? CIRectangleFeature {
-//         //We got a rectangle detected
-//
-//         let perspectiveTransform = CIFilter(name: "CIPerspectiveTransform")!
-//
-//         perspectiveTransform.setValue(CIVector(cgPoint:rect.topLeft),
-//         forKey: "inputTopLeft")
-//         perspectiveTransform.setValue(CIVector(cgPoint:rect.topRight),
-//         forKey: "inputTopRight")
-//         perspectiveTransform.setValue(CIVector(cgPoint:rect.bottomRight),
-//         forKey: "inputBottomRight")
-//         perspectiveTransform.setValue(CIVector(cgPoint:rect.bottomLeft),
-//         forKey: "inputBottomLeft")
-//         perspectiveTransform.setValue(monaLisa,
-//         forKey: kCIInputImageKey)
-//
-//         let composite = CIFilter(name: "CISourceAtopCompositing")!
-//
-//         composite.setValue(backgroundImage,
-//         forKey: kCIInputBackgroundImageKey)
-//         composite.setValue(perspectiveTransform.outputImage!,
-//
-//         forKey: kCIInputImageKey)
-//
-//         DispatchQueue.main.async {
-//         self.imageView.image = UIImage(ciImage:composite.outputImage!)
-//         }
-//         return
-//         }*/
-//
-//        // VERSION VISION
-//        snapshotSketchOverlay(layer: prototypeCanvasView.canvasLayer,size: prototypeCanvasView.frame.size)
-//
-//        applyFilterFromPrototypeToBackground(pixelBuffer)
-////        DispatchQueue.main.async {
-////            self.imageView.image = self.currentFrame
-////        }
-//    }
 
     func cgImageBackedImage(withCIImage ciImage:CIImage) -> UIImage? {
         guard let ref = context.createCGImage(ciImage, from: ciImage.extent) else {
@@ -1562,54 +1541,7 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
         }
     }
     
-    func RGBtoHSV(r : Float, g : Float, b : Float) -> (h : Float, s : Float, v : Float) {
-        var h : CGFloat = 0
-        var s : CGFloat = 0
-        var v : CGFloat = 0
-        let col = UIColor(red: CGFloat(r), green: CGFloat(g), blue: CGFloat(b), alpha: 1.0)
-        col.getHue(&h, saturation: &s, brightness: &v, alpha: nil)
-        return (Float(h), Float(s), Float(v))
-    }
     
-    func colorCubeFilterForChromaKey(hueAngle: Float) -> CIFilter {
-        
-        let hueRange: Float = 60 // degrees size pie shape that we want to replace
-        let minHueAngle: Float = (hueAngle - hueRange/2.0) / 360
-        let maxHueAngle: Float = (hueAngle + hueRange/2.0) / 360
-        
-        let size = 64
-        var cubeData = [Float](repeating: 0, count: size * size * size * 4)
-        var rgb: [Float] = [0, 0, 0]
-        var hsv: (h : Float, s : Float, v : Float)
-        var offset = 0
-        
-        for z in 0 ..< size {
-            rgb[2] = Float(z) / Float(size) // blue value
-            for y in 0 ..< size {
-                rgb[1] = Float(y) / Float(size) // green value
-                for x in 0 ..< size {
-                    
-                    rgb[0] = Float(x) / Float(size) // red value
-                    hsv = RGBtoHSV(r: rgb[0], g: rgb[1], b: rgb[2])
-                    // the condition checking hsv.s may need to be removed for your use-case
-                    let alpha: Float = (hsv.h > minHueAngle && hsv.h < maxHueAngle && hsv.s > 0.5) ? 0 : 1.0
-                    
-                    cubeData[offset] = rgb[0] * alpha
-                    cubeData[offset + 1] = rgb[1] * alpha
-                    cubeData[offset + 2] = rgb[2] * alpha
-                    cubeData[offset + 3] = alpha
-                    offset += 4
-                }
-            }
-        }
-        let data = cubeData.withUnsafeBufferPointer { Data(buffer: $0) }
-        
-        let colorCube = CIFilter(name: "CIColorCube", withInputParameters: [
-            "inputCubeDimension": size,
-            "inputCubeData": data as NSData
-            ])
-        return colorCube!
-    }
     
     func exifOrientation(orientation: UIDeviceOrientation) -> UInt32 {
         switch orientation {
@@ -1983,6 +1915,7 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
             self.canvasControllerMode.resume(controller: self)
         }
         
+        //TODO check this... suspicious
         if CMTimeCompare(prototypePlayer.currentTime(), prototypePlayerItem.duration) == 0 {
             scrubbedToTime(0.0, completionBlock: playBlock)
         } else {
@@ -2220,7 +2153,7 @@ extension CameraController:CanvasControllerModeDelegate {
         for eachCam in cams {
             sendMessage(peerID: eachCam, dict: ["streaming":false])
         }
-        self.startPlayback()
+        self.startPlayback(shouldUseSmallestDuration: false)
     }
     func pausedPlaying(mode:CanvasControllerPlayingMode){
         playButton.setImage(UIImage(named:"play-icon"), for: UIControlState.normal)
@@ -2463,7 +2396,11 @@ class CalendarEvent {
 
 extension CameraController: TimelineDelegate {
     func timeline(didSelect prototypeTrack:VideoTrack) {
-        self.startPlayback()
+        if canvasControllerMode.isPlayingMode {
+            deinitPlaybackObjects()
+            
+            self.startPlayback(shouldUseSmallestDuration: false)
+        }
     }
 }
 
