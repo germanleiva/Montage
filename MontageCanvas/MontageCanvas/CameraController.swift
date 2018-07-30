@@ -392,7 +392,7 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
     
     var activeVideoInput:AVCaptureDeviceInput?
         
-    var videoDimensions = CMVideoDimensions(width: 1920, height: 1080)
+    let videoDimensions = CMVideoDimensions(width: 1920, height: 1080)
     
     // MARK: Initializers
     
@@ -408,6 +408,12 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
     
     deinit {
         multipeerSession.disconnect()
+        multipeerSession.delegate = nil
+
+        
+        
+        
+        
         
         NotificationCenter.default.removeObserver(self)
         
@@ -454,6 +460,7 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        
 //        print("viewWillAppear")
 //        browser.startBrowsingForPeers()
 //        print("initial start browsing for peers")
@@ -565,12 +572,14 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
             backgroundTimeline = navigationController?.topViewController as? TimelineViewController
             backgroundTimeline?.videoTrack = videoModel.backgroundTrack
             backgroundTimeline?.canvasView = backgroundCanvasView
+            backgroundTimeline?.delegate = self
         }
         if "PROTOTYPE_TIMELINE_SEGUE" == segue.identifier {
             let navigationController = segue.destination as? UINavigationController
             prototypeTimeline = navigationController?.topViewController as? TimelineViewController
             prototypeTimeline?.videoTrack = videoModel.prototypeTrack
             prototypeTimeline?.canvasView = prototypeCanvasView
+            prototypeTimeline?.delegate = self
         }
     }
     
@@ -1742,12 +1751,6 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
                     for boxObservation in orderedTemporalBoxes {
                         videoModel.backgroundTrack?.addToBoxes(boxObservation)
                     }
-                    
-                    do {
-                        try coreDataContext.save()
-                    } catch {
-                        alert(error, title: "DB Error" , message: "Could not save DB after receiving boxes information from userCam")
-                    }
                 case "ACK":
                     guard let syncTime = syncTime else {
                         return
@@ -1892,6 +1895,7 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
             
             do {
                 try fileManager.copyItem(at: localURL, to: currentPrototypeVideoFileURL)
+                self.videoModel.prototypeTrack?.hasVideoFile = true
             } catch {
                 self.alert(error, title: "FileManager error", message: "Could not create prototype.mov")
                 return
@@ -1912,15 +1916,24 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
             
             do {
                 try fileManager.copyItem(at: localURL, to: currentBackgroundVideoFileURL)
+                self.videoModel.backgroundTrack?.hasVideoFile = true
             } catch {
                 self.alert(error, title: "FileManager error", message: "Could not create background.mov")
                 return
             }
         }
         
-        DispatchQueue.main.async {[unowned self] in
-            self.canvasControllerMode = CanvasControllerPlayingMode(controller:self)
+        if let _ = self.videoModel.prototypeTrack?.hasVideoFile, let _ =  self.videoModel.backgroundTrack?.hasVideoFile {
+            DispatchQueue.main.async {[unowned self] in
+                do {
+                    try self.coreDataContext.save()
+                } catch {
+                    self.alert(error, title: "DB Error", message: "Couldn't save video tracks after receiving their files")
+                }
+                self.canvasControllerMode = CanvasControllerPlayingMode(controller:self)
+            }
         }
+        
     }
 
     func session(_ session: MCSession, didReceiveCertificate certificate: [Any]?, fromPeer peerID: MCPeerID, certificateHandler: @escaping (Bool) -> Void) {
@@ -2446,6 +2459,12 @@ class CalendarEvent {
         durationInHours = Int(arc4random_uniform(5) + 1)
     }
     
+}
+
+extension CameraController: TimelineDelegate {
+    func timeline(didSelect prototypeTrack:VideoTrack) {
+        self.startPlayback()
+    }
 }
 
 //extension CameraController: TCMaskViewDelegate{

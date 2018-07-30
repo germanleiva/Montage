@@ -10,10 +10,16 @@ import UIKit
 import CoreData
 import AVKit
 
+protocol VideoCatalogDelegate: AnyObject {
+    func videoCatalog(didSelect prototypeTrack:VideoTrack)
+}
+
 let CELL_VIDEO_CATALOG_IDENTIFIER = "CELL_VIDEO_CATALOG_IDENTIFIER"
 
 class VideoCatalogController: UIViewController, UICollectionViewDelegate, UICollectionViewDataSource, NSFetchedResultsControllerDelegate {
     var myVideoTrack:VideoTrack!
+    
+    weak var delegate:VideoCatalogDelegate?
     
     let coreDataContext = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
     @IBOutlet weak var collectionView:UICollectionView!
@@ -76,19 +82,38 @@ class VideoCatalogController: UIViewController, UICollectionViewDelegate, UIColl
     
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         let selectedVideoTrack = fetchedResultController.object(at: indexPath)
+
+        guard let selectedFileURL = selectedVideoTrack.loadedFileURL, let myFileURL = myVideoTrack.loadedFileURL else {
+            return
+        }
+//
+//        let player = AVPlayer(url: videoURL)
+//        let playerViewController = AVPlayerViewController()
+//        playerViewController.player = player
+//        present(playerViewController, animated: true) {
+//            playerViewController.player!.play()
+//        }
         
-        guard let videoURL = selectedVideoTrack.loadedFileURL else {
+        //Assign the corresponding properties from selectedVideoTrack to myVideoTrack
+        
+        let backupFileName = myFileURL.deletingPathExtension().lastPathComponent + "-backup." + myFileURL.pathExtension
+        let backupFileURL = myFileURL.deletingLastPathComponent().appendingPathComponent(backupFileName)
+        do {
+            try FileManager.default.moveItem(at: myFileURL, to: backupFileURL)
+        } catch {
+            alert(error, title: "FileManager", message: "Couldn't backup the prototype video track \(myFileURL) to \(backupFileURL)")
             return
         }
         
-        let player = AVPlayer(url: videoURL)
-        let playerViewController = AVPlayerViewController()
-        playerViewController.player = player
-        present(playerViewController, animated: true) {
-            playerViewController.player!.play()
+        do {
+            try FileManager.default.copyItem(at: selectedFileURL, to: myFileURL)
+        } catch {
+            alert(error, title: "FileManager", message: "Couldn't copy the selected prototype video track \(selectedFileURL) to \(myFileURL)")
+            return
         }
         
-        //TODO: assign the corresponding properties from selectedVideoTrack to myVideoTrack
+        delegate?.videoCatalog(didSelect: selectedVideoTrack)
+        dismiss(animated: true, completion: nil)
     }
     
     // MARK: Fetched Results Controller
@@ -102,7 +127,7 @@ class VideoCatalogController: UIViewController, UICollectionViewDelegate, UIColl
         
         let fetchRequest: NSFetchRequest<VideoTrack> = VideoTrack.fetchRequest()
         
-        fetchRequest.predicate = NSPredicate(format: "SELF != %@ AND isPrototype == TRUE",self.myVideoTrack.objectID)
+        fetchRequest.predicate = NSPredicate(format: "SELF != %@ AND isPrototype == TRUE AND hasVideoFile == TRUE",self.myVideoTrack.objectID)
         
         fetchRequest.sortDescriptors = [NSSortDescriptor(key: "name", ascending: true)]
         let resultsController = NSFetchedResultsController(fetchRequest: fetchRequest, managedObjectContext: coreDataContext, sectionNameKeyPath: nil, cacheName: nil)

@@ -9,6 +9,10 @@
 import UIKit
 import CoreData
 
+protocol TimelineDelegate: AnyObject {
+    func timeline(didSelect prototypeTrack:VideoTrack)
+}
+
 class TimelineViewController: UIViewController, NSFetchedResultsControllerDelegate, UITableViewDataSource, UITableViewDelegate {
     var videoTrack:VideoTrack! {
         didSet {
@@ -17,6 +21,9 @@ class TimelineViewController: UIViewController, NSFetchedResultsControllerDelega
             }
         }
     }
+    
+    weak var delegate:TimelineDelegate?
+    
     var canvasView:CanvasView!
     
     let managedObjectContext = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
@@ -61,6 +68,7 @@ class TimelineViewController: UIViewController, NSFetchedResultsControllerDelega
             }
             
             videoCatalogController.myVideoTrack = videoTrack
+            videoCatalogController.delegate = self
             
 //            present(videoCatalogNavigationController, animated: true, completion: nil)
         }
@@ -368,5 +376,11 @@ class TimelineViewController: UIViewController, NSFetchedResultsControllerDelega
             canvasView.delegate?.canvasTierModified(canvasView, tier: selected, type: .strokeEnd)
         }
         sender.value = 1
+    }
+}
+
+extension TimelineViewController: VideoCatalogDelegate {
+    func videoCatalog(didSelect prototypeTrack:VideoTrack) {
+        delegate?.timeline(didSelect: prototypeTrack)
     }
 }

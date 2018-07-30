@@ -40,7 +40,7 @@ class CanvasControllerMode {
     var isPlayingMode:Bool {
         return false
     }
-    var delegate:CanvasControllerModeDelegate
+    weak var delegate:CanvasControllerModeDelegate?
     
     func startRecording(controller:CameraController) {
         preconditionFailure("This method must be overridden")
@@ -92,7 +92,7 @@ class CanvasControllerLiveMode:CanvasControllerMode {
     override init(controller:CameraController) {
         super.init(controller: controller)
         
-        delegate.startedLiveMode(mode: self)
+        delegate?.startedLiveMode(mode: self)
     }
 }
 
@@ -212,7 +212,7 @@ class CanvasControllerPlayingMode:CanvasControllerMode {
     
     override var currentTime: TimeInterval {
         get {
-            return delegate.playerItemOffset()
+            return delegate?.playerItemOffset() ?? 0
         }
         set {
             preconditionFailure("CanvasControllerPlayingMode >> This method should never be called")
