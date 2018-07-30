@@ -15,13 +15,37 @@ import MBProgressHUD
 class DetailLineController: UIViewController, UICollectionViewDelegate, UICollectionViewDataSource, NSFetchedResultsControllerDelegate, UINavigationControllerDelegate, UIImagePickerControllerDelegate {
     let coreDataContext = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
 
-    var shouldReloadCollectionView = false
+    var ignoreDataSourceUpdates = false
+
     var line: Line? {
         didSet {
             reloadFetchResultsController()
         }
     }
     var recordingVideo:Video?
+    
+    var longPressGesture: UILongPressGestureRecognizer!
+    
+    @objc func handleLongGesture(gesture: UILongPressGestureRecognizer) {
+        switch(gesture.state) {
+            
+        case .began:
+            guard let selectedIndexPath = collectionView.indexPathForItem(at: gesture.location(in: collectionView)) else {
+                break
+            }
+            
+            ignoreDataSourceUpdates = true
+            collectionView.beginInteractiveMovementForItem(at: selectedIndexPath)
+        case .changed:
+            collectionView.updateInteractiveMovementTargetPosition(gesture.location(in: gesture.view!))
+        case .ended:
+            collectionView.endInteractiveMovement()
+            ignoreDataSourceUpdates = false
+        default:
+            collectionView.cancelInteractiveMovement()
+            ignoreDataSourceUpdates = false
+        }
+    }
     
     @IBOutlet weak var collectionView:UICollectionView!
     
@@ -30,10 +54,10 @@ class DetailLineController: UIViewController, UICollectionViewDelegate, UICollec
     @IBOutlet weak var recordButton: UIBarButtonItem!
     
     deinit {
-        for operation: BlockOperation in blockOperations {
-            operation.cancel()
-        }
-        blockOperations.removeAll(keepingCapacity: false)
+//        for operation: BlockOperation in blockOperations {
+//            operation.cancel()
+//        }
+//        blockOperations.removeAll(keepingCapacity: false)
     }
     
     func configureView() {
@@ -50,6 +74,9 @@ class DetailLineController: UIViewController, UICollectionViewDelegate, UICollec
         // Do any additional setup after loading the view, typically from a nib.
         configureView()
         
+        longPressGesture = UILongPressGestureRecognizer(target: self, action: #selector(self.handleLongGesture(gesture:)))
+        collectionView.addGestureRecognizer(longPressGesture)
+
         NotificationCenter.default.addObserver(forName: NSNotification.Name(rawValue: "DELETE_RECORDING_VIDEO"), object: nil, queue: OperationQueue.main) { (notif) in
             self.deleteRecordingVideo()
         }
@@ -92,6 +119,32 @@ class DetailLineController: UIViewController, UICollectionViewDelegate, UICollec
         
         let controller = segue.destination as! CameraController
         controller.videoModel = video
+    }
+    
+    // MARK: Collection View Delegate
+    
+    func collectionView(_ collectionView: UICollectionView, canMoveItemAt indexPath: IndexPath) -> Bool {
+        return true
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, moveItemAt sourceIndexPath: IndexPath, to destinationIndexPath: IndexPath) {
+        let origin = fetchedResultController.object(at: sourceIndexPath)
+        let destination = fetchedResultController.object(at: destinationIndexPath)
+        
+        if let mutableElements = line?.mutableOrderedSetValue(forKey: "elements") {
+            mutableElements.exchangeObject(at: Int(origin.sequenceNumber), withObjectAt: Int(destination.sequenceNumber))
+            
+            let temporalSequenceNumber = destination.sequenceNumber
+            destination.sequenceNumber = origin.sequenceNumber
+            origin.sequenceNumber = temporalSequenceNumber
+            
+            if let elements = line?.elements?.array as? [Video] {
+                for (index,each) in elements.enumerated() {
+                    assert(each.sequenceNumber == index)
+                }
+            }
+        }
+        
     }
 
     // MARK: Collection View Data Source
@@ -260,7 +313,7 @@ class DetailLineController: UIViewController, UICollectionViewDelegate, UICollec
         _fetchedResultsController = nil
     }
     var _fetchedResultsController: NSFetchedResultsController<Video>? = nil
-    var blockOperations: [BlockOperation] = []
+//    var blockOperations: [BlockOperation] = []
     
     var fetchedResultController: NSFetchedResultsController<Video> {
         if _fetchedResultsController != nil {
@@ -287,132 +340,112 @@ class DetailLineController: UIViewController, UICollectionViewDelegate, UICollec
     }
     
     func controller(_ controller: NSFetchedResultsController<NSFetchRequestResult>, didChange anObject: Any, at indexPath: IndexPath?, for type: NSFetchedResultsChangeType, newIndexPath: IndexPath?) {
-        
-        if type == NSFetchedResultsChangeType.insert {
-            print("Insert Object: \(newIndexPath)")
-            
-            if (collectionView?.numberOfSections)! > 0 {
-                
-                if collectionView?.numberOfItems( inSection: newIndexPath!.section ) == 0 {
-                    self.shouldReloadCollectionView = true
-                } else {
-                    blockOperations.append(
-                        BlockOperation(block: { [weak self] in
-                            if let this = self {
-                                DispatchQueue.main.async {
-                                    this.collectionView!.insertItems(at: [newIndexPath!])
-                                }
-                            }
-                        })
-                    )
+        if ignoreDataSourceUpdates {
+            return
+        }
+        switch (type) {
+        case .insert:
+            print("didChange anObject .insert (==nil)indexPath = \(indexPath?.description ?? "it was nil!") AND (+)newIndexPath = \(newIndexPath?.description ?? "it was nil!")")
+
+            if indexPath == nil { // iOS 9 / Swift 2.0 BUG with running 8.4 (https://forums.developer.apple.com/thread/12184)
+                if let newIndexPath = newIndexPath {
+                    pendingUpdates.insertedRows.insert(newIndexPath)
                 }
-                
-            } else {
-                self.shouldReloadCollectionView = true
             }
-        }
-        else if type == NSFetchedResultsChangeType.update {
-            print("Update Object: \(indexPath)")
-            blockOperations.append(
-                BlockOperation(block: { [weak self] in
-                    if let this = self {
-                        DispatchQueue.main.async {
-                            
-                            this.collectionView!.reloadItems(at: [indexPath!])
-                        }
-                    }
-                })
-            )
-        }
-        else if type == NSFetchedResultsChangeType.move {
-            print("Move Object: \(indexPath)")
-            
-            blockOperations.append(
-                BlockOperation(block: { [weak self] in
-                    if let this = self {
-                        DispatchQueue.main.async {
-                            this.collectionView!.moveItem(at: indexPath!, to: newIndexPath!)
-                        }
-                    }
-                })
-            )
-        }
-        else if type == NSFetchedResultsChangeType.delete {
-            print("Delete Object: \(indexPath)")
-            if collectionView?.numberOfItems( inSection: indexPath!.section ) == 1 {
-                self.shouldReloadCollectionView = true
-            } else {
-                blockOperations.append(
-                    BlockOperation(block: { [weak self] in
-                        if let this = self {
-                            DispatchQueue.main.async {
-                                this.collectionView!.deleteItems(at: [indexPath!])
-                            }
-                        }
-                    })
-                )
+        case .delete:
+            print("didChange anObject .delete (-)indexPath = \(indexPath?.description ?? "it was nil!") AND newIndexPath = \(newIndexPath?.description ?? "it was nil!")")
+
+            if let indexPath = indexPath {
+                pendingUpdates.deletedRows.insert(indexPath)
+            }
+        case .update:
+            print("didChange anObject .update *indexPath = \(indexPath?.description ?? "it was nil!") AND newIndexPath = \(newIndexPath?.description ?? "it was nil!")")
+
+            if let indexPath = indexPath {
+                pendingUpdates.updatedRows.insert(indexPath)
+            }
+        case .move:
+            print("didChange anObject .move (-)indexPath = \(indexPath?.description ?? "it was nil!") AND (+)newIndexPath = \(newIndexPath?.description ?? "it was nil!")")
+
+            if let newIndexPath = newIndexPath, let indexPath = indexPath {
+                pendingUpdates.insertedRows.insert(newIndexPath)
+                pendingUpdates.deletedRows.insert(indexPath)
             }
         }
     }
     
     public func controller(_ controller: NSFetchedResultsController<NSFetchRequestResult>, didChange sectionInfo: NSFetchedResultsSectionInfo, atSectionIndex sectionIndex: Int, for type: NSFetchedResultsChangeType) {
-        if type == NSFetchedResultsChangeType.insert {
-            print("Insert Section: \(sectionIndex)")
-            blockOperations.append(
-                BlockOperation(block: { [weak self] in
-                    if let this = self {
-                        DispatchQueue.main.async {
-                            this.collectionView!.insertSections(NSIndexSet(index: sectionIndex) as IndexSet)
-                        }
-                    }
-                })
-            )
+        
+        if ignoreDataSourceUpdates {
+            return
         }
-        else if type == NSFetchedResultsChangeType.update {
-            print("Update Section: \(sectionIndex)")
-            blockOperations.append(
-                BlockOperation(block: { [weak self] in
-                    if let this = self {
-                        DispatchQueue.main.async {
-                            this.collectionView!.reloadSections(NSIndexSet(index: sectionIndex) as IndexSet)
-                        }
-                    }
-                })
-            )
-        }
-        else if type == NSFetchedResultsChangeType.delete {
-            print("Delete Section: \(sectionIndex)")
-            blockOperations.append(
-                BlockOperation(block: { [weak self] in
-                    if let this = self {
-                        DispatchQueue.main.async {
-                            this.collectionView!.deleteSections(NSIndexSet(index: sectionIndex) as IndexSet)
-                        }
-                    }
-                })
-            )
+        
+        switch (type) {
+        case .delete:
+            print("didChange sectionInfo .delete atSectionIndex \(sectionIndex)")
+            pendingUpdates.deletedSections.insert(sectionIndex)
+        case .insert:
+            print("didChange sectionInfo .insert atSectionIndex \(sectionIndex)")
+            pendingUpdates.insertedSections.insert(sectionIndex)
+        default:
+            break
         }
     }
     
     func controllerDidChangeContent(_ controller: NSFetchedResultsController<NSFetchRequestResult>) {
-        
-        // Checks if we should reload the collection view to fix a bug @ http://openradar.appspot.com/12954582
-        if (self.shouldReloadCollectionView) {
-            DispatchQueue.main.async {
-                self.collectionView.reloadData();
-            }
-        } else {
-            DispatchQueue.main.async {
-                self.collectionView!.performBatchUpdates({ () -> Void in
-                    for operation: BlockOperation in self.blockOperations {
-                        operation.start()
-                    }
-                }, completion: { (finished) -> Void in
-                    self.blockOperations.removeAll(keepingCapacity: false)
-                })
-            }
+        if ignoreDataSourceUpdates {
+            return
         }
+        
+        guard let currentCollectionView = collectionView else {
+            return
+        }
+        
+        guard let _ = currentCollectionView.window else {
+            currentCollectionView.reloadData()
+            return
+        }
+        
+        let update = pendingUpdates
+        
+        currentCollectionView.performBatchUpdates({
+            currentCollectionView.insertSections(update.insertedSections)
+            currentCollectionView.deleteSections(update.deletedSections)
+            currentCollectionView.reloadSections(update.updatedSections)
+            currentCollectionView.insertItems(at: Array(update.insertedRows))
+            currentCollectionView.deleteItems(at: Array(update.deletedRows))
+            currentCollectionView.reloadItems(at: Array(update.updatedRows))
+        }, completion: nil)
+        
+        pendingUpdates = PendingUpdates()
     }
-
+    
+    private struct PendingUpdates {
+        var insertedSections = IndexSet()
+        var updatedSections = IndexSet()
+        var deletedSections = IndexSet()
+        var insertedRows = Set<IndexPath>()
+        var updatedRows = Set<IndexPath>()
+        var deletedRows = Set<IndexPath>()
+    }
+    private var pendingUpdates = PendingUpdates()
 }
 
+//extension DetailLineController:UICollectionViewDropDelegate {
+//    func collectionView(_ collectionView: UICollectionView, dropSessionDidUpdate session: UIDropSession, withDestinationIndexPath destinationIndexPath: IndexPath?) -> UICollectionViewDropProposal {
+//        return UICollectionViewDropProposal(operation: .move, intent: .insertAtDestinationIndexPath)
+//    }
+//    func collectionView(_ collectionView: UICollectionView, performDropWith coordinator: UICollectionViewDropCoordinator) {
+//        guard let destinationIndexPath = coordinator.destinationIndexPath else {
+//            return
+//        }
+//        for item in coordinator.items {
+//            if let sourceIndexPath = item.sourceIndexPath {
+//                collectionView.performBatchUpdates({
+//                    collectionView.deleteItems(at: [sourceIndexPath])
+//                    collectionView.insertItems(at: [destinationIndexPath])
+//                }, completion: nil)
+//            }
+//        }
+//    }
+//}

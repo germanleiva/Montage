@@ -15,6 +15,13 @@ import Vision
 let offsetUptimeTo1970 = Date().timeIntervalSince1970 - ProcessInfo.processInfo.systemUptime
 let DEFAULT_TIMESCALE = Int32(600)
 
+extension NSObjectProtocol {
+    
+    var className: String {
+        return String(describing: Self.self)
+    }
+}
+
 extension UITouch {
     var timestamp1970:TimeInterval {
         return self.timestamp + offsetUptimeTo1970

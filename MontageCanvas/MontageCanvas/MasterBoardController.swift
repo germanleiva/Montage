@@ -303,11 +303,9 @@ class MasterBoardController: UIViewController, NSFetchedResultsControllerDelegat
         case .delete:
             tableView.deleteSections(IndexSet(integer: sectionIndex), with: .fade)
         case .move:
-            print("it was a move")
+            print("\(className) >> it was a move")
         case .update:
-            print("it was an update")
-        default:
-            return
+            print("\(className) >> it was an update")
         }
     }
     
@@ -323,14 +321,14 @@ class MasterBoardController: UIViewController, NSFetchedResultsControllerDelegat
         case .delete:
             tableView.deleteRows(at: [indexPath!], with: .fade)
         case .update:
-            print("it was an update \(indexPath!.row) \(newIndexPath!.row)")
+            print("\(className) >> it was an update \(indexPath!.row) \(newIndexPath!.row)")
             if let updatedCell = tableView.cellForRow(at: indexPath!) {
                 configureCell(updatedCell, withLine: anObject as! Line)
             } else {
                 print("It should not call didChange for this row, because there is no associated UITableViewCell - BIG PROBLEM")
             }
         case .move:
-            print("it was a move \(indexPath!.row) \(newIndexPath!.row)")
+            print("\(className) >> it was a move \(indexPath!.row) \(newIndexPath!.row)")
             configureCell(tableView.cellForRow(at: indexPath!)!, withLine: anObject as! Line)
             tableView.moveRow(at: indexPath!, to: newIndexPath!)
         }
