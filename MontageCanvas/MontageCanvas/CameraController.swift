@@ -68,7 +68,7 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
     func inputStreamer(_ streamer: InputStreamer, decodedImage ciImage: CIImage) {
         let weakSelf = self
         
-        if streamer.isEqual(userCamStreamer) {
+        if streamer == userCamStreamer {
 //            print("inputStreamer1")
 //            let shouldDrawDirectly = inputStreamer2 == nil
             streamerQueue.async {
@@ -84,7 +84,7 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
             
             return
         }
-        if streamer.isEqual(wizardCamStreamer) {
+        if streamer == wizardCamStreamer {
 //            print("inputStreamer2")
             
             DispatchQueue.main.async {
@@ -171,15 +171,15 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
 //        if let index = inputStreamers.index(of: streamer) {
 //            inputStreamers.remove(at: index)
 //        }
-        if streamer.isEqual(userCamStreamer) {
+        if streamer == userCamStreamer {
             userCamStreamer = nil
-            print("didClose InputStreamer 1")
+            print("didClose userCamStreamer")
 
         }
         
-        if streamer.isEqual(wizardCamStreamer) {
+        if streamer == wizardCamStreamer {
             wizardCamStreamer = nil
-            print("didClose InputStreamer 2")
+            print("didClose wizardCamStreamer")
         }
     }
     
@@ -1679,16 +1679,16 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
         case .notConnected:
             print("PEER NOT CONNECTED: \(peerID.displayName)")
         
-            if peerID.isEqual(userCamPeer) {
+            if peerID == userCamPeer {
                 userCamPeer = nil
                 browser.startBrowsingForPeers()
             }
             
-            if peerID.isEqual(wizardCamPeer) {
+            if peerID == wizardCamPeer {
                 wizardCamPeer = nil
             }
             
-            if peerID.isEqual(mirrorPeer) {
+            if peerID == mirrorPeer {
                 mirrorPeer = nil
                 
                 outputStreamerForMirror?.close()
@@ -1714,26 +1714,39 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
                     }
                     break
                 case "savedBoxes":
-                    if peerID.isEqual(userCamPeer) {
-                        if let savedBoxes = value as? [NSDictionary:VNRectangleObservation] {
-                            var orderedTemporalBoxes = [BoxObservation]()
-                            for (timeBoxDictionary,box) in savedBoxes {
-                                let timeBox = CMTimeMakeFromDictionary(timeBoxDictionary)
-                                
-                                let newBoxObservation = BoxObservation(moc: coreDataContext, time: timeBox, rectangleObservation: box)
-                                
-                                orderedTemporalBoxes.append(newBoxObservation)
-                            }
-                            
-                            orderedTemporalBoxes.sort(by: { (a, b) -> Bool in
-                                return CMTimeCompare(a.time, b.time) == -1
-                            })
-                            
-                            videoModel.backgroundTrack?.boxes = NSMutableOrderedSet(array: [BoxObservation]())
-                            for boxObservation in orderedTemporalBoxes {
-                                videoModel.backgroundTrack?.addToBoxes(boxObservation)
-                            }
-                        }
+                    print("Received savedBoxes")
+                    
+                    guard peerID == userCamPeer else {
+                        print("I shouldn't receive a message with savedBoxes from someone that it is not the userCamPeer")
+                        return
+                    }
+                    guard let savedBoxes = value as? [NSDictionary:VNRectangleObservation] else {
+                        print("Couldn't get value from message")
+                        return
+                    }
+                    
+                    var orderedTemporalBoxes = [BoxObservation]()
+                    for (timeBoxDictionary,box) in savedBoxes {
+                        let timeBox = CMTimeMakeFromDictionary(timeBoxDictionary)
+                        
+                        let newBoxObservation = BoxObservation(moc: coreDataContext, time: timeBox, rectangleObservation: box)
+                        
+                        orderedTemporalBoxes.append(newBoxObservation)
+                    }
+                    
+                    orderedTemporalBoxes.sort(by: { (a, b) -> Bool in
+                        return CMTimeCompare(a.time, b.time) == -1
+                    })
+                    
+                    videoModel.backgroundTrack?.boxes = NSMutableOrderedSet(array: [BoxObservation]())
+                    for boxObservation in orderedTemporalBoxes {
+                        videoModel.backgroundTrack?.addToBoxes(boxObservation)
+                    }
+                    
+                    do {
+                        try coreDataContext.save()
+                    } catch {
+                        alert(error, title: "DB Error" , message: "Could not save DB after receiving boxes information from userCam")
                     }
                 case "ACK":
                     guard let syncTime = syncTime else {
@@ -1769,22 +1782,11 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
     }
     
     func session(_ session: MCSession, didReceive stream: InputStream, withName streamName: String, fromPeer peerID: MCPeerID) {
-        let weakSelf = self
-        
-        if peerID.isEqual(userCamPeer) {
-//            if let createAt = Double(streamName) {
-//                let elapsedTimeSinceCreation = Date().timeIntervalSince1970 - createAt
-//                print("connectedCamBackgroundPeer elapsedTimeSinceCreation: \(elapsedTimeSinceCreation * 1000)ms")
-//            }
+        if peerID == userCamPeer {
             userCamStreamer = InputStreamer(peerID,stream:stream)
             userCamStreamer?.delegate = self
         }
-        if peerID.isEqual(wizardCamPeer) {
-//            if let createAt = Double(streamName) {
-//                let elapsedTimeSinceCreation = Date().timeIntervalSince1970 - createAt
-//                print("connectedCamPrototypePeer elapsedTimeSinceCreation: \(elapsedTimeSinceCreation * 1000)ms")
-//            }
-            
+        if peerID == wizardCamPeer {
             wizardCamStreamer = InputStreamer(peerID,stream:stream)
             wizardCamStreamer?.delegate = self
         }
@@ -1803,7 +1805,7 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
         }
         
         DispatchQueue.main.async {[unowned self] in
-            if peerID.isEqual(self.wizardCamPeer) {
+            if peerID == self.wizardCamPeer {
                 self.prototypeCanvasView.isHidden = true
                 self.prototypeCanvasView.isUserInteractionEnabled = false
                 
@@ -1814,7 +1816,7 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
                     self.prototypeReceptionTimer?.fire()
                 }
             }
-            if peerID.isEqual(self.userCamPeer) {
+            if peerID == self.userCamPeer {
                 self.backgroundCanvasView.isHidden = true
                 self.backgroundCanvasView.isUserInteractionEnabled = false
                 
@@ -1874,50 +1876,48 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
             return
         }
         
-//        DispatchQueue.main.async {[unowned self] in
-            let fileManager = FileManager.default
+        let fileManager = FileManager.default
+        
+        if peerID == wizardCamPeer {
+            let currentPrototypeVideoFileURL = self.videoModel.prototypeTrack!.fileURL
             
-            if peerID.isEqual(self.wizardCamPeer) {
-                let currentPrototypeVideoFileURL = self.videoModel.prototypeTrack!.fileURL
-
-                if fileManager.fileExists(atPath: currentPrototypeVideoFileURL.path) {
-                    do {
-                        try fileManager.removeItem(atPath: currentPrototypeVideoFileURL.path)
-                    } catch let error {
-                        print("error occurred when deleting file prototype.mov: \(error)")
-                        return
-                    }
-                }
-                
+            if fileManager.fileExists(atPath: currentPrototypeVideoFileURL.path) {
                 do {
-                    try fileManager.copyItem(at: localURL, to: currentPrototypeVideoFileURL)
-//                    self.videoModel.prototypeTrack!.loadedFileURL = currentPrototypeVideoFileURL
-                } catch {
-                    self.alert(error, title: "FileManager error", message: "Could not create prototype.mov")
-                    return
-                }
-                
-            }
-            if peerID.isEqual(self.userCamPeer) {
-                let currentBackgroundVideoFileURL = self.videoModel.backgroundTrack!.fileURL
-                
-                if fileManager.fileExists(atPath: currentBackgroundVideoFileURL.path) {
-                    do {
-                        try fileManager.removeItem(atPath: currentBackgroundVideoFileURL.path)
-                    } catch let error {
-                        print("error occurred when deleting file background.mov: \(error)")
-                        return
-                    }
-                }
-                
-                do {
-                    try fileManager.copyItem(at: localURL, to: currentBackgroundVideoFileURL)
-//                    self.videoModel.backgroundTrack!.loadedFileURL = currentBackgroundVideoFileURL
-                } catch {
-                    self.alert(error, title: "FileManager error", message: "Could not create background.mov")
+                    try fileManager.removeItem(atPath: currentPrototypeVideoFileURL.path)
+                } catch let error {
+                    print("error occurred when deleting file prototype.mov: \(error)")
                     return
                 }
             }
+            
+            do {
+                try fileManager.copyItem(at: localURL, to: currentPrototypeVideoFileURL)
+            } catch {
+                self.alert(error, title: "FileManager error", message: "Could not create prototype.mov")
+                return
+            }
+            
+        }
+        if peerID == userCamPeer {
+            let currentBackgroundVideoFileURL = self.videoModel.backgroundTrack!.fileURL
+            
+            if fileManager.fileExists(atPath: currentBackgroundVideoFileURL.path) {
+                do {
+                    try fileManager.removeItem(atPath: currentBackgroundVideoFileURL.path)
+                } catch let error {
+                    print("error occurred when deleting file background.mov: \(error)")
+                    return
+                }
+            }
+            
+            do {
+                try fileManager.copyItem(at: localURL, to: currentBackgroundVideoFileURL)
+            } catch {
+                self.alert(error, title: "FileManager error", message: "Could not create background.mov")
+                return
+            }
+        }
+        
         DispatchQueue.main.async {[unowned self] in
             self.canvasControllerMode = CanvasControllerPlayingMode(controller:self)
         }
@@ -1947,7 +1947,7 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
             update(role: role, forPeer: peerID)
 
             let data = "MONTAGE_CANVAS".data(using: .utf8)
-            if peerID.isEqual(wizardCamPeer) || peerID.isEqual(userCamPeer) || peerID.isEqual(mirrorPeer) {
+            if [wizardCamPeer,userCamPeer,mirrorPeer].contains(peerID) {
                 print("browser NOT INVITING \(peerID.displayName)")
                 return
             }

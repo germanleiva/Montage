@@ -69,17 +69,16 @@ class DetailLineController: UIViewController, UICollectionViewDelegate, UICollec
         let video:Video
         switch segue.identifier {
         case "SEGUE_NEW_COMPOSITION":
-            
             video = Video(context: coreDataContext)
             line?.addToElements(video)
             video.sequenceNumber = Int32(line?.elements?.index(of: video) ?? 0)
             recordingVideo = video
             
-            do {
-                try coreDataContext.save()
-            } catch let error as NSError {
-                
-            }
+//            do {
+//                try coreDataContext.save()
+//            } catch {
+//                alert(error, title: "DB Error", message: "Couldn't save the DB after creating a new video")
+//            }
             
         case "SEGUE_EXISTING_COMPOSITION":
             guard let selectedIndexPath = collectionView.indexPathsForSelectedItems?.first else {
@@ -102,7 +101,6 @@ class DetailLineController: UIViewController, UICollectionViewDelegate, UICollec
             return 0
         }
         return fetchedResultController.sections?.count ?? 0
-
     }
     
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {

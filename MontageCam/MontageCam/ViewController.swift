@@ -705,8 +705,8 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
                     shouldStartEncoder = true
                 }
                 
-                if peerID.isEqual(weakSelf.serverPeer) || peerID.isEqual(weakSelf.mirrorPeer) {
-                    if peerID.isEqual(weakSelf.mirrorPeer) {
+                if [weakSelf.serverPeer,weakSelf.mirrorPeer].contains(peerID) {
+                    if peerID == weakSelf.mirrorPeer {
                         print("IS MIRRORING")
                     }
                     let id = weakSelf.outputStreamers.count + 1
@@ -726,7 +726,7 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
                     }
                 }
                 
-                if peerID.isEqual(weakSelf.serverPeer) {
+                if peerID == weakSelf.serverPeer {
                     print("stopAdvertisingPeer")
                     weakSelf.serviceAdvertiser.stopAdvertisingPeer()
                 }
@@ -741,13 +741,13 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
                     unproperlyDisconnectedDestination.close()
                 }
                 
-                if peerID.isEqual(weakSelf.serverPeer) {
+                if peerID == weakSelf.serverPeer {
                     weakSelf.serverPeer = nil
                     print("startAdvertisingPeer")
                     weakSelf.serviceAdvertiser.startAdvertisingPeer()
                 }
                 
-                if peerID.isEqual(weakSelf.mirrorPeer) {
+                if peerID == weakSelf.mirrorPeer {
                     weakSelf.mirrorPeer = nil
                 }
             }

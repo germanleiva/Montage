@@ -109,11 +109,11 @@ class ViewController: UIViewController, MCSessionDelegate, InputStreamerDelegate
     }
     
     func didClose(_ streamer: InputStreamer) {
-        if streamer.isEqual(inputStreamer) {
+        if streamer == inputStreamer {
             inputStreamer = nil
             print("didClose InputStreamer")
         }
-        if streamer.isEqual(inputStreamerSketches) {
+        if streamer == inputStreamerSketches {
             inputStreamer = nil
             print("didClose InputStreamer for the sketches")
         }
@@ -200,7 +200,7 @@ class ViewController: UIViewController, MCSessionDelegate, InputStreamerDelegate
         case .connected:
             print("WHO's CONNECTED? \(peerID.displayName)")
             
-            if peerID.isEqual(connectedServer) {
+            if peerID == connectedServer {
                 print("SERVER PEER CONNECTED: \(peerID.displayName)")
                 
                 print("stopAdvertisingPeer")
@@ -214,13 +214,13 @@ class ViewController: UIViewController, MCSessionDelegate, InputStreamerDelegate
             break
         case .notConnected:
             print("PEER NOT CONNECTED: \(peerID.displayName)")
-            if serverName?.isEqual(peerID.displayName) ?? false  {
+            if serverName == peerID.displayName {
                 serverName = nil
                 overlayImageView.backgroundColor = UIColor.green
                 print("startAdvertisingPeer")
                 serviceAdvertiser.startAdvertisingPeer()
             }
-            if peerID.isEqual(connectedWizardCam) {
+            if peerID == connectedWizardCam {
                 connectedWizardCam = nil
             }
             break
@@ -229,7 +229,7 @@ class ViewController: UIViewController, MCSessionDelegate, InputStreamerDelegate
     
     var connectedServer:MCPeerID? {
         return self.multipeerSession.connectedPeers.first { (peer) -> Bool in
-            return peer.displayName.isEqual(serverName)
+            return peer.displayName == serverName
         }
     }
     var connectedWizardCam:MCPeerID?
@@ -256,7 +256,7 @@ class ViewController: UIViewController, MCSessionDelegate, InputStreamerDelegate
     func session(_ session: MCSession, didReceive stream: InputStream, withName streamName: String, fromPeer peerID: MCPeerID) {
         //        print("didReceive stream from someone")
         
-        if serverName?.isEqual(peerID.displayName) ?? false  {
+        if serverName == peerID.displayName {
             inputStreamerSketches = InputStreamer(peerID,stream:stream)
             inputStreamerSketches?.isSimpleData = true
             inputStreamerSketches?.delegate = self
