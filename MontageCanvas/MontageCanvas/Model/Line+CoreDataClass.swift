@@ -45,13 +45,13 @@ public class Line: NSManagedObject {
         //        locationMetadata.value = "+48.701697+002.188952"
         //        metadataItems.append(locationMetadata)
         
-        let assetLoadingGroup = DispatchGroup();
+        let assetLoadingGroup = DispatchGroup()
         
         var assetDictionary:[Video:AVAsset] = [:]
         
         for eachElement in elements {
             
-            assetLoadingGroup.enter();
+            assetLoadingGroup.enter()
             
             if eachElement.isVideo && compositionAudioTrack == nil {
                 //I need to create a mutable track for the sound

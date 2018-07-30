@@ -132,7 +132,7 @@ class VideoCatalogController: UIViewController, UICollectionViewDelegate, UIColl
         fetchRequest.sortDescriptors = [NSSortDescriptor(key: "name", ascending: true)]
         let resultsController = NSFetchedResultsController(fetchRequest: fetchRequest, managedObjectContext: coreDataContext, sectionNameKeyPath: nil, cacheName: nil)
         
-        resultsController.delegate = self;
+        resultsController.delegate = self
         _fetchedResultsController = resultsController
         
         do {
@@ -256,7 +256,7 @@ class VideoCatalogController: UIViewController, UICollectionViewDelegate, UIColl
         // Checks if we should reload the collection view to fix a bug @ http://openradar.appspot.com/12954582
         if (self.shouldReloadCollectionView) {
             DispatchQueue.main.async {
-                self.collectionView.reloadData();
+                self.collectionView.reloadData()
             }
         } else {
             DispatchQueue.main.async {

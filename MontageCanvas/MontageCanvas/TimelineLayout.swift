@@ -24,7 +24,7 @@ class TimelineLayout: UICollectionViewFlowLayout {
         let contentHeight = DayHeaderHeight + (HeightPerHour * HoursPerDay)
         
         let contentSize = CGSize(width: contentWidth, height:contentHeight)
-        return contentSize;
+        return contentSize
     }
     
     override func layoutAttributesForElements(in rect: CGRect) -> [UICollectionViewLayoutAttributes]? {
@@ -74,7 +74,7 @@ class TimelineLayout: UICollectionViewFlowLayout {
         let attributes = UICollectionViewLayoutAttributes(forCellWith: indexPath)
         attributes.frame = frameForEvent(event: event)
 
-        return attributes;
+        return attributes
     }
     
     override func layoutAttributesForSupplementaryView(ofKind elementKind: String, at indexPath: IndexPath) -> UICollectionViewLayoutAttributes? {
@@ -88,7 +88,7 @@ class TimelineLayout: UICollectionViewFlowLayout {
             attributes.zIndex = -10
         } else if elementKind.isEqual("HourHeaderView") {
             attributes.frame = CGRect(x:0, y:DayHeaderHeight + HeightPerHour * CGFloat(indexPath.item), width: totalWidth, height: HeightPerHour)
-            attributes.zIndex = -10;
+            attributes.zIndex = -10
         }
         return attributes
     }
@@ -130,7 +130,7 @@ class TimelineLayout: UICollectionViewFlowLayout {
 
     func indexPathsOfDayHeaderViews(inRect rect:CGRect) -> [IndexPath] {
         if (rect.minY > DayHeaderHeight) {
-            return [];
+            return []
         }
         
         let minDayIndex = dayIndexFromXCoordinate(rect.minX)
@@ -162,7 +162,7 @@ class TimelineLayout: UICollectionViewFlowLayout {
     
     func frameForEvent(event:CalendarEvent) -> CGRect {
         let totalWidth = collectionViewContentSize.width - HourHeaderWidth
-        let widthPerDay = totalWidth / DaysPerWeek;
+        let widthPerDay = totalWidth / DaysPerWeek
     
         var frame = CGRect.zero
         frame.origin.x = HourHeaderWidth + widthPerDay * CGFloat(event.day)

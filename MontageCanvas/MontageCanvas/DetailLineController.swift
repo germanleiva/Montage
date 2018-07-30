@@ -340,7 +340,7 @@ class DetailLineController: UIViewController, UICollectionViewDelegate, UICollec
         fetchRequest.sortDescriptors = [NSSortDescriptor(key: "sequenceNumber", ascending: true)]
         let resultsController = NSFetchedResultsController(fetchRequest: fetchRequest, managedObjectContext: coreDataContext, sectionNameKeyPath: nil, cacheName: nil)
         
-        resultsController.delegate = self;
+        resultsController.delegate = self
         _fetchedResultsController = resultsController
         
         do {

@@ -964,9 +964,9 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
                 case .failed:
                     print("Export failed: \(session.error?.localizedDescription ?? "unknown error")")
                 case .cancelled:
-                    print("Export canceled");
+                    print("Export canceled")
                 default:
-                    print("Export succeded");
+                    print("Export succeded")
                     let weakSelf = self
                     senderQueue.async {
                         guard let serverPeer = weakSelf._serverPeer else {

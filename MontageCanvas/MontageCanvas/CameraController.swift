@@ -1055,7 +1055,7 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
             return
         }
         
-        let assetLoadingGroup = DispatchGroup();
+        let assetLoadingGroup = DispatchGroup()
         
         let prototypeAsset = AVURLAsset(url: prototypeVideoFileURL, options: [AVURLAssetPreferPreciseDurationAndTimingKey:true])
         assetLoadingGroup.enter()
@@ -1371,7 +1371,7 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
         }
         let image = UIImage(cgImage: ref, scale: UIScreen.main.scale, orientation: UIImageOrientation.up)
         
-        return image;
+        return image
     }
     
     func applyFilterFromPrototypeToBackground(_ pixelBuffer:CVImageBuffer) {
@@ -2270,7 +2270,7 @@ extension CameraController: CanvasViewDelegate {
         let paletteController = UIViewController()
         
         paletteController.view.translatesAutoresizingMaskIntoConstraints = false
-        paletteController.modalPresentationStyle = UIModalPresentationStyle.popover;
+        paletteController.modalPresentationStyle = UIModalPresentationStyle.popover
         let paletteHeight = paletteView.paletteHeight()
         
         paletteController.preferredContentSize = CGSize(width:Palette.initialWidth,height:paletteHeight)

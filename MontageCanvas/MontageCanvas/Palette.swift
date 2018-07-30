@@ -34,7 +34,7 @@ open class Palette: UIView
     fileprivate var alphaButtonList = [CircleButton]()
     fileprivate var widthButtonList = [CircleButton]()
     
-    fileprivate var totalHeight: CGFloat = 0.0;
+    fileprivate var totalHeight: CGFloat = 0.0
     
     fileprivate weak var colorPaletteView: UIView?
     fileprivate weak var alphaPaletteView: UIView?
@@ -57,7 +57,7 @@ open class Palette: UIView
     // MARK: - Private Methods
     override open var intrinsicContentSize : CGSize {
         let size: CGSize = CGSize(width: Palette.initialWidth, height: self.totalHeight)
-        return size;
+        return size
     }
     
     @objc open func setup() {
@@ -87,7 +87,7 @@ open class Palette: UIView
             self.colorButtonList.append(button!)
         }
         
-        self.totalHeight = button!.frame.maxY + self.buttonPadding;
+        self.totalHeight = button!.frame.maxY + self.buttonPadding
         self.colorPaletteView?.frame = CGRect(x: 0, y: 0, width: button!.frame.maxX + self.buttonPadding, height: self.totalHeight)
     }
     
@@ -179,7 +179,7 @@ open class Palette: UIView
     }
     
     @objc fileprivate func onClickColorPicker(_ button: CircleButton) {
-        self.brush.color = button.color!;
+        self.brush.color = button.color!
         let shouldEnable = !self.brush.color.isEqual(UIColor.clear)
         
         self.resetButtonSelected(self.colorButtonList, button: button)
