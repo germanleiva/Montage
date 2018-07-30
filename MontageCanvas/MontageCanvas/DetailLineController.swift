@@ -40,7 +40,13 @@ class DetailLineController: UIViewController, UICollectionViewDelegate, UICollec
             collectionView.updateInteractiveMovementTargetPosition(gesture.location(in: gesture.view!))
         case .ended:
             collectionView.endInteractiveMovement()
-            ignoreDataSourceUpdates = false
+            
+            //TODO is there a better way?
+            //This timer tries to set ignoreDataSourceUpdates = false after the animation finish
+            let deadlineTime = DispatchTime.now() + .seconds(1)
+            DispatchQueue.main.asyncAfter(deadline: deadlineTime) { [unowned self] in
+                self.ignoreDataSourceUpdates = false
+            }
         default:
             collectionView.cancelInteractiveMovement()
             ignoreDataSourceUpdates = false
@@ -398,11 +404,6 @@ class DetailLineController: UIViewController, UICollectionViewDelegate, UICollec
         }
         
         guard let currentCollectionView = collectionView else {
-            return
-        }
-        
-        guard let _ = currentCollectionView.window else {
-            currentCollectionView.reloadData()
             return
         }
         
