@@ -37,6 +37,33 @@ public class Tier: NSManagedObject {
 //    var recordedOpacityInputs = [(TimeInterval,Transformation)]()
     var recordedTransformInputs = [(TimeInterval,Transformation)]()
 
+    
+    func clone() -> Tier {
+        let clonedTier = Tier(context: managedObjectContext!)
+        
+        clonedTier.zIndex = zIndex
+        clonedTier.end = end
+        clonedTier.lineWidth = lineWidth
+        clonedTier.rotationValue = rotationValue
+        clonedTier.start = start
+        clonedTier.hasDrawnPath = hasDrawnPath
+        clonedTier.selected = selected
+        clonedTier.createdAt = createdAt
+        clonedTier.fillColor = fillColor
+        if let appearAtTimes = innerAppearAtTimes {
+            clonedTier.innerAppearAtTimes = [NSNumber](appearAtTimes)
+        }
+        if let disappearAtTimes = innerDisappearAtTimes {
+            clonedTier.innerDisappearAtTimes = [NSNumber](disappearAtTimes)
+        }
+        clonedTier.scalingValue = scalingValue
+        clonedTier.strokeColor = strokeColor
+        clonedTier.translationValue = translationValue
+        
+        sketch = sketch?.clone()
+        
+        return clonedTier
+    }
     var translation:CGPoint?  {
         get {
             return translationValue?.cgPoint

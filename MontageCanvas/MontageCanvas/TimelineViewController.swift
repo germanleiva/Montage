@@ -10,7 +10,8 @@ import UIKit
 import CoreData
 
 protocol TimelineDelegate: AnyObject {
-    func timeline(didSelect prototypeTrack:VideoTrack)
+    func timeline(didSelectPrototypeTrack prototypeTrack:VideoTrack)
+    func timeline(didSelectNewVideo video:Video)
 }
 
 class TimelineViewController: UIViewController, NSFetchedResultsControllerDelegate, UITableViewDataSource, UITableViewDelegate {
@@ -380,7 +381,10 @@ class TimelineViewController: UIViewController, NSFetchedResultsControllerDelega
 }
 
 extension TimelineViewController: VideoCatalogDelegate {
-    func videoCatalog(didSelect prototypeTrack:VideoTrack) {
-        delegate?.timeline(didSelect: prototypeTrack)
+    func videoCatalog(didSelectPrototypeTrack prototypeTrack: VideoTrack) {
+        delegate?.timeline(didSelectPrototypeTrack: prototypeTrack)
+    }
+    func videoCatalog(didSelectNewVideo video: Video) {
+        delegate?.timeline(didSelectNewVideo: video)
     }
 }

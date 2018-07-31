@@ -23,6 +23,13 @@ public class Line: NSManagedObject {
         return elements!.array as! [Video]
     }
     
+    func addNewVideo(context:NSManagedObjectContext) -> Video {
+        let newVideo = Video(context: context)
+        self.addToElements(newVideo)
+        newVideo.sequenceNumber = Int32(elements?.index(of: newVideo) ?? 0)
+        return newVideo
+    }
+    
     class func createComposition(_ elements:[Video],completionHandler:((NSError?,AVMutableComposition?,AVMutableVideoComposition?) -> Void)?) {
         let composition = AVMutableComposition()
         guard let compositionVideoTrack = composition.addMutableTrack(withMediaType: .video, preferredTrackID: kCMPersistentTrackID_Invalid) else {

@@ -15,15 +15,13 @@ import MBProgressHUD
 class DetailLineController: UIViewController, UICollectionViewDelegate, UICollectionViewDataSource, NSFetchedResultsControllerDelegate, UINavigationControllerDelegate, UIImagePickerControllerDelegate {
     let coreDataContext = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
 
-    var ignoreDataSourceUpdates = false
-
     var line: Line? {
         didSet {
             reloadFetchResultsController()
         }
     }
     var recordingVideo:Video?
-    
+
     var longPressGesture: UILongPressGestureRecognizer!
     
     @objc func handleLongGesture(gesture: UILongPressGestureRecognizer) {
@@ -60,10 +58,7 @@ class DetailLineController: UIViewController, UICollectionViewDelegate, UICollec
     @IBOutlet weak var recordButton: UIBarButtonItem!
     
     deinit {
-//        for operation: BlockOperation in blockOperations {
-//            operation.cancel()
-//        }
-//        blockOperations.removeAll(keepingCapacity: false)
+
     }
     
     func configureView() {
@@ -266,9 +261,7 @@ class DetailLineController: UIViewController, UICollectionViewDelegate, UICollec
             return
         }
         
-        let newVideo = Video(context: coreDataContext)
-        line?.addToElements(newVideo)
-        newVideo.sequenceNumber = Int32(line?.elements?.index(of: newVideo) ?? 0)
+        let newVideo = line?.addNewVideo(context: coreDataContext)
         
         do {
             try coreDataContext.save()
@@ -321,11 +314,12 @@ class DetailLineController: UIViewController, UICollectionViewDelegate, UICollec
     }
     
     // MARK: Fetched Results Controller
+    var ignoreDataSourceUpdates = false
+
     func reloadFetchResultsController() {
         _fetchedResultsController = nil
     }
     var _fetchedResultsController: NSFetchedResultsController<Video>? = nil
-//    var blockOperations: [BlockOperation] = []
     
     var fetchedResultController: NSFetchedResultsController<Video> {
         if _fetchedResultsController != nil {

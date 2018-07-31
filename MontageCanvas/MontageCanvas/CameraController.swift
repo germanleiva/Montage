@@ -37,7 +37,7 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
 //        }
 //    }
     var palettePopoverPresentationController:UIPopoverPresentationController?
-
+        
     lazy var removeGreenFilter = {
         return colorCubeFilterForChromaKey(hueAngle: 120)
     }()
@@ -232,7 +232,9 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
         }
     }
     
+    let persistentContainer = (UIApplication.shared.delegate as! AppDelegate).persistentContainer
     let coreDataContext = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
+
     var videoModel:Video!
     
     //AVPlaying
@@ -666,90 +668,115 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
                 
                 let weakSelf = self
                 
+                guard let backgroundPlayerItem = self.backgroundPlayerItem else {
+                    return
+                }
+                
+                guard let prototypePlayerItem = self.prototypePlayerItem else {
+                    return
+                }
+                let tolerance = kCMTimeZero//CMTime(seconds: 0.05, preferredTimescale: DEFAULT_TIMESCALE)
+                
                 let videoComposition = AVVideoComposition(asset: backgroundMutableComposition, applyingCIFiltersWithHandler: { request in
-                    self.backgroundPlayerItem?.seek(to: request.compositionTime, toleranceBefore: kCMTimeZero, toleranceAfter: kCMTimeZero, completionHandler: { (finishedBackgroundPlayerItem) in
-                        self.prototypePlayerItem?.seek(to: request.compositionTime, toleranceBefore: kCMTimeZero, toleranceAfter: kCMTimeZero, completionHandler: { (finishedPrototypePlayerItem) in
+                    let compositionTime = request.compositionTime
+                    let backgroundFrameImage = request.sourceImage
+                    
+                    backgroundPlayerItem.cancelPendingSeeks()
+                    backgroundPlayerItem.seek(to: compositionTime, toleranceBefore: tolerance, toleranceAfter: tolerance, completionHandler: { (finishedBackgroundPlayerItem) in
+//                        guard finishedBackgroundPlayerItem else {
+//                            request.finish(with: NSError(domain: "savePressed", code: 666, userInfo: [NSLocalizedDescriptionKey : "App error - Couldn't seek backgroundPlayerItem"]))
+//                            return
+//                        }
+                        prototypePlayerItem.cancelPendingSeeks()
+                        prototypePlayerItem.seek(to: compositionTime, toleranceBefore: tolerance, toleranceAfter: tolerance, completionHandler: { (finishedPrototypePlayerItem) in
                             
-                            let backgroundFrameImage = request.sourceImage
+//                            guard finishedPrototypePlayerItem else {
+//                                request.finish(with: NSError(domain: "savePressed", code: 666, userInfo: [NSLocalizedDescriptionKey : "App error - Couldn't seek prototypePlayerItem"]))
+//                                return
+//                            }
                             
-//                            let currentMediaTime = CACurrentMediaTime()
-                            let currentMediaTime = weakSelf.displayLink.timestamp + weakSelf.displayLink.duration
+                            let currentMediaTime = CACurrentMediaTime()
+//                            let currentMediaTime = weakSelf.displayLink.timestamp + weakSelf.displayLink.duration
 
                             let prototypeItemTime = weakSelf.prototypeVideoOutput.itemTime(forHostTime: currentMediaTime)
-                            if let prototypePixelBuffer = weakSelf.prototypeVideoOutput.copyPixelBuffer(forItemTime: prototypeItemTime, itemTimeForDisplay: nil) {
-                                
-                                let source = CIImage(cvPixelBuffer: prototypePixelBuffer)
-                                
-                                DispatchQueue.main.async {
-                                    if let copiedSyncLayer = weakSelf.prototypePlayerView.syncLayer?.presentation(), let copiedCanvasLayer = weakSelf.prototypePlayerCanvasView?.canvasLayer.presentation(),
-                                        let copiedBackgroundSyncLayer = weakSelf.backgroundPlayerSyncLayer?.presentation(),
-                                        let copiedBackgroundCanvasLayer = weakSelf.backgroundCanvasView?.canvasLayer.presentation() {
-                                        
-                                        weakSelf.snapshotSketchOverlay(layers:[copiedSyncLayer,copiedCanvasLayer],size:weakSelf.prototypePlayerView.frame.size)
-                                        
-                                        if let currentBox = weakSelf.videoModel.backgroundTrack?.box(forItemTime: prototypeItemTime) {
-                                            let currentPrototypeAndOverlayFrame:CIImage
-                                            
-                                            if let overlay = weakSelf.sketchOverlay {
-                                                let scaledSource = source.transformed(by: CGAffineTransform.identity.scaledBy(x: overlay.extent.width / source.extent.width, y: overlay.extent.height / source.extent.height ))
-                                                
-                                                let overlayFilter = CIFilter(name: "CISourceOverCompositing")!
-                                                overlayFilter.setValue(scaledSource, forKey: kCIInputBackgroundImageKey)
-                                                overlayFilter.setValue(overlay, forKey: kCIInputImageKey)
-                                                
-                                                currentPrototypeAndOverlayFrame = overlayFilter.outputImage!
-                                            } else {
-                                                currentPrototypeAndOverlayFrame = source
-                                            }
-                                            
-                                            let perspectiveTransformFilter = CIFilter(name: "CIPerspectiveTransform")!
-                                            
-                                            let w = backgroundFrameImage.extent.size.width
-                                            let h = backgroundFrameImage.extent.size.height
-                                            
-                                            perspectiveTransformFilter.setValue(CIVector(cgPoint:CGPoint(x: currentBox.topLeft.x * w, y: h * (1 - currentBox.topLeft.y))), forKey: "inputTopLeft")
-                                            perspectiveTransformFilter.setValue(CIVector(cgPoint:CGPoint(x: currentBox.topRight.x * w, y: h * (1 - currentBox.topRight.y))), forKey: "inputTopRight")
-                                            perspectiveTransformFilter.setValue(CIVector(cgPoint:CGPoint(x: currentBox.bottomRight.x * w, y: h * (1 - currentBox.bottomRight.y))), forKey: "inputBottomRight")
-                                            perspectiveTransformFilter.setValue(CIVector(cgPoint:CGPoint(x: currentBox.bottomLeft.x * w, y: h * (1 - currentBox.bottomLeft.y))), forKey: "inputBottomLeft")
-                                            
-                                            perspectiveTransformFilter.setValue(currentPrototypeAndOverlayFrame.oriented(CGImagePropertyOrientation.downMirrored),
-                                                                                forKey: kCIInputImageKey)
-                                            
-                                            let finalBackgroundFrameImage:CIImage
-                                            weakSelf.snapshotSketchOverlay(layers: [copiedBackgroundSyncLayer,copiedBackgroundCanvasLayer], size:weakSelf.backgroundCanvasView.frame.size)
-                                            
-                                            if let backgroundOverlay = weakSelf.sketchOverlay {
-                                                
-                                                let overlayFilter = CIFilter(name: "CISourceOverCompositing")!
-                                                overlayFilter.setValue(backgroundFrameImage, forKey: kCIInputBackgroundImageKey)
-                                                overlayFilter.setValue(backgroundOverlay, forKey: kCIInputImageKey)
-                                                guard let result = overlayFilter.outputImage else {
-                                                    request.finish(with: NSError(domain: "savePressed", code: 666, userInfo: [:]))
-                                                    return
-                                                }
-                                                finalBackgroundFrameImage = result
-                                            } else {
-                                                finalBackgroundFrameImage = backgroundFrameImage
-                                            }
-                                            
-                                            let composite = ChromaKeyFilter()
-                                            composite.inputImage = finalBackgroundFrameImage
-                                            composite.backgroundImage = perspectiveTransformFilter.outputImage
-                                            composite.activeColor = CIColor(red: 0, green: 1, blue: 0)
-                                            
-                                            // Provide the filter output to the composition
-                                            request.finish(with: composite.outputImage, context: nil)
-                                        }
-                                        
-                                        
-                                    } else {
-                                        print("Could not get presentation()")
-                                    }
-                                }
+                            
+                            let prototypePixelBuffer:CVPixelBuffer
+                            
+                            if let currentPrototypePixelBuffer = weakSelf.prototypeVideoOutput.copyPixelBuffer(forItemTime: prototypeItemTime, itemTimeForDisplay: nil) {
+                                prototypePixelBuffer = currentPrototypePixelBuffer
+                                weakSelf.lastPrototypePixelBuffer = currentPrototypePixelBuffer
+                            } else {
+                                prototypePixelBuffer = weakSelf.lastPrototypePixelBuffer!
                             }
+                                
+                            let source = CIImage(cvPixelBuffer: prototypePixelBuffer)
                             
-                            
-                            
+                            DispatchQueue.main.async {
+                                guard let copiedSyncLayer = weakSelf.prototypePlayerView.syncLayer?.presentation(), let copiedCanvasLayer = weakSelf.prototypePlayerCanvasView?.canvasLayer.presentation(),
+                                    let copiedBackgroundSyncLayer = weakSelf.backgroundPlayerSyncLayer?.presentation(),
+                                    let copiedBackgroundCanvasLayer = weakSelf.backgroundCanvasView?.canvasLayer.presentation()  else {
+                                        request.finish(with: NSError(domain: "savePressed", code: 666, userInfo: [NSLocalizedDescriptionKey : "App error - Could not get presentation()"]))
+                                        return
+                                }
+                                
+                                weakSelf.snapshotSketchOverlay(layers:[copiedSyncLayer,copiedCanvasLayer],size:weakSelf.prototypePlayerView.frame.size)
+                                
+                                guard let currentBox = weakSelf.videoModel.backgroundTrack?.box(forItemTime: prototypeItemTime) else {
+                                    request.finish(with: NSError(domain: "savePressed", code: 666, userInfo: [NSLocalizedDescriptionKey : "App error - Could not get box"]))
+                                    return
+                                }
+                                let currentPrototypeAndOverlayFrame:CIImage
+                                
+                                if let overlay = weakSelf.sketchOverlay {
+                                    let scaledSource = source.transformed(by: CGAffineTransform.identity.scaledBy(x: overlay.extent.width / source.extent.width, y: overlay.extent.height / source.extent.height ))
+                                    
+                                    let overlayFilter = CIFilter(name: "CISourceOverCompositing")!
+                                    overlayFilter.setValue(scaledSource, forKey: kCIInputBackgroundImageKey)
+                                    overlayFilter.setValue(overlay, forKey: kCIInputImageKey)
+                                    
+                                    currentPrototypeAndOverlayFrame = overlayFilter.outputImage!
+                                } else {
+                                    currentPrototypeAndOverlayFrame = source
+                                }
+                                
+                                let perspectiveTransformFilter = CIFilter(name: "CIPerspectiveTransform")!
+                                
+                                let w = backgroundFrameImage.extent.size.width
+                                let h = backgroundFrameImage.extent.size.height
+                                
+                                perspectiveTransformFilter.setValue(CIVector(cgPoint:CGPoint(x: currentBox.topLeft.x * w, y: h * (1 - currentBox.topLeft.y))), forKey: "inputTopLeft")
+                                perspectiveTransformFilter.setValue(CIVector(cgPoint:CGPoint(x: currentBox.topRight.x * w, y: h * (1 - currentBox.topRight.y))), forKey: "inputTopRight")
+                                perspectiveTransformFilter.setValue(CIVector(cgPoint:CGPoint(x: currentBox.bottomRight.x * w, y: h * (1 - currentBox.bottomRight.y))), forKey: "inputBottomRight")
+                                perspectiveTransformFilter.setValue(CIVector(cgPoint:CGPoint(x: currentBox.bottomLeft.x * w, y: h * (1 - currentBox.bottomLeft.y))), forKey: "inputBottomLeft")
+                                
+                                perspectiveTransformFilter.setValue(currentPrototypeAndOverlayFrame.oriented(CGImagePropertyOrientation.downMirrored),
+                                                                    forKey: kCIInputImageKey)
+                                
+                                let finalBackgroundFrameImage:CIImage
+                                weakSelf.snapshotSketchOverlay(layers: [copiedBackgroundSyncLayer,copiedBackgroundCanvasLayer], size:weakSelf.backgroundCanvasView.frame.size)
+                                
+                                if let backgroundOverlay = weakSelf.sketchOverlay {
+                                    
+                                    let overlayFilter = CIFilter(name: "CISourceOverCompositing")!
+                                    overlayFilter.setValue(backgroundFrameImage, forKey: kCIInputBackgroundImageKey)
+                                    overlayFilter.setValue(backgroundOverlay, forKey: kCIInputImageKey)
+                                    guard let result = overlayFilter.outputImage else {
+                                        request.finish(with: NSError(domain: "savePressed", code: 666, userInfo: [NSLocalizedDescriptionKey : "App error - couldn't get outputImage from CISourceOverCompositing"]))
+                                        return
+                                    }
+                                    finalBackgroundFrameImage = result
+                                } else {
+                                    finalBackgroundFrameImage = backgroundFrameImage
+                                }
+                                
+                                let composite = ChromaKeyFilter()
+                                composite.inputImage = finalBackgroundFrameImage
+                                composite.backgroundImage = perspectiveTransformFilter.outputImage
+                                composite.activeColor = CIColor(red: 0, green: 1, blue: 0)
+                                
+                                // Provide the filter output to the composition
+                                request.finish(with: composite.outputImage, context: nil)
+                            }                            
                         })
                     })
                 })
@@ -771,12 +798,15 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
 
                 exportSession?.exportAsynchronously {
                     switch exportSession!.status {
-                    case .cancelled, .completed, .failed:
-                        print("export session .cancelled, .completed, .failed")
-                    default:
-                        break
-                    }
-                    if exportSession!.status == .completed {
+                    case .unknown:
+                        print("exportSession status unknown")
+                    case .waiting:
+                        print("exportSession status waiting")
+                    case .exporting:
+                        print("exportSession status exporting")
+                    case .cancelled, .failed:
+                        print("export session .cancelled or .failed -> \(exportSession?.error?.localizedDescription ?? "no error description")")
+                    case .completed:
                         DispatchQueue.main.async { [unowned self] in
                             let finalOutputURL = self.videoModel.file
                             
@@ -812,14 +842,17 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
                                 return
                             }
                             
-                            do {
-                                try self.coreDataContext.save()
-                                self.dismiss(animated: true, completion: nil)
-                            } catch {
-                                self.alert(error, title: "DB Error", message: "Could not save recorded video") {
-                                    self.dismiss(animated: true, completion: nil)
+                            weakSelf.persistentContainer.performBackgroundTask() { (context) in
+                                do {
+                                    try context.save()
+                                    weakSelf.dismiss(animated: true, completion: nil)
+                                } catch {
+                                    weakSelf.alert(error, title: "DB Error", message: "Could not save exported final video") {
+                                        weakSelf.dismiss(animated: true, completion: nil)
+                                    }
                                 }
                             }
+                            
                         }
                     }
                 }
@@ -1108,7 +1141,7 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
             self.prototypeCanvasView.isHidden = true
             self.prototypeCanvasView.isUserInteractionEnabled = false
             
-            aPrototypePlayerItem.add(self.prototypeVideoOutput)
+            self.prototypePlayerItem.add(self.prototypeVideoOutput)
             
             self.backgroundComposition = AVMutableComposition()
             guard let backgroundCompositionVideoTrack = self.backgroundComposition?.addMutableTrack(withMediaType: .video, preferredTrackID: kCMPersistentTrackID_Invalid) else {
@@ -1159,12 +1192,12 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
             //        backgroundPlayerView.frame = CGRect(x: 0, y: 500, width: 480, height: 360)
             //        view.addSubview(backgroundPlayerView)
             
-            aBackgroundPlayerItem.add(self.backgroundVideoOutput)
+            self.backgroundPlayerItem.add(self.backgroundVideoOutput)
             self.backgroundVideoOutput.suppressesPlayerRendering = true
             
             //Prototype Player Canvas View
             self.prototypePlayerCanvasView.isHidden = false
-            self.prototypePlayerView.syncLayer = AVSynchronizedLayer(playerItem: aPrototypePlayerItem)
+            self.prototypePlayerView.syncLayer = AVSynchronizedLayer(playerItem: self.prototypePlayerItem)
 
             self.prototypePlayerCanvasView?.associatedSyncLayer = self.prototypePlayerView.syncLayer
             
@@ -1182,7 +1215,7 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
             //Background Player Canvas View
             self.backgroundPlayerCanvasView.isHidden = false
             
-            self.backgroundPlayerSyncLayer = AVSynchronizedLayer(playerItem: aBackgroundPlayerItem)
+            self.backgroundPlayerSyncLayer = AVSynchronizedLayer(playerItem: self.backgroundPlayerItem)
             self.backgroundFrameImageView.layer.addSublayer(self.backgroundPlayerSyncLayer!)
             
             self.backgroundPlayerCanvasView?.associatedSyncLayer = self.backgroundPlayerSyncLayer
@@ -1200,8 +1233,8 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
             self.scrubberSlider.isEnabled = true
             self.scrubberButtonItem.isEnabled = true
             
-            aPrototypePlayerItem.addObserver(self, forKeyPath: STATUS_KEYPATH, options: NSKeyValueObservingOptions(rawValue: 0), context: &CameraController.observerContext)
-            aPrototypePlayerItem.addObserver(self, forKeyPath: RATE_KEYPATH, options: NSKeyValueObservingOptions.initial, context: &CameraController.observerContext)
+            self.prototypePlayerItem.addObserver(self, forKeyPath: STATUS_KEYPATH, options: NSKeyValueObservingOptions(rawValue: 0), context: &CameraController.observerContext)
+            self.prototypePlayerItem.addObserver(self, forKeyPath: RATE_KEYPATH, options: NSKeyValueObservingOptions.initial, context: &CameraController.observerContext)
             
             self.backgroundPlayer.play()
             self.prototypePlayer.play()
@@ -1661,27 +1694,34 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
                         print("I shouldn't receive a message with savedBoxes from someone that it is not the userCamPeer")
                         return
                     }
-                    guard let savedBoxes = value as? [NSDictionary:VNRectangleObservation] else {
+                    guard let dictionaryOfSavedBoxes = value as? [NSDictionary:VNRectangleObservation] else {
                         print("Couldn't get value from message")
                         return
                     }
                     
-                    var orderedTemporalBoxes = [BoxObservation]()
-                    for (timeBoxDictionary,box) in savedBoxes {
+                    var orderedTemporalBoxes = [(CMTime,VNRectangleObservation)]()
+                    for (timeBoxDictionary,box) in dictionaryOfSavedBoxes {
                         let timeBox = CMTimeMakeFromDictionary(timeBoxDictionary)
                         
-                        let newBoxObservation = BoxObservation(moc: coreDataContext, time: timeBox, rectangleObservation: box)
-                        
-                        orderedTemporalBoxes.append(newBoxObservation)
+                        orderedTemporalBoxes.append((timeBox,box))
                     }
                     
-                    orderedTemporalBoxes.sort(by: { (a, b) -> Bool in
-                        return CMTimeCompare(a.time, b.time) == -1
+                    orderedTemporalBoxes.sort(by: { (tuple1, tuple2) -> Bool in
+                        return CMTimeCompare(tuple1.0, tuple2.0) == -1
                     })
-                    
-                    videoModel.backgroundTrack?.boxes = NSMutableOrderedSet(array: [BoxObservation]())
-                    for boxObservation in orderedTemporalBoxes {
-                        videoModel.backgroundTrack?.addToBoxes(boxObservation)
+
+                    persistentContainer.performBackgroundTask { [unowned self] (context) in
+                        
+                        for (time,box) in orderedTemporalBoxes {
+                            let newBoxObservation = BoxObservation(moc: self.videoModel.backgroundTrack!.managedObjectContext!, time: time, rectangleObservation: box)
+                            self.videoModel.backgroundTrack?.addToBoxes(newBoxObservation)
+                        }
+                        
+                        do {
+                            try context.save()
+                        } catch {
+                            self.alert(error, title: "DB", message: "Couldn't save DB after receiving boxes from camera")
+                        }
                     }
                 case "ACK":
                     guard let syncTime = syncTime else {
@@ -1857,12 +1897,14 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
         
         if let _ = self.videoModel.prototypeTrack?.hasVideoFile, let _ =  self.videoModel.backgroundTrack?.hasVideoFile {
             DispatchQueue.main.async {[unowned self] in
-                do {
-                    try self.coreDataContext.save()
-                } catch {
-                    self.alert(error, title: "DB Error", message: "Couldn't save video tracks after receiving their files")
+                self.persistentContainer.performBackgroundTask { [unowned self] (context) in
+                    do {
+                        try context.save()
+                    } catch {
+                        self.alert(error, title: "DB", message: "Couldn't save video tracks after receiving their files")
+                    }
+                    self.canvasControllerMode = CanvasControllerPlayingMode(controller:self)
                 }
-                self.canvasControllerMode = CanvasControllerPlayingMode(controller:self)
             }
         }
         
@@ -1969,13 +2011,23 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
         let seekingGroup = DispatchGroup()
         
         seekingGroup.enter()
-        prototypePlayer.seek(to: CMTimeMakeWithSeconds(time, DEFAULT_TIMESCALE), toleranceBefore: kCMTimeZero, toleranceAfter: kCMTimeZero) { (completed) in
+//        prototypePlayer.seek(to: CMTimeMakeWithSeconds(time, DEFAULT_TIMESCALE), toleranceBefore: kCMTimeZero, toleranceAfter: kCMTimeZero) { (completed) in
+        prototypePlayer.seek(to: CMTimeMakeWithSeconds(time, DEFAULT_TIMESCALE)) { (completed) in
+            guard completed else {
+                print("prototypePlayer seek not completed while scrubbed")
+                return
+            }
             seekingGroup.leave()
         }
         
         seekingGroup.enter()
         backgroundPlayerItem.cancelPendingSeeks()
-        backgroundPlayer.seek(to: CMTimeMakeWithSeconds(time, DEFAULT_TIMESCALE), toleranceBefore: kCMTimeZero, toleranceAfter: kCMTimeZero) { (completed) in
+//        backgroundPlayer.seek(to: CMTimeMakeWithSeconds(time, DEFAULT_TIMESCALE), toleranceBefore: kCMTimeZero, toleranceAfter: kCMTimeZero) { (completed) in
+        backgroundPlayer.seek(to: CMTimeMakeWithSeconds(time, DEFAULT_TIMESCALE)) { (completed) in
+            guard completed else {
+                print("backgroundPlayer seek not completed while scrubbed")
+                return
+            }
             seekingGroup.leave()
         }
         
@@ -2016,9 +2068,10 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
         weak var weakSelf:CameraController! = self
 
         self.itemEndObserver = NotificationCenter.default.addObserver(forName: NSNotification.Name.AVPlayerItemDidPlayToEndTime, object: prototypePlayerItem, queue: OperationQueue.main, using: { (notification) -> Void in
-            weakSelf.prototypePlayer.seek(to: kCMTimeZero, toleranceBefore: kCMTimeZero, toleranceAfter: kCMTimeZero, completionHandler: { (finished) in
+//            weakSelf.prototypePlayer.seek(to: kCMTimeZero, toleranceBefore: kCMTimeZero, toleranceAfter: kCMTimeZero, completionHandler: { (finished) in
+            weakSelf.prototypePlayer.seek(to: kCMTimeZero) { (completed) in
                 weakSelf.playBackComplete()
-            })
+            }
         })
     }
     
@@ -2395,7 +2448,37 @@ class CalendarEvent {
 }
 
 extension CameraController: TimelineDelegate {
-    func timeline(didSelect prototypeTrack:VideoTrack) {
+    func timeline(didSelectPrototypeTrack prototypeTrack:VideoTrack) {
+        guard let selectedFileURL = prototypeTrack.loadedFileURL, let myFileURL = videoModel.prototypeTrack?.loadedFileURL else {
+            return
+        }
+        
+        let backupFileName = myFileURL.deletingPathExtension().lastPathComponent + "-backup." + myFileURL.pathExtension
+        let backupFileURL = myFileURL.deletingLastPathComponent().appendingPathComponent(backupFileName)
+        do {
+            try FileManager.default.moveItem(at: myFileURL, to: backupFileURL)
+        } catch {
+            self.alert(error, title: "FileManager", message: "Couldn't backup the prototype video track \(myFileURL) to \(backupFileURL)")
+            return
+        }
+        
+        do {
+            try FileManager.default.copyItem(at: selectedFileURL, to: myFileURL)
+        } catch {
+            self.alert(error, title: "FileManager", message: "Couldn't copy the selected prototype video track \(selectedFileURL) to \(myFileURL)")
+            return
+        }
+        
+        if canvasControllerMode.isPlayingMode {
+            deinitPlaybackObjects()
+            
+            self.startPlayback(shouldUseSmallestDuration: false)
+        }
+    }
+    
+    func timeline(didSelectNewVideo video: Video) {
+        videoModel = video
+        
         if canvasControllerMode.isPlayingMode {
             deinitPlaybackObjects()
             

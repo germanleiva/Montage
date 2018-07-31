@@ -141,4 +141,35 @@ public class VideoTrack: NSManagedObject {
         }
         return nil
     }
+    
+    func copyEverythingFrom(_ videoTrack:VideoTrack) -> Bool {
+        name = videoTrack.name
+        
+        if let previousBoxes = videoTrack.boxes {
+            self.addToBoxes(previousBoxes)
+        }
+        
+        isBackground = videoTrack.isBackground
+        isPrototype = videoTrack.isPrototype
+        
+        //Copy the files
+        if let previousURL = videoTrack.loadedFileURL {
+            do {
+                try FileManager.default.copyItem(at: previousURL, to: fileURL)
+                hasVideoFile = videoTrack.hasVideoFile
+            } catch {
+                return false
+            }
+        }
+        
+        copyTiersFrom(videoTrack)
+        
+        return true
+    }
+    
+    func copyTiersFrom(_ videoTrack:VideoTrack) {
+        for tier in videoTrack.tiers?.array as! [Tier] {
+            addToTiers(tier.clone())
+        }
+    }
 }

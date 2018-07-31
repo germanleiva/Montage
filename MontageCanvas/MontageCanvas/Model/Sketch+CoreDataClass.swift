@@ -25,6 +25,23 @@ public class Sketch: NSManagedObject {
         pathActions = [PathAction]()
     }
     
+    func clone() -> Sketch {
+        let clonedSketch = Sketch(context: managedObjectContext!)
+        
+        clonedSketch.board = board
+        
+        clonedSketch.lineWidth =  lineWidth
+        clonedSketch.lineCap = lineCap
+        clonedSketch.fillColor = fillColor
+        clonedSketch.strokeColor = strokeColor
+        
+        if let existingPathActions = pathActions {
+            clonedSketch.pathActions?.append(contentsOf: existingPathActions)
+        }
+        
+        return clonedSketch
+    }
+    
     func move(to point:CGPoint) {
         firstPathActionTime = Date().timeIntervalSince1970
         pathActions?.append(PathAction(.move,point,0))
