@@ -114,7 +114,9 @@ class CanvasControllerRecordingMode:CanvasControllerMode {
         return currentlyPausedAt != nil
     }
     
-    let timerInterval = 0.0001 //in seconds, this is 0.1 millisecond
+//    let timerInterval = 0.0001 //in seconds, this is 0.1 millisecond
+    let timerInterval = 0.001 //in seconds, this is 1 millisecond
+
     var currentlyPausedAt:TimeInterval?
     
     var accumulatedTime:TimeInterval = 0.0 //This count the paused ranges
@@ -123,9 +125,9 @@ class CanvasControllerRecordingMode:CanvasControllerMode {
         super.init(controller: controller)
         
         currentlyPausedAt = nil
-        
+//        print("****** started recording mode at time \(NSDate.network().timeIntervalSince1970)")
         let weakSelf = self
-        timer = RepeatingTimer(timeInterval: 0.0001)
+        timer = RepeatingTimer(timeInterval: timerInterval)
         timer?.eventHandler = {
             if !weakSelf.isPaused {
                 weakSelf.currentTime += weakSelf.timerInterval

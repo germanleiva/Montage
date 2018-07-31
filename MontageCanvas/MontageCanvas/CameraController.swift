@@ -405,8 +405,6 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
     
     let countDownTimeInterval:TimeInterval = 3.0
     var syncTime:Date?
-    var wizardCamDelay:TimeInterval?
-    var userCamDelay:TimeInterval?
     
     var userCamPeer:MCPeerID?
     var wizardCamPeer:MCPeerID?
@@ -768,6 +766,7 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
                                                                     forKey: kCIInputImageKey)
                                 
                                 let finalBackgroundFrameImage:CIImage
+                                
                                 weakSelf.snapshotSketchOverlay(layers: [copiedBackgroundSyncLayer,copiedBackgroundCanvasLayer], size:weakSelf.backgroundCanvasView.frame.size)
                                 
                                 if let backgroundOverlay = weakSelf.sketchOverlay {
@@ -1017,12 +1016,10 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
         
         recordingControls.isHidden = false
         
-        let timer = Timer(fire: startRecordingDate, interval: 0, repeats: false, block: { (timer) in
-            self.recordingIndicator.isHidden = false
+        let timer = Timer(fire: startRecordingDate, interval: 0, repeats: false, block: {  [unowned self](timer) in
             
-            self.videoModel.prototypeTrack?.startRecording(time:Date().timeIntervalSince1970)
-            self.videoModel.backgroundTrack?.startRecording(time:Date().timeIntervalSince1970)
-            print("START RECORDING!!!! NOW! \(NSDate.network().timeIntervalSince1970)")
+            self.canvasControllerMode.startRecording(controller: self)
+
             timer.invalidate()
         })
         RunLoop.main.add(timer, forMode: RunLoopMode.commonModes)
@@ -1078,8 +1075,6 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
         } else if recordingLabel.text! == "1" {
             recordingLabel.text = "GO"
             
-            canvasControllerMode.startRecording(controller: self)
-            
             UIView.animate(withDuration: 0.5, animations: {[unowned self] in
                 self.recordingLabel.alpha = 0
             }, completion: { [unowned self] (completed) in
@@ -1095,7 +1090,7 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
         self.scrubbedToTime(Double(scrubberSlider.value))
     }
     
-    func startPlayback(shouldUseSmallestDuration:Bool = true) {
+    func startPlayback(shouldUseSmallestDuration:Bool = false) {
         //We should start showing the prototype AVPlayer and enabling the player controls\
         
         guard let prototypeVideoFileURL = self.videoModel.prototypeTrack?.loadedFileURL, let backgroundVideoFileURL = self.videoModel.backgroundTrack?.loadedFileURL else {
@@ -1464,53 +1459,15 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
             currentPrototypeAndOverlayFrame = currentPrototypeAndOverlayFrame.cropped(to: croppingRect)
         }
         
-        //        print("TopR \(topRight) \(box.topRight)")
-        //        print("TopL \(topLeft) \(box.topLeft)")
-        //        print("BotR \(bottomRight) \(box.bottomRight)")
-        //        print("BotL \(bottomLeft) \(box.bottomLeft)")
-        
-        //Core image points are in cartesian (y is going upwards insetead of downwards)
-        //        var t = CGAffineTransform(scaleX: 1, y: -1)
-        //        t = t.translatedBy(CGAffineTransform(translationX: 0, y: -box.boundingBox.size.height)
-        //        let pointUIKit = CGPointApplyAffineTransform(pointCI, t)
-        //        let rectUIKIT = CGRectApplyAffineTransform(rectCI, t)
-        
         guard let finalBackgroundFrameImage = backgroundCameraFrame else {
             setImageOpenGL(view: prototypeFrameImageView,image: source)
             return
         }
         
-        //If we have
-//        guard let scaleFilter = CIFilter(name: "CILanczosScaleTransform") else {
-//            return
-//        }
-//        scaleFilter.setValue(currentBrackgroundFrameImage, forKey: "inputImage")
-//        let increaseFactor = 1/0.25
-//        scaleFilter.setValue(increaseFactor, forKey: "inputScale")
-//        scaleFilter.setValue(1.0, forKey: "inputAspectRatio")
-//
-//        guard let finalBackgroundFrameImage = scaleFilter.outputImage else {
-//            return
-//        }
-        
-//        CIFilter *cropFilter = [CIFilter filterWithName:@"CICrop"];
-//        CIVector *cropRect = [CIVector vectorWithX:rect.origin.x Y:rect.origin.y Z:rect.size.width W:rect.size.height];
-//        [cropFilter setValue:resizeFilter.outputImage forKey:@"inputImage"];
-//        [cropFilter setValue:cropRect forKey:@"inputRectangle"];
-//        CIImage *croppedImage = cropFilter.outputImage;
-        
         let perspectiveTransformFilter = CIFilter(name: "CIPerspectiveTransform")!
         let ciSize = finalBackgroundFrameImage.extent.size
         
         let currentBox = box
-
-//        let w = finalBackgroundFrameImage.extent.size.width
-//        let h = finalBackgroundFrameImage.extent.size.height
-//        perspectiveTransformFilter.setValue(CIVector(cgPoint:CGPoint(x: currentBox.topLeft.x * w, y: h * (1 - currentBox.topLeft.y))), forKey: "inputTopLeft")
-//        perspectiveTransformFilter.setValue(CIVector(cgPoint:CGPoint(x: currentBox.topRight.x * w, y: h * (1 - currentBox.topRight.y))), forKey: "inputTopRight")
-//        perspectiveTransformFilter.setValue(CIVector(cgPoint:CGPoint(x: currentBox.bottomRight.x * w, y: h * (1 - currentBox.bottomRight.y))), forKey: "inputBottomRight")
-//        perspectiveTransformFilter.setValue(CIVector(cgPoint:CGPoint(x: currentBox.bottomLeft.x * w, y: h * (1 - currentBox.bottomLeft.y))), forKey: "inputBottomLeft")
-        
         perspectiveTransformFilter.setValue(CIVector(cgPoint:currentBox.topLeft.scaled(to: ciSize)),
                                             forKey: "inputTopLeft")
         perspectiveTransformFilter.setValue(CIVector(cgPoint:currentBox.topRight.scaled(to: ciSize)),
@@ -1527,6 +1484,9 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
         composite.backgroundImage = perspectiveTransformFilter.outputImage
         composite.activeColor = CIColor(red: 0, green: 1, blue: 0)
         
+        if let compositeImage = composite.outputImage {
+            self.setImageOpenGL(view: self.backgroundFrameImageView,image: compositeImage)
+        }
         //Apple Chroma (not working)
         //            let composite = CIFilter(name:"ChromaKey") as! ChromaKey
         //
@@ -1538,6 +1498,10 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
         //            composite.inputAngleWidth = NSNumber(value:45 * Float.pi / 180)
         
         //GHOST
+        guard isUserOverlayActive else {
+            self.setImageOpenGL(view: self.prototypeFrameImageView,image: source)
+            return
+        }
         
         //We do a CIPerspectiveCorrection of the green area finalBackgroundFrameImage
         
@@ -1554,49 +1518,36 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
         
         perspectiveCorrection.setValue(finalBackgroundFrameImage,forKey: kCIInputImageKey)
         
-        //            guard let scaleFilter2 = CIFilter(name: "CILanczosScaleTransform") else {
-        //                return
-        //            }
-        //            scaleFilter2.setValue(internalCameraFrame, forKey: "inputImage")
-        //            scaleFilter2.setValue(2.0, forKey: "inputScale")
-        //            scaleFilter2.setValue(1.0, forKey: "inputAspectRatio")
-        
-        //            let composite2 = ChromaKeyFilter()
-        
-//        if isUserOverlayActive, let ghost = perspectiveCorrection.outputImage?.oriented(CGImagePropertyOrientation.rightMirrored) {
-        if isUserOverlayActive, let ghost = perspectiveCorrection.outputImage?.oriented(CGImagePropertyOrientation.up) {
-            let scaledGhost = ghost.transformed(by: CGAffineTransform.identity.scaledBy(x: source.extent.width / ghost.extent.width, y: source.extent.height / ghost.extent.height ))
-            
-            removeGreenFilter.setValue(scaledGhost, forKey: kCIInputImageKey)
-            
-            let transparencyMatrixEffect = CIFilter(name:"CIColorMatrix")!
-            
-            transparencyMatrixEffect.setDefaults()
-            transparencyMatrixEffect.setValue(removeGreenFilter.outputImage, forKey: kCIInputImageKey)
-            
-            transparencyMatrixEffect.setValue(CIVector(x: 1, y: 0, z: 0, w: 0), forKey: "inputRVector")
-            transparencyMatrixEffect.setValue(CIVector(x: 0, y: 1, z: 0, w: 0), forKey: "inputGVector")
-            transparencyMatrixEffect.setValue(CIVector(x: 0, y: 0, z: 1, w: 0), forKey: "inputBVector")
-            transparencyMatrixEffect.setValue(CIVector(x: 0, y: 0, z: 0, w: 0.8), forKey: "inputAVector")
-            
-            let composite2 = CIFilter(name: "CISourceOverCompositing")!
-            composite2.setValue(transparencyMatrixEffect.outputImage, forKey: kCIInputImageKey)
-            composite2.setValue(source, forKey: kCIInputBackgroundImageKey)
-            
-            //                composite2.inputImage = transparencyMatrixEffect.outputImage
-            //                composite2.backgroundImage = source
-            //                composite2.activeColor = CIColor(red: 0, green: 1, blue: 0)
-            
-            if let compositeImage2 = composite2.outputImage {
-                self.setImageOpenGL(view: self.prototypeFrameImageView,image: compositeImage2)
-            }
-        } else {
-            //No isUserOverlayActive
+        guard let ghost = perspectiveCorrection.outputImage?.oriented(CGImagePropertyOrientation.up) else {
+            print("perspectiveCorrection failed - falling back to simple source")
             self.setImageOpenGL(view: self.prototypeFrameImageView,image: source)
+            return
         }
         
-        if let compositeImage = composite.outputImage {
-            self.setImageOpenGL(view: self.backgroundFrameImageView,image: compositeImage)
+        let scaledGhost = ghost.transformed(by: CGAffineTransform.identity.scaledBy(x: source.extent.width / ghost.extent.width, y: source.extent.height / ghost.extent.height ))
+        
+        removeGreenFilter.setValue(scaledGhost, forKey: kCIInputImageKey)
+        
+        let transparencyMatrixEffect = CIFilter(name:"CIColorMatrix")!
+        
+        transparencyMatrixEffect.setDefaults()
+        transparencyMatrixEffect.setValue(removeGreenFilter.outputImage, forKey: kCIInputImageKey)
+        
+        transparencyMatrixEffect.setValue(CIVector(x: 1, y: 0, z: 0, w: 0), forKey: "inputRVector")
+        transparencyMatrixEffect.setValue(CIVector(x: 0, y: 1, z: 0, w: 0), forKey: "inputGVector")
+        transparencyMatrixEffect.setValue(CIVector(x: 0, y: 0, z: 1, w: 0), forKey: "inputBVector")
+        transparencyMatrixEffect.setValue(CIVector(x: 0, y: 0, z: 0, w: 0.8), forKey: "inputAVector")
+        
+        let composite2 = CIFilter(name: "CISourceOverCompositing")!
+        composite2.setValue(transparencyMatrixEffect.outputImage, forKey: kCIInputImageKey)
+        composite2.setValue(source, forKey: kCIInputBackgroundImageKey)
+        
+        //composite2.inputImage = transparencyMatrixEffect.outputImage
+        //composite2.backgroundImage = source
+        //composite2.activeColor = CIColor(red: 0, green: 1, blue: 0)
+        
+        if let compositeImage2 = composite2.outputImage {
+            self.setImageOpenGL(view: self.prototypeFrameImageView,image: compositeImage2)
         }
     }
     
@@ -1754,17 +1705,17 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
                     guard let syncTime = syncTime else {
                         return
                     }
-                    let delay = NSDate.network().timeIntervalSince(syncTime) / 2
+                    let delay = NSDate.network().timeIntervalSince(syncTime) /// 2
                     switch peerID {
                     case wizardCamPeer:
-                        wizardCamDelay = delay
+                        videoModel.prototypeTrack?.camDelay = delay
                     case userCamPeer:
-                        userCamDelay = delay
+                        videoModel.backgroundTrack?.camDelay = delay
                     default:
                         print("Ignored ACK from unkown peerID \(peerID.displayName)")
                     }
                     
-                    if let wizardCamDelay = wizardCamDelay, let userCamDelay = userCamDelay {
+                    if let wizardCamDelay = videoModel.prototypeTrack?.camDelay, let userCamDelay = videoModel.backgroundTrack?.camDelay {
                         print("wizardCamDelay \(wizardCamDelay)")
                         print("userCamDelay \(userCamDelay)")
                         for (camPeer, camDelay) in [(wizardCamPeer,wizardCamDelay),(userCamPeer,userCamDelay)] {
@@ -2152,6 +2103,11 @@ extension CameraController:CanvasControllerModeDelegate {
     }
     
     func startedRecording(mode: CanvasControllerRecordingMode) {
+        self.recordingIndicator.isHidden = false
+        
+        self.videoModel.prototypeTrack?.isRecordingInputs = true
+        self.videoModel.backgroundTrack?.isRecordingInputs = true
+        
         recordingIndicator.alpha = 0
         
         let options:UIViewAnimationOptions = [.allowUserInteraction,.autoreverse,.repeat]
@@ -2193,8 +2149,8 @@ extension CameraController:CanvasControllerModeDelegate {
         
         recordingControls.isHidden = true
         
-        self.videoModel.prototypeTrack?.stopRecording(time:Date().timeIntervalSince1970)
-        self.videoModel.backgroundTrack?.stopRecording(time:Date().timeIntervalSince1970)
+        self.videoModel.prototypeTrack?.isRecordingInputs = false
+        self.videoModel.backgroundTrack?.isRecordingInputs = false
         
         var pausedTimeRangesToSend = [NSDictionary]()
         
@@ -2221,8 +2177,8 @@ extension CameraController:CanvasControllerModeDelegate {
         recordingIndicator.alpha = 1.0
         recordingIndicator.textColor = UIColor.black
         
-        self.videoModel.prototypeTrack?.pauseRecording()
-        self.videoModel.backgroundTrack?.pauseRecording()
+        self.videoModel.prototypeTrack?.isRecordingInputs = false
+        self.videoModel.backgroundTrack?.isRecordingInputs = false
     }
 
     func resumedRecording(mode:CanvasControllerRecordingMode,pausedTimeRange:TimeRange?){
@@ -2238,8 +2194,8 @@ extension CameraController:CanvasControllerModeDelegate {
             videoModel.pausedTimeRanges?.append(pausedTimeRange)
         }
         
-        self.videoModel.prototypeTrack?.resumeRecording()
-        self.videoModel.backgroundTrack?.resumeRecording()
+        self.videoModel.prototypeTrack?.isRecordingInputs = true
+        self.videoModel.backgroundTrack?.isRecordingInputs = true
 
     }
     
@@ -2247,17 +2203,17 @@ extension CameraController:CanvasControllerModeDelegate {
         for eachCam in cams {
             sendMessage(peerID: eachCam, dict: ["streaming":false])
         }
-        self.startPlayback(shouldUseSmallestDuration: true)
+        self.startPlayback()
     }
     func pausedPlaying(mode:CanvasControllerPlayingMode){
         playButton.setImage(UIImage(named:"play-icon"), for: UIControlState.normal)
-        videoModel.backgroundTrack?.stopRecording(time: Date().timeIntervalSince1970)
-        videoModel.prototypeTrack?.stopRecording(time: Date().timeIntervalSince1970)
+        videoModel.backgroundTrack?.isRecordingInputs = false
+        videoModel.prototypeTrack?.isRecordingInputs = false
     }
     func resumedPlaying(mode:CanvasControllerPlayingMode){
         playButton.setImage(UIImage(named:"pause-icon"), for: UIControlState.normal)
-        videoModel.prototypeTrack?.startRecording(time: Date().timeIntervalSince1970 - self.prototypePlayerItem.currentTime().seconds)
-        videoModel.backgroundTrack?.startRecording(time: Date().timeIntervalSince1970 - self.backgroundPlayerItem.currentTime().seconds)
+        videoModel.prototypeTrack?.isRecordingInputs = true
+        videoModel.backgroundTrack?.isRecordingInputs = true
     }
     
     func playerItemOffset() -> TimeInterval {
@@ -2526,7 +2482,7 @@ extension CameraController: TimelineDelegate {
         if canvasControllerMode.isPlayingMode {
             deinitPlaybackObjects()
             
-            self.startPlayback(shouldUseSmallestDuration: true)
+            self.startPlayback()
         }
     }
     
@@ -2536,7 +2492,7 @@ extension CameraController: TimelineDelegate {
         if canvasControllerMode.isPlayingMode {
             deinitPlaybackObjects()
             
-            self.startPlayback(shouldUseSmallestDuration: true)
+            self.startPlayback()
         }
     }
 }

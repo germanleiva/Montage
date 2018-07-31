@@ -13,8 +13,7 @@ import AVFoundation
 
 @objc(VideoTrack)
 public class VideoTrack: NSManagedObject {
-    var startedRecordingAt:TimeInterval = -1
-    var endedRecordingAt:TimeInterval = -1
+    var camDelay:TimeInterval?
     
     var video:Video {
         if inverseBackgroundTrack != nil {
@@ -34,24 +33,6 @@ public class VideoTrack: NSManagedObject {
             fileName = "background.mov"
         }
         return video.videoDirectory.appendingPathComponent(fileName)
-    }
-    
-    func startRecording(time:TimeInterval) {
-        startedRecordingAt = time
-        isRecordingInputs = true
-    }
-    
-    func stopRecording(time:TimeInterval) {
-        endedRecordingAt = time
-        isRecordingInputs = false
-    }
-    
-    func pauseRecording() {
-        isRecordingInputs = false
-    }
-    
-    func resumeRecording() {
-        isRecordingInputs = true
     }
     
     var isRecordingInputs = false
