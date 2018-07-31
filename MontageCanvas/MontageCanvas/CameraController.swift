@@ -2247,7 +2247,7 @@ extension CameraController:CanvasControllerModeDelegate {
         for eachCam in cams {
             sendMessage(peerID: eachCam, dict: ["streaming":false])
         }
-        self.startPlayback(shouldUseSmallestDuration: false)
+        self.startPlayback(shouldUseSmallestDuration: true)
     }
     func pausedPlaying(mode:CanvasControllerPlayingMode){
         playButton.setImage(UIImage(named:"play-icon"), for: UIControlState.normal)
@@ -2526,7 +2526,7 @@ extension CameraController: TimelineDelegate {
         if canvasControllerMode.isPlayingMode {
             deinitPlaybackObjects()
             
-            self.startPlayback(shouldUseSmallestDuration: false)
+            self.startPlayback(shouldUseSmallestDuration: true)
         }
     }
     
@@ -2536,7 +2536,7 @@ extension CameraController: TimelineDelegate {
         if canvasControllerMode.isPlayingMode {
             deinitPlaybackObjects()
             
-            self.startPlayback(shouldUseSmallestDuration: false)
+            self.startPlayback(shouldUseSmallestDuration: true)
         }
     }
 }

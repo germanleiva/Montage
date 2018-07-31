@@ -72,6 +72,7 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
     var recordStartedAt:TimeInterval?
     var firstRecordedFrameTimeStamp:CMTime?
     
+    var lastDetectedRectangle:VNRectangleObservation?
     var savedBoxes = [(CMTime,VNRectangleObservation)]()
     var mirrorPeer:MCPeerID? = nil
     var isStreaming:Bool = false {
@@ -324,10 +325,11 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
                         guard let detectedRectangle = region else {
                             continue
                         }
+                        
+                        weakSelf.lastDetectedRectangle = detectedRectangle
 
                         //For live previews we send now
                         if let aRole = weakSelf.myRole, aRole == .userCam {
-                            print("detectedRectangle x: \(detectedRectangle.bottomLeft) y: \(detectedRectangle.topLeft) x+w: \(detectedRectangle.bottomRight) y: \(detectedRectangle.topRight) ")
                             weakSelf.sendMessageToServer(dict: ["detectedRectangle":detectedRectangle])
                             weakSelf.highlightRectangle(box:detectedRectangle)
                         }
@@ -664,6 +666,11 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
                 let outputImage = colorMatrixEffect.outputImage!
                 
                 self.visionDetection(sampleBufferCameraIntrinsicMatrix, outputImage: outputImage, presentationTimeStamp: presentationTime)
+            }
+        } else {
+            //For saving to send later
+            if let presentationTimeStamp = presentationTime, let detectedRectangle = lastDetectedRectangle {
+                savedBoxes.append((presentationTimeStamp, detectedRectangle))
             }
         }
         /*Vision*/
