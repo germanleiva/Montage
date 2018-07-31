@@ -46,7 +46,7 @@ class CanvasControllerMode {
         preconditionFailure("This method must be overridden")
     }
     
-    func cancelRecording(controller:CameraController) {
+    func cancel(controller:CameraController) {
         //Empty implementation
     }
     
@@ -77,6 +77,11 @@ class CanvasControllerLiveMode:CanvasControllerMode {
     override func startRecording(controller:CameraController) {
         controller.canvasControllerMode = CanvasControllerRecordingMode(controller: controller)
     }
+    
+    override func cancel(controller: CameraController) {
+        controller.cancelLiveMode(mode: self)
+    }
+    
     override func stopRecording(controller:CameraController) {
 //        controller.alert(nil, title: "Cannot do", message: "I'm not recording")
     }
@@ -137,7 +142,7 @@ class CanvasControllerRecordingMode:CanvasControllerMode {
         controller.alert(nil, title: "Cannot do", message: "I'm already recording")
     }
     
-    override func cancelRecording(controller: CameraController) {
+    override func cancel(controller: CameraController) {
         controller.cancelRecording(mode: self)
     }
     

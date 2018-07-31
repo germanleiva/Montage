@@ -77,10 +77,6 @@ class DetailLineController: UIViewController, UICollectionViewDelegate, UICollec
         
         longPressGesture = UILongPressGestureRecognizer(target: self, action: #selector(self.handleLongGesture(gesture:)))
         collectionView.addGestureRecognizer(longPressGesture)
-
-        NotificationCenter.default.addObserver(forName: NSNotification.Name(rawValue: "DELETE_RECORDING_VIDEO"), object: nil, queue: OperationQueue.main) { (notif) in
-            self.deleteRecordingVideo()
-        }
     }
      
     override func viewWillAppear(_ animated: Bool) {
@@ -100,13 +96,6 @@ class DetailLineController: UIViewController, UICollectionViewDelegate, UICollec
             video = Video(context: coreDataContext)
             line?.addToElements(video)
             video.sequenceNumber = Int32(line?.elements?.index(of: video) ?? 0)
-            recordingVideo = video
-            
-//            do {
-//                try coreDataContext.save()
-//            } catch {
-//                alert(error, title: "DB Error", message: "Couldn't save the DB after creating a new video")
-//            }
             
         case "SEGUE_EXISTING_COMPOSITION":
             guard let selectedIndexPath = collectionView.indexPathsForSelectedItems?.first else {

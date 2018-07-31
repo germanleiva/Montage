@@ -37,7 +37,7 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
 //        }
 //    }
     var palettePopoverPresentationController:UIPopoverPresentationController?
-        
+    
     lazy var removeGreenFilter = {
         return colorCubeFilterForChromaKey(hueAngle: 120)
     }()
@@ -860,7 +860,7 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
     }
     
     @IBAction func cancelPressed(_ sender: Any) {
-        canvasControllerMode.cancelRecording(controller:self)
+        canvasControllerMode.cancel(controller:self)
         
         dismiss(animated: true, completion: nil)
     }
@@ -2142,7 +2142,21 @@ extension CameraController:CanvasControllerModeDelegate {
         
         recordingControls.isHidden = true
         
-        NotificationCenter.default.post(Notification(name:Notification.Name(rawValue: "DELETE_RECORDING_VIDEO")))
+        deleteVideoModel()
+    }
+    
+    func cancelLiveMode(mode:CanvasControllerLiveMode) {
+        deleteVideoModel()
+    }
+    
+    func deleteVideoModel() {
+        coreDataContext.delete(self.videoModel)
+        
+        do {
+            try coreDataContext.save()
+        } catch {
+            self.alert(error, title: "DB", message: "Couldn't delete cancelled video")
+        }
     }
     
     func stoppedRecording(mode: CanvasControllerRecordingMode) {
