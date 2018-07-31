@@ -142,6 +142,17 @@ public class VideoTrack: NSManagedObject {
         return nil
     }
     
+    var viewportRect:CGRect? {
+        get {
+            return viewportValue?.cgRectValue
+        }
+        set(aRect) {
+            if let cgRect = aRect {
+                viewportValue = NSValue(cgRect:cgRect)
+            }
+        }
+    }
+    
     func copyEverythingFrom(_ videoTrack:VideoTrack) -> Bool {
         name = videoTrack.name
         
@@ -151,6 +162,8 @@ public class VideoTrack: NSManagedObject {
         
         isBackground = videoTrack.isBackground
         isPrototype = videoTrack.isPrototype
+        
+        viewportRect = videoTrack.viewportRect
         
         //Copy the files
         if let previousURL = videoTrack.loadedFileURL {

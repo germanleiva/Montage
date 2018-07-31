@@ -297,8 +297,8 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
         }
         
         //        let imageRequestHandler = VNImageRequestHandler(cvPixelBuffer: outputImage.pixelBuffer!, orientation: CGImagePropertyOrientation.downMirrored, options: requestOptions)
-        
-        let imageRequestHandler = VNImageRequestHandler(ciImage: outputImage, orientation: CGImagePropertyOrientation.downMirrored, options: requestOptions)
+//        let imageRequestHandler = VNImageRequestHandler(ciImage: outputImage, options: requestOptions)
+        let imageRequestHandler = VNImageRequestHandler(ciImage: outputImage, orientation: CGImagePropertyOrientation.up, options: requestOptions)
         
         //        DispatchQueue.main.async {
         //            let rectangleRequest = self.requests.first as! VNDetectRectanglesRequest
@@ -327,6 +327,7 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
 
                         //For live previews we send now
                         if let aRole = weakSelf.myRole, aRole == .userCam {
+                            print("detectedRectangle x: \(detectedRectangle.bottomLeft) y: \(detectedRectangle.topLeft) x+w: \(detectedRectangle.bottomRight) y: \(detectedRectangle.topRight) ")
                             weakSelf.sendMessageToServer(dict: ["detectedRectangle":detectedRectangle])
                             weakSelf.highlightRectangle(box:detectedRectangle)
                         }
@@ -392,17 +393,23 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
 //        }
 //    }
     
-    func highlightRectangle(box: VNRectangleObservation) {
+    func highlightRectangle(box rectangle: VNRectangleObservation) {
         if let videoLayer = videoLayer {
             let path = CGMutablePath()
-            
-            let topLeft = videoLayer.layerPointConverted(fromCaptureDevicePoint: box.topLeft)
-            let topRight = videoLayer.layerPointConverted(fromCaptureDevicePoint: box.topRight)
-            let bottomLeft = videoLayer.layerPointConverted(fromCaptureDevicePoint: box.bottomLeft)
-            let bottomRight = videoLayer.layerPointConverted(fromCaptureDevicePoint: box.bottomRight)
+//
+//            let topLeft = videoLayer.layerPointConverted(fromCaptureDevicePoint: box.topLeft)
+//            let topRight = videoLayer.layerPointConverted(fromCaptureDevicePoint: box.topRight)
+//            let bottomLeft = videoLayer.layerPointConverted(fromCaptureDevicePoint: box.bottomLeft)
+//            let bottomRight = videoLayer.layerPointConverted(fromCaptureDevicePoint: box.bottomRight)
+//
+            let topLeft: CGPoint = videoLayer.layerPointConverted(fromCaptureDevicePoint: CGPoint(x: rectangle.topLeft.x, y: 1 - rectangle.topLeft.y))
+            let topRight: CGPoint = videoLayer.layerPointConverted(fromCaptureDevicePoint: CGPoint(x: rectangle.topRight.x, y: 1 - rectangle.topRight.y))
+            let bottomLeft: CGPoint = videoLayer.layerPointConverted(fromCaptureDevicePoint: CGPoint(x: rectangle.bottomLeft.x, y: 1 - rectangle.bottomLeft.y))
+            let bottomRight: CGPoint = videoLayer.layerPointConverted(fromCaptureDevicePoint: CGPoint(x: rectangle.bottomRight.x, y: 1 - rectangle.bottomRight.y))
+
             
             path.move(to: topLeft)
-            path.addLine(to: topLeft)
+//            path.addLine(to: topLeft)
             path.addLine(to: topRight)
             path.addLine(to: bottomRight)
             path.addLine(to: bottomLeft)

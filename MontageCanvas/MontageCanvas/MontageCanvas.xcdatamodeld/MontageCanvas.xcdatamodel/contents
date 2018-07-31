@@ -62,6 +62,7 @@
         <attribute name="isBackground" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES" syncable="YES"/>
         <attribute name="isPrototype" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES" syncable="YES"/>
         <attribute name="name" optional="YES" attributeType="String" syncable="YES"/>
+        <attribute name="viewportValue" optional="YES" attributeType="Transformable" customClassName="NSValue" syncable="YES"/>
         <relationship name="boxes" toMany="YES" deletionRule="Cascade" ordered="YES" destinationEntity="BoxObservation" inverseName="track" inverseEntity="BoxObservation" syncable="YES"/>
         <relationship name="inverseBackgroundTrack" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Video" inverseName="backgroundTrack" inverseEntity="Video" syncable="YES"/>
         <relationship name="inversePrototypeTrack" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Video" inverseName="prototypeTrack" inverseEntity="Video" syncable="YES"/>
@@ -74,6 +75,6 @@
         <element name="Sketch" positionX="603" positionY="536" width="128" height="150"/>
         <element name="Tier" positionX="900" positionY="486" width="128" height="285"/>
         <element name="Video" positionX="835" positionY="224" width="128" height="163"/>
-        <element name="VideoTrack" positionX="1123" positionY="296" width="128" height="165"/>
+        <element name="VideoTrack" positionX="1123" positionY="296" width="128" height="180"/>
     </elements>
 </model>

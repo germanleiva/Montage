@@ -675,7 +675,7 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
                 guard let prototypePlayerItem = self.prototypePlayerItem else {
                     return
                 }
-                let tolerance = kCMTimeZero//CMTime(seconds: 0.05, preferredTimescale: DEFAULT_TIMESCALE)
+                let tolerance = kCMTimeZero
                 
                 let videoComposition = AVVideoComposition(asset: backgroundMutableComposition, applyingCIFiltersWithHandler: { request in
                     let compositionTime = request.compositionTime
@@ -725,7 +725,8 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
                                     request.finish(with: NSError(domain: "savePressed", code: 666, userInfo: [NSLocalizedDescriptionKey : "App error - Could not get box"]))
                                     return
                                 }
-                                let currentPrototypeAndOverlayFrame:CIImage
+                                
+                                var currentPrototypeAndOverlayFrame:CIImage
                                 
                                 if let overlay = weakSelf.sketchOverlay {
                                     let scaledSource = source.transformed(by: CGAffineTransform.identity.scaledBy(x: overlay.extent.width / source.extent.width, y: overlay.extent.height / source.extent.height ))
@@ -739,17 +740,31 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
                                     currentPrototypeAndOverlayFrame = source
                                 }
                                 
+                                if let normalizedViewportRect = weakSelf.videoModel.prototypeTrack?.viewportRect {
+                                    let totalWidth = currentPrototypeAndOverlayFrame.extent.width
+                                    let totalHeight = currentPrototypeAndOverlayFrame.extent.height
+                                    
+                                    let croppingRect = CGRect(x: normalizedViewportRect.origin.x * totalWidth,
+                                                              y: normalizedViewportRect.origin.y * totalHeight,
+                                                              width: normalizedViewportRect.width * totalWidth,
+                                                              height: normalizedViewportRect.height * totalHeight)
+                                    
+                                    currentPrototypeAndOverlayFrame = currentPrototypeAndOverlayFrame.cropped(to: croppingRect)
+                                }
+                                
                                 let perspectiveTransformFilter = CIFilter(name: "CIPerspectiveTransform")!
                                 
-                                let w = backgroundFrameImage.extent.size.width
-                                let h = backgroundFrameImage.extent.size.height
+                                let ciSize = backgroundFrameImage.extent.size
                                 
-                                perspectiveTransformFilter.setValue(CIVector(cgPoint:CGPoint(x: currentBox.topLeft.x * w, y: h * (1 - currentBox.topLeft.y))), forKey: "inputTopLeft")
-                                perspectiveTransformFilter.setValue(CIVector(cgPoint:CGPoint(x: currentBox.topRight.x * w, y: h * (1 - currentBox.topRight.y))), forKey: "inputTopRight")
-                                perspectiveTransformFilter.setValue(CIVector(cgPoint:CGPoint(x: currentBox.bottomRight.x * w, y: h * (1 - currentBox.bottomRight.y))), forKey: "inputBottomRight")
-                                perspectiveTransformFilter.setValue(CIVector(cgPoint:CGPoint(x: currentBox.bottomLeft.x * w, y: h * (1 - currentBox.bottomLeft.y))), forKey: "inputBottomLeft")
-                                
-                                perspectiveTransformFilter.setValue(currentPrototypeAndOverlayFrame.oriented(CGImagePropertyOrientation.downMirrored),
+                                perspectiveTransformFilter.setValue(CIVector(cgPoint:currentBox.topLeft.scaled(to: ciSize)),
+                                                                    forKey: "inputTopLeft")
+                                perspectiveTransformFilter.setValue(CIVector(cgPoint:currentBox.topRight.scaled(to: ciSize)),
+                                                                    forKey: "inputTopRight")
+                                perspectiveTransformFilter.setValue(CIVector(cgPoint:currentBox.bottomRight.scaled(to: ciSize)),
+                                                                    forKey: "inputBottomRight")
+                                perspectiveTransformFilter.setValue(CIVector(cgPoint:currentBox.bottomLeft.scaled(to: ciSize)),
+                                                                    forKey: "inputBottomLeft")
+                                perspectiveTransformFilter.setValue(currentPrototypeAndOverlayFrame.oriented(CGImagePropertyOrientation.up),
                                                                     forKey: kCIInputImageKey)
                                 
                                 let finalBackgroundFrameImage:CIImage
@@ -1423,7 +1438,7 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
     
     func applyFilterFromPrototypeToBackground(source:CIImage) {
 
-        let currentPrototypeAndOverlayFrame:CIImage
+        var currentPrototypeAndOverlayFrame:CIImage
         
         if let overlay = sketchOverlay {
             let scaledSource = source.transformed(by: CGAffineTransform.identity.scaledBy(x: overlay.extent.width / source.extent.width, y: overlay.extent.height / source.extent.height ))
@@ -1435,6 +1450,18 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
             currentPrototypeAndOverlayFrame = overlayFilter.outputImage!
         } else {
             currentPrototypeAndOverlayFrame = source
+        }
+        
+        if let normalizedViewportRect = videoModel.prototypeTrack?.viewportRect {
+            let totalWidth = currentPrototypeAndOverlayFrame.extent.width
+            let totalHeight = currentPrototypeAndOverlayFrame.extent.height
+    
+            let croppingRect = CGRect(x: normalizedViewportRect.origin.x * totalWidth,
+                                      y: normalizedViewportRect.origin.y * totalHeight,
+                                      width: normalizedViewportRect.width * totalWidth,
+                                      height: normalizedViewportRect.height * totalHeight)
+            
+            currentPrototypeAndOverlayFrame = currentPrototypeAndOverlayFrame.cropped(to: croppingRect)
         }
         
         //        print("TopR \(topRight) \(box.topRight)")
@@ -1473,23 +1500,27 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
 //        CIImage *croppedImage = cropFilter.outputImage;
         
         let perspectiveTransformFilter = CIFilter(name: "CIPerspectiveTransform")!
-        
-        let w = finalBackgroundFrameImage.extent.size.width
-        let h = finalBackgroundFrameImage.extent.size.height
+        let ciSize = finalBackgroundFrameImage.extent.size
         
         let currentBox = box
+
+//        let w = finalBackgroundFrameImage.extent.size.width
+//        let h = finalBackgroundFrameImage.extent.size.height
+//        perspectiveTransformFilter.setValue(CIVector(cgPoint:CGPoint(x: currentBox.topLeft.x * w, y: h * (1 - currentBox.topLeft.y))), forKey: "inputTopLeft")
+//        perspectiveTransformFilter.setValue(CIVector(cgPoint:CGPoint(x: currentBox.topRight.x * w, y: h * (1 - currentBox.topRight.y))), forKey: "inputTopRight")
+//        perspectiveTransformFilter.setValue(CIVector(cgPoint:CGPoint(x: currentBox.bottomRight.x * w, y: h * (1 - currentBox.bottomRight.y))), forKey: "inputBottomRight")
+//        perspectiveTransformFilter.setValue(CIVector(cgPoint:CGPoint(x: currentBox.bottomLeft.x * w, y: h * (1 - currentBox.bottomLeft.y))), forKey: "inputBottomLeft")
         
-        perspectiveTransformFilter.setValue(CIVector(cgPoint:CGPoint(x: currentBox.topLeft.x * w, y: h * (1 - currentBox.topLeft.y))), forKey: "inputTopLeft")
-        perspectiveTransformFilter.setValue(CIVector(cgPoint:CGPoint(x: currentBox.topRight.x * w, y: h * (1 - currentBox.topRight.y))), forKey: "inputTopRight")
-        perspectiveTransformFilter.setValue(CIVector(cgPoint:CGPoint(x: currentBox.bottomRight.x * w, y: h * (1 - currentBox.bottomRight.y))), forKey: "inputBottomRight")
-        perspectiveTransformFilter.setValue(CIVector(cgPoint:CGPoint(x: currentBox.bottomLeft.x * w, y: h * (1 - currentBox.bottomLeft.y))), forKey: "inputBottomLeft")
-        //        perspectiveTransform.setValue(CIVector(cgPoint:currentBox.topLeft.scaled(to: ciSize)), forKey: "inputTopLeft")
-        //        perspectiveTransform.setValue(CIVector(cgPoint:currentBox.topRight.scaled(to: ciSize)), forKey: "inputTopRight")
-        //        perspectiveTransform.setValue(CIVector(cgPoint:currentBox.bottomRight.scaled(to: ciSize)), forKey: "inputBottomRight")
-        //        perspectiveTransform.setValue(CIVector(cgPoint:currentBox.bottomLeft.scaled(to: ciSize)), forKey: "inputBottomLeft")
+        perspectiveTransformFilter.setValue(CIVector(cgPoint:currentBox.topLeft.scaled(to: ciSize)),
+                                            forKey: "inputTopLeft")
+        perspectiveTransformFilter.setValue(CIVector(cgPoint:currentBox.topRight.scaled(to: ciSize)),
+                                            forKey: "inputTopRight")
+        perspectiveTransformFilter.setValue(CIVector(cgPoint:currentBox.bottomRight.scaled(to: ciSize)),
+                                            forKey: "inputBottomRight")
+        perspectiveTransformFilter.setValue(CIVector(cgPoint:currentBox.bottomLeft.scaled(to: ciSize)),
+                                            forKey: "inputBottomLeft")
         
-        perspectiveTransformFilter.setValue(currentPrototypeAndOverlayFrame.oriented(CGImagePropertyOrientation.downMirrored), forKey: kCIInputImageKey)
-//        perspectiveTransformFilter.setValue(currentPrototypeAndOverlayFrame.oriented(CGImagePropertyOrientation.rightMirrored), forKey: kCIInputImageKey)
+        perspectiveTransformFilter.setValue(currentPrototypeAndOverlayFrame.oriented(CGImagePropertyOrientation.up), forKey: kCIInputImageKey)
         
         let composite = ChromaKeyFilter()
         composite.inputImage = finalBackgroundFrameImage
@@ -1512,11 +1543,6 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
         
         let perspectiveCorrection = CIFilter(name: "CIPerspectiveCorrection")!
         
-        //            perspectiveCorrection.setValue(CIVector(cgPoint:CGPoint(x: currentBox.topLeft.x, y: currentBox.topLeft.y)), forKey: "inputTopLeft")
-        //            perspectiveCorrection.setValue(CIVector(cgPoint:CGPoint(x: currentBox.topRight.x, y: currentBox.topRight.y)), forKey: "inputTopRight")
-        //            perspectiveCorrection.setValue(CIVector(cgPoint:CGPoint(x: currentBox.bottomRight.x, y: currentBox.bottomRight.y)), forKey: "inputBottomRight")
-        //            perspectiveCorrection.setValue(CIVector(cgPoint:CGPoint(x: currentBox.bottomLeft.x, y: currentBox.bottomLeft.y)), forKey: "inputBottomLeft")
-        
         perspectiveCorrection.setValue(perspectiveTransformFilter.value(forKey: "inputTopLeft"),
                                        forKey: "inputTopLeft")
         perspectiveCorrection.setValue(perspectiveTransformFilter.value(forKey: "inputTopRight"),
@@ -1526,7 +1552,7 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
         perspectiveCorrection.setValue(perspectiveTransformFilter.value(forKey: "inputBottomLeft"),
                                        forKey: "inputBottomLeft")
         
-        perspectiveCorrection.setValue(finalBackgroundFrameImage/*.oriented(CGImagePropertyOrientation.downMirrored)*/,forKey: kCIInputImageKey)
+        perspectiveCorrection.setValue(finalBackgroundFrameImage,forKey: kCIInputImageKey)
         
         //            guard let scaleFilter2 = CIFilter(name: "CILanczosScaleTransform") else {
         //                return
@@ -1538,7 +1564,7 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
         //            let composite2 = ChromaKeyFilter()
         
 //        if isUserOverlayActive, let ghost = perspectiveCorrection.outputImage?.oriented(CGImagePropertyOrientation.rightMirrored) {
-        if isUserOverlayActive, let ghost = perspectiveCorrection.outputImage?.oriented(CGImagePropertyOrientation.downMirrored) {
+        if isUserOverlayActive, let ghost = perspectiveCorrection.outputImage?.oriented(CGImagePropertyOrientation.up) {
             let scaledGhost = ghost.transformed(by: CGAffineTransform.identity.scaledBy(x: source.extent.width / ghost.extent.width, y: source.extent.height / ghost.extent.height ))
             
             removeGreenFilter.setValue(scaledGhost, forKey: kCIInputImageKey)
@@ -1683,6 +1709,7 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
             for (messageType, value) in receivedDict {
                 switch messageType {
                 case "detectedRectangle":
+                    //These rectangles are in a coordinate space with lower left origin.
                     if let currentRectangle = value as? VNRectangleObservation {
                         box = currentRectangle
                     }
@@ -2370,6 +2397,10 @@ extension CameraController: CanvasViewDelegate {
         }
     }
     
+    func canvasTierViewport(normalizedRect: CGRect) {
+        videoModel.prototypeTrack?.viewportRect = normalizedRect
+    }
+    
     var currentTime: TimeInterval {
         return canvasControllerMode.currentTime
     }
@@ -2462,6 +2493,15 @@ class CalendarEvent {
 }
 
 extension CameraController: TimelineDelegate {
+    func timelineDidStartViewporting() {
+        if canvasControllerMode.isRecording {
+            self.prototypeCanvasView.isViewporting = true
+        }
+        if canvasControllerMode.isPlayingMode {
+            self.prototypePlayerCanvasView.isViewporting = true
+        }
+    }
+    
     func timeline(didSelectPrototypeTrack prototypeTrack:VideoTrack) {
         guard let selectedFileURL = prototypeTrack.loadedFileURL, let myFileURL = videoModel.prototypeTrack?.loadedFileURL else {
             return

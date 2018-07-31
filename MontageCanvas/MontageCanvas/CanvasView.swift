@@ -16,12 +16,14 @@ protocol CanvasViewDelegate:AnyObject {
     func canvasTierAdded(_ canvas:CanvasView,tier:Tier)
     func canvasTierModified(_ canvas:CanvasView,tier:Tier, type:TierModification)
     func canvasTierRemoved(_ canvas:CanvasView,tier:Tier)
-
+    func canvasTierViewport(normalizedRect:CGRect)
+    
     func playerItemOffset() -> TimeInterval
 //    func normalizeTime1970(time:TimeInterval) -> TimeInterval?
     var currentTime:TimeInterval { get }
 
     var shouldRecordInking:Bool { get }
+    
 }
 
 class CanvasView: UIView, UIGestureRecognizerDelegate {
@@ -29,6 +31,17 @@ class CanvasView: UIView, UIGestureRecognizerDelegate {
     var fastDrawingTimer:Timer?
     var stylusTouchBeganLocation:CGPoint?
     weak var associatedSyncLayer:AVSynchronizedLayer?
+    var isViewporting = false {
+        willSet(willBeViewporting) {
+            if isViewporting == willBeViewporting {
+                return
+            }
+            
+            let shouldEnable = isViewporting && !willBeViewporting
+            setRecognizers(isEnabled: shouldEnable)
+        }
+    }
+    var viewportLayer:CAShapeLayer?
     
     weak var delegate:CanvasViewDelegate?
     
@@ -68,13 +81,12 @@ class CanvasView: UIView, UIGestureRecognizerDelegate {
         return panRecognizer
     }()
     
-//    lazy var swipeRecognizer:UISwipeGestureRecognizer = {
-//        let swipeRecognizer = UISwipeGestureRecognizer(target: self, action: #selector(CanvasView.swipeDetected))
-//        swipeRecognizer.delegate = self
-//        swipeRecognizer.numberOfTouchesRequired = 2
-//        swipeRecognizer.allowedTouchTypes = [NSNumber(value:UITouchType.direct.rawValue)]
-//        return swipeRecognizer
-//    }()
+    func setRecognizers(isEnabled:Bool) {
+        rotationRecognizer.isEnabled = isEnabled
+        pinchRecognizer.isEnabled = isEnabled
+        panRecognizer.isEnabled = isEnabled
+        longPressRecognizer.isEnabled = isEnabled
+    }
     
     lazy var longPressRecognizer:UILongPressGestureRecognizer = {
         let longPressRecognizer = UILongPressGestureRecognizer(target: self, action: #selector(CanvasView.longPressDetected))
@@ -114,15 +126,14 @@ class CanvasView: UIView, UIGestureRecognizerDelegate {
     func initialize() {
         backgroundColor = UIColor.clear
         
-        layer.borderWidth = 1
-        layer.borderColor = UIColor.gray.cgColor
+//        layer.borderWidth = 1
+//        layer.borderColor = UIColor.gray.cgColor
         
         layer.addSublayer(canvasLayer)
 
         addGestureRecognizer(rotationRecognizer)
         addGestureRecognizer(pinchRecognizer)
         addGestureRecognizer(panRecognizer)
-//        addGestureRecognizer(swipeRecognizer)
         addGestureRecognizer(longPressRecognizer)
     }
     
@@ -201,7 +212,35 @@ class CanvasView: UIView, UIGestureRecognizerDelegate {
             if touch.type == .stylus {
                 stylusTouchBeganLocation = touchLocation
 
-                if Globals.outIsPressedDown {
+                if isViewporting {
+                    viewportLayer?.removeFromSuperlayer()
+                    
+                    let shapeLayer = CAShapeLayer()
+                    shapeLayer.strokeColor = UIColor.red.cgColor
+                    shapeLayer.lineWidth = 3
+                    shapeLayer.fillColor = UIColor.clear.cgColor
+                    
+                    // passing an array with the values [2,3] sets a dash pattern that alternates between a 2-user-space-unit-long painted segment and a 3-user-space-unit-long unpainted segment
+                    
+                    /*To set the pattern, specify an array of at least 1 value. The pattern repeats itself so even-count arrays will be symmetric, where odd-count arrays will alternate the occurrence of strokes and dashes.
+                    
+                    [2] becomes [2, 2, 2, 2, ...]
+                    [2, 4] becomes [2, 4, 2, 4, ...]
+                    [2, 4, 6] becomes [2, 4, 6, 2, 4, 6, ...] //the first 2 is a dash, the second is a gap
+                    Stroke-Gap
+                    The order of the strokes and gaps looks like this:
+                    
+                    [stroke, gap, stroke, gap, ...]*/
+
+                    shapeLayer.lineDashPattern = [2,4]
+                    
+                    let mutablePath = CGMutablePath()
+                    mutablePath.move(to: touchLocation)
+                    shapeLayer.path = mutablePath
+                    
+                    layer.addSublayer(shapeLayer)
+                    
+                    viewportLayer = shapeLayer
                     return
                 }
                 
@@ -237,6 +276,13 @@ class CanvasView: UIView, UIGestureRecognizerDelegate {
             let touchLocation = touch.location(in: self)
 
             if touch.type == .stylus {
+                if isViewporting {
+                    if let mutablePath = viewportLayer?.path?.mutableCopy() {
+                        mutablePath.addLine(to: touchLocation)
+                        viewportLayer?.path = mutablePath
+                    }
+                    return
+                }
                 if let startingLocation = stylusTouchBeganLocation, Globals.outIsPressedDown {
                     let invisibleXSliderValue = abs(startingLocation.x - touchLocation.x)
                     if invisibleXSliderValue > 0 {
@@ -259,6 +305,26 @@ class CanvasView: UIView, UIGestureRecognizerDelegate {
 //            let touchLocation = touch.location(in:self)
 
             if touch.type == .stylus {
+                if isViewporting {
+                    if let mutablePath = viewportLayer?.path?.mutableCopy() {
+                        mutablePath.closeSubpath()
+                        viewportLayer?.path = mutablePath
+                        
+                        if let viewportRect = viewportLayer?.path?.boundingBoxOfPath {
+                            viewportLayer?.path = CGPath(rect: viewportRect, transform: nil)
+                            
+                            let normalizedViewportRect = CGRect(x: viewportRect.origin.x / bounds.width,
+                                                                y: 1 - (viewportRect.origin.y + viewportRect.height) / bounds.height,
+                                                                width: viewportRect.width / bounds.width,
+                                                                height: viewportRect.height / bounds.height)
+                            
+                            delegate?.canvasTierViewport(normalizedRect: normalizedViewportRect)
+                        }
+                    }
+                    isViewporting = false
+                    return
+                }
+                
                 //There is at least one path in the Tier
                 currentlyDrawnSketch?.hasDrawnPath = true
                 
@@ -494,28 +560,6 @@ class CanvasView: UIView, UIGestureRecognizerDelegate {
             break
         }
     }
-    
-//    @objc func swipeDetected(recognizer:UISwipeGestureRecognizer) {
-//        switch recognizer.state {
-//
-//        case .ended:
-//            print("swipeDetected ended")
-//
-//            let touchLocation = recognizer.location(in: self)
-//
-//            for sketchLayerToDelete in (videoTrack.tiers!.filter { ($0 as! Tier).shapeLayer.path!.contains(touchLocation) }) {
-//                let sketchLayerToDelete = sketchLayerToDelete as! Tier
-//                let shapeLayer = sketchLayerToDelete.shapeLayer
-//                shapeLayer.removeFromSuperlayer()
-//                videoTrack.removeFromTiers(sketchLayerToDelete)
-//
-//                //TODO: save in DB
-//            }
-//            break
-//        default:
-//            print("swipeDetected ignoring recognizer state")
-//        }
-//    }
     
     @objc func longPressDetected(recognizer:UILongPressGestureRecognizer) {
         switch recognizer.state {

@@ -40,6 +40,7 @@ struct Globals {
 
 }
 
+public typealias Rect = CGRect
 public typealias RectangleObservation = VNRectangleObservation
 public typealias Time = CMTime
 public typealias TimeRange = CMTimeRange
@@ -96,6 +97,9 @@ public class PointWrapper: NSObject, NSCoding {
 extension CGPoint {
     func distance(_ other:CGPoint) -> CGFloat {
         return hypot(self.x - other.x, self.y - other.y)
+    }
+    func scaled(to size: CGSize) -> CGPoint {
+        return CGPoint(x: self.x * size.width, y: self.y * size.height)
     }
 }
 

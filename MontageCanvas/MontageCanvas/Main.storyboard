@@ -50,7 +50,7 @@
                                         </connections>
                                     </barButtonItem>
                                     <barButtonItem style="plain" systemItem="flexibleSpace" id="4KP-x9-Pmb"/>
-                                    <barButtonItem enabled="NO" systemItem="compose" id="zxQ-BF-3B1">
+                                    <barButtonItem enabled="NO" systemItem="action" id="zxQ-BF-3B1">
                                         <connections>
                                             <segue destination="Ck6-q5-ZZf" kind="presentation" identifier="SEGUE_NEW_COMPOSITION" id="B0G-Jg-6es"/>
                                         </connections>
@@ -159,7 +159,7 @@
                                                 <action selector="cancelPressed:" destination="Ck6-q5-ZZf" id="m3v-7h-TfV"/>
                                             </connections>
                                         </barButtonItem>
-                                        <segmentedControl key="titleView" opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="top" segmentControlStyle="bar" id="fE2-5E-p5y">
+                                        <segmentedControl key="titleView" opaque="NO" contentMode="scaleToFill" misplaced="YES" contentHorizontalAlignment="left" contentVerticalAlignment="top" segmentControlStyle="bar" id="fE2-5E-p5y">
                                             <rect key="frame" x="460.5" y="7.5" width="103" height="29"/>
                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                             <segments>
@@ -688,15 +688,23 @@
                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                             <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                         </view>
-                        <barButtonItem key="rightBarButtonItem" enabled="NO" systemItem="camera" id="Nww-Tv-NDo">
-                            <connections>
-                                <segue destination="d3f-Nd-4mS" kind="presentation" identifier="VIDEO_CATALOG_NAVIGATION_SEGUE" id="cxD-bi-Ry1"/>
-                            </connections>
-                        </barButtonItem>
+                        <rightBarButtonItems>
+                            <barButtonItem enabled="NO" systemItem="camera" id="Nww-Tv-NDo">
+                                <connections>
+                                    <segue destination="d3f-Nd-4mS" kind="presentation" identifier="VIDEO_CATALOG_NAVIGATION_SEGUE" id="cxD-bi-Ry1"/>
+                                </connections>
+                            </barButtonItem>
+                            <barButtonItem enabled="NO" systemItem="compose" id="1De-N4-NJh">
+                                <connections>
+                                    <action selector="viewportButtonPressed:" destination="R0W-H9-jWX" id="UMa-VD-DRg"/>
+                                </connections>
+                            </barButtonItem>
+                        </rightBarButtonItems>
                     </navigationItem>
                     <connections>
                         <outlet property="reuseButton" destination="Nww-Tv-NDo" id="dz9-v6-enS"/>
                         <outlet property="tableView" destination="QUI-BF-TpT" id="RPi-27-fR1"/>
+                        <outlet property="viewportButton" destination="1De-N4-NJh" id="enf-0A-Ic5"/>
                         <segue destination="zJx-LQ-Pmn" kind="show" id="iCC-Uz-P3X"/>
                     </connections>
                 </viewController>

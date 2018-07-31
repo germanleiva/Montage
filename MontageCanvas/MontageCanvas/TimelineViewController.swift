@@ -12,6 +12,7 @@ import CoreData
 protocol TimelineDelegate: AnyObject {
     func timeline(didSelectPrototypeTrack prototypeTrack:VideoTrack)
     func timeline(didSelectNewVideo video:Video)
+    func timelineDidStartViewporting()
 }
 
 class TimelineViewController: UIViewController, NSFetchedResultsControllerDelegate, UITableViewDataSource, UITableViewDelegate {
@@ -32,6 +33,8 @@ class TimelineViewController: UIViewController, NSFetchedResultsControllerDelega
     var userReorderingCells = false
     
     @IBOutlet weak var reuseButton:UIBarButtonItem!
+    @IBOutlet weak var viewportButton:UIBarButtonItem!
+    var isViewporting = false
     
     @IBOutlet weak var tableView:UITableView! {
         didSet {
@@ -46,6 +49,7 @@ class TimelineViewController: UIViewController, NSFetchedResultsControllerDelega
         // Do any additional setup after loading the view.
         if videoTrack.isPrototype {
             reuseButton.isEnabled = true
+            viewportButton.isEnabled = true
         }
     }
 
@@ -322,6 +326,10 @@ class TimelineViewController: UIViewController, NSFetchedResultsControllerDelega
      */
     
     // MARK: - Actions
+    
+    @IBAction func viewportButtonPressed(_ sender:AnyObject?) {
+        delegate?.timelineDidStartViewporting()
+    }
     
     @IBAction func outButtonPressed(_ sender:AnyObject?) {
 //        Globals.outIsPressedDown = true
