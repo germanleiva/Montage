@@ -89,21 +89,8 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
     var lastDetectedRectangle:VNRectangleObservation?
     var savedBoxes = [(CMTime,VNRectangleObservation)]()
     var mirrorPeer:MCPeerID? = nil
-    var isStreaming:Bool = false //{
-//        didSet {
-//            if isStreaming {
-//                if !captureSession.isRunning {
-//                    captureSession.startRunning()
-//                }
-//            } else {
-//                if captureSession.isRunning {
-//                    captureSession.stopRunning()
-//                    closeAndRemoveOutputStreamers()
-//                }
-//            }
-//        }
-//    }
-    
+    var shouldBeStreaming:Bool = false
+
     func closeAndRemoveOutputStreamers() {
         let weakSelf = self
         streamerQueue.async {
@@ -230,6 +217,31 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
         guard setupCamera() else {
             alert(nil, title: "AVFoundation", message: "Couldn't setup the camera")
             return
+        }
+        
+        let weakSelf = self
+        //I'm dispatching this in a synchronous way to configure everything before doing any rectangle detection
+        DispatchQueue.main.async {
+            let previewLayer = AVCaptureVideoPreviewLayer(session: weakSelf.captureSession)
+            
+            previewLayer.connection!.videoOrientation = .landscapeRight
+            
+            previewLayer.frame = weakSelf.view.frame
+            previewLayer.videoGravity = AVLayerVideoGravity.resizeAspect
+            weakSelf.view.layer.addSublayer(previewLayer)
+            
+            weakSelf.videoLayer = previewLayer
+            
+            let outline = CAShapeLayer()
+            
+            //        outline.frame = CGRect(x: xCord, y: yCord, width: width, height: height)
+            outline.lineWidth = 2
+            outline.strokeColor = UIColor.red.cgColor
+            //            outline.fillColor = UIColor.orange.cgColor
+            outline.fillColor = UIColor.clear.cgColor
+            
+            weakSelf.videoLayer?.addSublayer(outline)
+            weakSelf.rectangleLayer = outline
         }
         
         captureSession.startRunning()
@@ -566,7 +578,6 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
         }
         captureSession.addOutput(audioDataOutput)
 
-        
         //Configure movie writer
         let fileType = AVFileType.mov
         
@@ -585,31 +596,6 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
         }
         
         captureSession.commitConfiguration()
-        
-        let weakSelf = self
-        //I'm dispatching this in a synchronous way to configure everything before doing any rectangle detection
-        DispatchQueue.main.async {
-            let previewLayer = AVCaptureVideoPreviewLayer(session: self.captureSession)
-            
-            previewLayer.connection!.videoOrientation = .landscapeRight
-            
-            previewLayer.frame = self.view.frame
-            previewLayer.videoGravity = AVLayerVideoGravity.resizeAspect
-            weakSelf.view.layer.addSublayer(previewLayer)
-            
-            weakSelf.videoLayer = previewLayer
-            
-            let outline = CAShapeLayer()
-            
-            //        outline.frame = CGRect(x: xCord, y: yCord, width: width, height: height)
-            outline.lineWidth = 2
-            outline.strokeColor = UIColor.red.cgColor
-            //            outline.fillColor = UIColor.orange.cgColor
-            outline.fillColor = UIColor.clear.cgColor
-            
-            weakSelf.videoLayer?.addSublayer(outline)
-            weakSelf.rectangleLayer = outline
-        }
         
         return true
     }
@@ -786,6 +772,10 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
         print("stopAdvertisingPeer")
         serviceAdvertiser.stopAdvertisingPeer()
         
+        if !captureSession.isRunning {
+            captureSession.startRunning()
+        }
+        
         //The creation of the outputStreamers happens in session(_ session: MCSession, peer peerID: MCPeerID, didChange state: MCSessionState)
     }
     
@@ -800,7 +790,7 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
         lastDetectedRectangle = nil
         savedBoxes.removeAll()
         
-        isStreaming = false
+        shouldBeStreaming = false
         overlayImage = nil
         
         rectangleLocked = false
@@ -888,14 +878,26 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
                     }
                     
                     self.movieWriter.stopWriting()
+                    
+                    self.closeAndRemoveOutputStreamers()
                 case "mirrorMode":
                     mirrorPeer = value as? MCPeerID
                 case "ARE_YOU_WIZARD_CAM":
                     if let aRole = self.myRole, aRole == .wizardCam {
                         sendMessage(peerID: peerID, dict: ["I_AM_WIZARD_CAM":true])
                     }
-                case "streaming":
-                    isStreaming = value as! Bool
+                case "shouldStream":
+                    shouldBeStreaming = value as! Bool
+                    if shouldBeStreaming {
+                        if !captureSession.isRunning {
+                            captureSession.startRunning()
+                        }
+                    } else {
+                        if captureSession.isRunning {
+                            captureSession.stopRunning()
+                        }
+                        closeAndRemoveOutputStreamers()
+                    }
                 default:
                     print("Unrecognized message in receivedDict \(receivedDict)")
                 }
@@ -957,7 +959,13 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
     }
     func movieWriter(didFinishedWriting temporalURL:URL,error:Error?) {
         guard error == nil else {
+            alert(error, title: "movieWriter", message: "movieWriter(didFinishedWriting ...")
             return
+        }
+        
+        //We close the captureSession here instad of shouldBeStreaming = false or stopRecording
+        if captureSession.isRunning {
+            captureSession.stopRunning()
         }
         
         let asset = AVURLAsset(url: temporalURL, options: [AVURLAssetPreferPreciseDurationAndTimingKey:true])

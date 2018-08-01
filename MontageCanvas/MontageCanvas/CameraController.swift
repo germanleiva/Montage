@@ -231,20 +231,12 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
     
     var displayLink:CADisplayLink?
     
-    var prototypePlayerItem:AVPlayerItem? {
-        get {
-            return prototypePlayer.currentItem
-        }
-    }
+    var prototypePlayerItem:AVPlayerItem?
     var prototypePlayer:AVPlayer!
     
     @IBOutlet weak var prototypePlayerView:VideoPlayerView!
 
-    var backgroundPlayerItem:AVPlayerItem? {
-        get {
-            return backgroundPlayer.currentItem
-        }
-    }
+    var backgroundPlayerItem:AVPlayerItem?
     var backgroundPlayer:AVPlayer!
     
     var lastPrototypePixelBuffer:CVPixelBuffer?
@@ -476,11 +468,6 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
         super.viewDidLoad()
         
         ciContext = CIContext.init(eaglContext: eaglContext)//, options: [kCIContextWorkingColorSpace:NSNull.init()])
-
-        displayLink = CADisplayLink(target: self, selector: #selector(self.displayLinkDidRefresh(displayLink:)))
-        displayLink?.preferredFramesPerSecond = Int(fps)
-        displayLink?.isPaused = true
-        displayLink?.add(to: RunLoop.main, forMode: RunLoopMode.commonModes)
         
         //Let's initialize the mode
          //POP
@@ -496,6 +483,9 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
         // Do any additional setup after loading the view.
 //        cloudKitInitialize()
         
+        displayLink = CADisplayLink(target: self, selector: #selector(self.displayLinkDidRefresh(displayLink:)))
+        displayLink?.preferredFramesPerSecond = Int(fps)
+        displayLink?.add(to: RunLoop.main, forMode: RunLoopMode.commonModes)
         displayLink?.isPaused = false
         
         NotificationCenter.default.addObserver(self, selector: #selector(appWillWillEnterForeground), name: NSNotification.Name.UIApplicationWillEnterForeground, object: nil)
@@ -952,7 +942,7 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
             scrubberSlider.isEnabled = false
             scrubberButtonItem.isEnabled = false
             
-            let dict = ["streaming":true]
+            let dict = ["shouldStream":true]
             let data = NSKeyedArchiver.archivedData(withRootObject: dict)
             
             do {
@@ -1132,6 +1122,7 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
             }
             
             let aPrototypePlayerItem = AVPlayerItem(asset: weakSelf.prototypeComposition!,automaticallyLoadedAssetKeys:["tracks","duration"])
+            self.prototypePlayerItem = aPrototypePlayerItem
             
             weakSelf.prototypePlayer = AVPlayer(playerItem: aPrototypePlayerItem)
             weakSelf.prototypePlayerView.player = weakSelf.prototypePlayer
@@ -1179,6 +1170,7 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
             }
             
             let aBackgroundPlayerItem = AVPlayerItem(asset: weakSelf.backgroundComposition!,automaticallyLoadedAssetKeys:["tracks","duration"])
+            self.backgroundPlayerItem = aBackgroundPlayerItem
             weakSelf.backgroundPlayer = AVPlayer(playerItem: aBackgroundPlayerItem)
 
             weakSelf.backgroundCanvasView.isHidden = true
@@ -1236,6 +1228,11 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
             
             weakSelf.backgroundPlayer.play()
             weakSelf.prototypePlayer.play()
+            
+            if weakSelf.displayLink?.isPaused != true {
+                print("Weird, displayLink?.isPaused should be true at this point")
+            }
+            weakSelf.displayLink?.isPaused = false
         }
     }
     
@@ -1419,14 +1416,15 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
     }
     
     func setImageOpenGL(view glkView:GLKView, image:CIImage) {
-        guard let ciContext = ciContext else {
-            print("Couldn't get ciContext")
-            return
-        }
+//        guard let ciContext = ciContext else {
+//            print("Couldn't get ciContext")
+//            return
+//        }
+        let weakSelf = self
         drawingQueue.async {
             glkView.bindDrawable()
             let containerBoundsInPixels = glkView.bounds.applying(CGAffineTransform(scaleX: deviceScale, y: deviceScale))
-            ciContext.draw(image, in: containerBoundsInPixels, from: image.extent)
+            weakSelf.ciContext?.draw(image, in: containerBoundsInPixels, from: image.extent)
             glkView.display()
         }
     }
@@ -1502,7 +1500,7 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
             setImageOpenGL(view: self.prototypeFrameImageView,image: source)
             return
         }
-        
+        return
         //We do a CIPerspectiveCorrection of the green area finalBackgroundFrameImage
         
         let perspectiveCorrection = CIFilter(name: "CIPerspectiveCorrection")!
@@ -1761,8 +1759,13 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
             return
         }
         
+        displayLink?.isPaused = true
+        
         let weakSelf = self
         DispatchQueue.main.async {
+            weakSelf.setImageOpenGL(view: weakSelf.prototypeFrameImageView, image: CIImage(image: #imageLiteral(resourceName: "white"))!)
+            weakSelf.setImageOpenGL(view: weakSelf.backgroundFrameImageView, image: CIImage(image: #imageLiteral(resourceName: "white"))!)
+            
             if peerID == weakSelf.wizardCamPeer {
                 weakSelf.prototypeCanvasView.isHidden = true
                 weakSelf.prototypeCanvasView.isUserInteractionEnabled = false
@@ -2149,6 +2152,12 @@ extension CameraController:CanvasControllerModeDelegate {
         }
     }
     
+    func stopCamsStreaming() {
+        for eachCam in cams {
+            sendMessage(peerID: eachCam, dict: ["shouldStream":false])
+        }
+    }
+    
     func stoppedRecording(mode: CanvasControllerRecordingMode) {
         recordingIndicator.layer.removeAllAnimations()
         recordingIndicator.isHidden = true
@@ -2208,11 +2217,9 @@ extension CameraController:CanvasControllerModeDelegate {
     }
     
     func startedPlaying(mode:CanvasControllerPlayingMode) {
-        for eachCam in cams {
-            sendMessage(peerID: eachCam, dict: ["streaming":false])
-        }
         self.startPlayback()
     }
+    
     func pausedPlaying(mode:CanvasControllerPlayingMode){
         playButton.setImage(UIImage(named:"play-icon"), for: UIControlState.normal)
         videoModel.backgroundTrack?.isRecordingInputs = false

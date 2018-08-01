@@ -47,7 +47,7 @@ class CanvasControllerMode {
     }
     
     func cancel(controller:CameraController) {
-        //Empty implementation
+        controller.stopCamsStreaming()
     }
     
     func stopRecording(controller:CameraController) {
@@ -79,6 +79,7 @@ class CanvasControllerLiveMode:CanvasControllerMode {
     }
     
     override func cancel(controller: CameraController) {
+        super.cancel(controller: controller)
         controller.cancelLiveMode(mode: self)
     }
     
@@ -145,6 +146,7 @@ class CanvasControllerRecordingMode:CanvasControllerMode {
     }
     
     override func cancel(controller: CameraController) {
+        super.cancel(controller: controller)
         controller.cancelRecording(mode: self)
     }
     
