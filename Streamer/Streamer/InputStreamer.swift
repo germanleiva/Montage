@@ -119,7 +119,7 @@ public class InputStreamer: NSObject, VideoDecoderDelegate, StreamDelegate {
         case .hasBytesAvailable:
 //            print("Stream.Event.hasBytesAvailable \(iStream.description)")
             let weakSelf = self
-            readingQueue.async {[unowned self] in
+            readingQueue.async {
                 if !weakSelf.isRunning {
                     return
                 }
@@ -142,9 +142,9 @@ public class InputStreamer: NSObject, VideoDecoderDelegate, StreamDelegate {
                 
                 if readResult > 0 {
                     //                print("readResult > 0: \(readResult)")
-                    self.savedDataSampleBuffer.append(readingSampleBuffer,count:readResult)
+                    weakSelf.savedDataSampleBuffer.append(readingSampleBuffer,count:readResult)
                     
-                    let readingDataSampleBuffer = self.savedDataSampleBuffer
+                    let readingDataSampleBuffer = weakSelf.savedDataSampleBuffer
                     
                     if weakSelf.isSimpleData {
                         //The simpleData is just a bunch of bytes that end with simpleSepdata
@@ -154,19 +154,19 @@ public class InputStreamer: NSObject, VideoDecoderDelegate, StreamDelegate {
                             return
                         }
                         
-                        let imageData = self.savedDataSampleBuffer.subdata(in: 0..<nextRange.lowerBound)
+                        let imageData = weakSelf.savedDataSampleBuffer.subdata(in: 0..<nextRange.lowerBound)
 
-                        if self.savedDataSampleBuffer.count > nextRange.upperBound {
-                            self.savedDataSampleBuffer = self.savedDataSampleBuffer.subdata(in: nextRange.upperBound + 1 ..< self.savedDataSampleBuffer.count)
+                        if weakSelf.savedDataSampleBuffer.count > nextRange.upperBound {
+                            weakSelf.savedDataSampleBuffer = weakSelf.savedDataSampleBuffer.subdata(in: nextRange.upperBound + 1 ..< weakSelf.savedDataSampleBuffer.count)
                         } else {
-                            self.savedDataSampleBuffer.removeAll()
+                            weakSelf.savedDataSampleBuffer.removeAll()
                         }
 
 //                        print("Trying to decode imageData into CIImage")
                         if let finalImage = CIImage(data: imageData) {
 //                            print("Decoding successful, imageData into CIImage")
                             DispatchQueue.main.async {
-                                weakSelf.delegate?.inputStreamer(self, decodedImage:finalImage)
+                                weakSelf.delegate?.inputStreamer(weakSelf, decodedImage:finalImage)
                             }
                         } else {
                             print("Decoding failed, imageData into CIImage")
@@ -233,9 +233,9 @@ public class InputStreamer: NSObject, VideoDecoderDelegate, StreamDelegate {
                         newFirst.append(secondChunk)
                         newFirst.append(thirdChunk)
                         
-                        self.interpretRawFrameData(newFirst.bytes)
+                        weakSelf.interpretRawFrameData(newFirst.bytes)
                         
-                        self.savedDataSampleBuffer = self.savedDataSampleBuffer.subdata(in: newFirst.count ..< self.savedDataSampleBuffer.count)
+                        weakSelf.savedDataSampleBuffer = weakSelf.savedDataSampleBuffer.subdata(in: newFirst.count ..< weakSelf.savedDataSampleBuffer.count)
                         
                         return
                     } else {
@@ -256,7 +256,7 @@ public class InputStreamer: NSObject, VideoDecoderDelegate, StreamDelegate {
                         while i <= lastIndexToCheck {
                             if [bigChunk[i],bigChunk[i+1],bigChunk[i+2],bigChunk[i+3]] == sepdata.bytes {
                                 let nextChunk = bigChunk.subdata(in: chunkInit..<i)
-                                self.interpretRawFrameData(nextChunk.bytes)
+                                weakSelf.interpretRawFrameData(nextChunk.bytes)
                                 chunkInit = i
                                 i += sepdata.count
                             } else {
@@ -267,11 +267,11 @@ public class InputStreamer: NSObject, VideoDecoderDelegate, StreamDelegate {
                         bigChunk.removeFirst(chunkInit)
                         
                         if bigChunk.count > 0 {
-                            self.interpretRawFrameData(bigChunk.bytes)
+                            weakSelf.interpretRawFrameData(bigChunk.bytes)
                         }
                         
                         //This last nextRange has the last delimiter range
-                        self.savedDataSampleBuffer = self.savedDataSampleBuffer.subdata(in: nextRange!.lowerBound ..< self.savedDataSampleBuffer.count)
+                        weakSelf.savedDataSampleBuffer = weakSelf.savedDataSampleBuffer.subdata(in: nextRange!.lowerBound ..< weakSelf.savedDataSampleBuffer.count)
                     }
                     
                 } else {

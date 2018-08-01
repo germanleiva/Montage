@@ -101,13 +101,13 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
     
     // MARK: OutputStreamerDelegate
     func didClose(streamer: OutputStreamer) {
-        if let outputStreamerIndex = outputStreamers.index(of: streamer) {
-            outputStreamers.remove(at: outputStreamerIndex)
-            print("didClose OutputStreamer")
+        if outputStreamerForMirror == streamer {
+            print("didClose outputStreamerForMirror")
+            outputStreamerForMirror = nil
         }
     }
     
-    var outputStreamers = [OutputStreamer]()
+//    var outputStreamers = [OutputStreamer]()
     var outputStreamerForMirror:SimpleOutputStreamer?
     
     // MARK: InputStreamerDelegate
@@ -118,71 +118,45 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
         let weakSelf = self
         
         if streamer == userCamStreamer {
-//            print("inputStreamer1")
-//            let shouldDrawDirectly = inputStreamer2 == nil
             streamerQueue.async {
                 weakSelf.backgroundCameraFrame = ciImage
-//                if shouldDrawDirectly {
-//                    weakSelf.setImageOpenGL(view: weakSelf.backgroundFrameImageView, image: ciImage)
-//                }
             }
-            
-//            if inputStreamer2 == nil {
-//
-//            }
-            
             return
         }
         if streamer == wizardCamStreamer {
-//            print("inputStreamer2")
-            
             DispatchQueue.main.async {
                 weakSelf.snapshotSketchOverlay(layers: [weakSelf.prototypeCanvasView.canvasLayer],size: weakSelf.prototypeCanvasView.frame.size)
             }
     
             streamerQueue.async {
                 weakSelf.prototypeCameraFrame = ciImage
-
-//                if let receivedCIImage = weakSelf.prototypeCameraFrame {
-//
-//                    weakSelf.applyFilterFromPrototypeToBackground(source: receivedCIImage)
-//                }
-                /* TODO: MIRROR */
                 
+                //MIRROR
                 if let _ = weakSelf.mirrorPeer {
-                    let isPhoneMirror:Bool = false
-                    
-                    //                    if let mirrorRole = weakSelf.peersRoles[connectedMirrorPeer.displayName], mirrorRole == MontageRole.iphoneCam {
-                    //                        isPhoneMirror = true
-                    //                    } else {
-                    //                        isPhoneMirror = false
-                    //                    }
                     
                     if Date().timeIntervalSince(weakSelf.lastTimeSent) >= (1 / fps) {
-                        mirrorQueue.async {[unowned self] in
-                            if self.sketchOverlay == nil {
+                        mirrorQueue.async {
+                            if weakSelf.sketchOverlay == nil {
                                 return
                             }
                             
-                            var overlay = self.sketchOverlay!
+                            var overlay = weakSelf.sketchOverlay!
                             
-//                            if isPhoneMirror {
-                                //Reduce the overlay drastically
-                                guard let scaleFilter = CIFilter(name: "CILanczosScaleTransform") else {
-                                    return
-                                }
-                                scaleFilter.setValue(overlay, forKey: "inputImage")
-                                let scaleFactor = 0.25
-                                scaleFilter.setValue(scaleFactor, forKey: "inputScale")
-                                scaleFilter.setValue(1.0, forKey: "inputAspectRatio")
-                                
-                                guard let scaledFinalImage = scaleFilter.outputImage else {
-                                    return
-                                }
-                                overlay = scaledFinalImage
-//                            }
+                            //Reduce the overlay drastically
+                            guard let scaleFilter = CIFilter(name: "CILanczosScaleTransform") else {
+                                return
+                            }
+                            scaleFilter.setValue(overlay, forKey: "inputImage")
+                            let scaleFactor = 0.25
+                            scaleFilter.setValue(scaleFactor, forKey: "inputScale")
+                            scaleFilter.setValue(1.0, forKey: "inputAspectRatio")
                             
-                            guard let image = self.cgImageBackedImage(withCIImage: overlay) else {
+                            guard let scaledFinalImage = scaleFilter.outputImage else {
+                                return
+                            }
+                            overlay = scaledFinalImage
+                            
+                            guard let image = weakSelf.cgImageBackedImage(withCIImage: overlay) else {
                                 print("Could not build overly image to mirror")
                                 return
                             }
@@ -206,24 +180,14 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
                     }
                 }
             }
-
-//            if weakSelf.camBackgroundPeer == nil {
-//                let source = ciImage
-//                DispatchQueue.main.async {
-//                    weakSelf.prototypeFrameImageView.image = UIImage(ciImage:source)
-//                }
             
         }
 
     }
     func didClose(_ streamer: InputStreamer) {
-//        if let index = inputStreamers.index(of: streamer) {
-//            inputStreamers.remove(at: index)
-//        }
         if streamer == userCamStreamer {
             userCamStreamer = nil
             print("didClose userCamStreamer")
-
         }
         
         if streamer == wizardCamStreamer {
@@ -241,18 +205,7 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
     var prototypeComposition:AVMutableComposition?
     var backgroundComposition:AVMutableComposition?
     
-    @IBOutlet weak var recordingLabel:UILabel! {
-        didSet {
-//            let strokeTextAttributes: [NSAttributedStringKey : Any] = [
-//                NSAttributedStringKey.strokeColor : UIColor.black,
-//                NSAttributedStringKey.foregroundColor : UIColor.white,
-//                NSAttributedStringKey.strokeWidth : -2.0,
-//                ]
-//            
-//            recordingLabel.attributedText = NSAttributedString(string: "Foo", attributes: strokeTextAttributes)
-        }
-    }
-    
+    @IBOutlet weak var recordingLabel:UILabel!
     @IBOutlet weak var modalNavigationItem:UINavigationItem!
     @IBOutlet weak var recordingIndicator:UILabel!
     @IBOutlet weak var recordingControls:UISegmentedControl! {
@@ -260,12 +213,6 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
             recordingControls.isHidden = true
         }
     }
-//    @IBOutlet weak var stopRecordingButton:UIButton! {
-//        didSet {
-//            stopRecordingButton.isHidden = true
-//
-//        }
-//    }
 
     @IBOutlet weak var saveButton:UIBarButtonItem!
     @IBOutlet weak var playButton:UIButton!
@@ -282,15 +229,9 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
 
     private static var observerContext = 0
     
-    lazy var displayLink:CADisplayLink = {
-        let displayLink = CADisplayLink(target: self, selector: #selector(self.displayLinkDidRefresh(displayLink:)))
-        displayLink.preferredFramesPerSecond = Int(fps)
-        displayLink.isPaused = true
-        displayLink.add(to: RunLoop.main, forMode: RunLoopMode.commonModes)
-        return displayLink
-    }()
+    var displayLink:CADisplayLink?
     
-    var prototypePlayerItem:AVPlayerItem! {
+    var prototypePlayerItem:AVPlayerItem? {
         get {
             return prototypePlayer.currentItem
         }
@@ -299,7 +240,7 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
     
     @IBOutlet weak var prototypePlayerView:VideoPlayerView!
 
-    var backgroundPlayerItem:AVPlayerItem! {
+    var backgroundPlayerItem:AVPlayerItem? {
         get {
             return backgroundPlayer.currentItem
         }
@@ -431,10 +372,7 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
         return context
     }()
     
-    lazy var context:CIContext = {
-        return CIContext.init(eaglContext: eaglContext)//, options: [kCIContextWorkingColorSpace:NSNull.init()])
-
-    }()
+    var ciContext:CIContext?
     var backgroundCameraFrame:CIImage?
     var prototypeCameraFrame:CIImage?
     
@@ -442,12 +380,13 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
     
     var isUserOverlayActive = false
 
-    lazy var videoDataOutput:AVCaptureVideoDataOutput = {
-        let deviceOutput = AVCaptureVideoDataOutput()
-        deviceOutput.videoSettings = [kCVPixelBufferPixelFormatTypeKey as String: Int(kCVPixelFormatType_32BGRA)]
-        deviceOutput.setSampleBufferDelegate(self, queue: streamerQueue)
-        return deviceOutput
-    }()
+    //POP
+//    lazy var videoDataOutput:AVCaptureVideoDataOutput = {
+//        let deviceOutput = AVCaptureVideoDataOutput()
+//        deviceOutput.videoSettings = [kCVPixelBufferPixelFormatTypeKey as String: Int(kCVPixelFormatType_32BGRA)]
+//        deviceOutput.setSampleBufferDelegate(self, queue: streamerQueue)
+//        return deviceOutput
+//    }()
     
     var activeVideoInput:AVCaptureDeviceInput?
         
@@ -466,22 +405,57 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
     }
     
     deinit {
+        print("^^^^^^ I actually did deinit")
+    }
+    
+    func close() {
+        userCamStreamer?.close()
+        userCamStreamer = nil
+        wizardCamStreamer?.close()
+        wizardCamStreamer = nil
+        outputStreamerForMirror?.close()
+        outputStreamerForMirror = nil
+        
         multipeerSession.disconnect()
         multipeerSession.delegate = nil
-
+        
+        browser.stopBrowsingForPeers()
+        browser.delegate = nil
+        
         NotificationCenter.default.removeObserver(self)
         
         //TODO: revise
         deinitPlaybackObjects()
-
+        
+        displayLink?.isPaused = true
+        displayLink?.remove(from: RunLoop.main, forMode: RunLoopMode.commonModes)
+        displayLink?.invalidate()
+        displayLink = nil
+        
+        prototypePlayerCanvasView.removeFromSuperview()
+        prototypePlayerCanvasView.delegate = nil
+        prototypeCanvasView.removeFromSuperview()
+        prototypeCanvasView.delegate = nil
+        backgroundPlayerCanvasView.removeFromSuperview()
+        backgroundPlayerCanvasView.delegate = nil
+        backgroundCanvasView.removeFromSuperview()
+        backgroundCanvasView.delegate = nil
+        
+        videoModel = nil
+        prototypeTimeline?.delegate = nil
+        prototypeTimeline = nil
+        backgroundTimeline?.delegate = nil
+        backgroundTimeline = nil
+        
+        ciContext = nil
     }
 
     func deinitPlaybackObjects() {
-        prototypePlayerItem.removeObserver(self, forKeyPath: STATUS_KEYPATH, context: &CameraController.observerContext)
-        prototypePlayerItem.removeObserver(self, forKeyPath: RATE_KEYPATH, context: &CameraController.observerContext)
+        prototypePlayerItem?.removeObserver(self, forKeyPath: STATUS_KEYPATH, context: &CameraController.observerContext)
+        prototypePlayerItem?.removeObserver(self, forKeyPath: RATE_KEYPATH, context: &CameraController.observerContext)
         
-        prototypePlayerItem.remove(self.prototypeVideoOutput)
-        backgroundPlayerItem.remove(self.backgroundVideoOutput)
+        prototypePlayerItem?.remove(self.prototypeVideoOutput)
+        backgroundPlayerItem?.remove(self.backgroundVideoOutput)
         
         if let observer = self.periodicTimeObserver {
             prototypePlayer.removeTimeObserver(observer)
@@ -501,6 +475,13 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
     override func viewDidLoad() {
         super.viewDidLoad()
         
+        ciContext = CIContext.init(eaglContext: eaglContext)//, options: [kCIContextWorkingColorSpace:NSNull.init()])
+
+        displayLink = CADisplayLink(target: self, selector: #selector(self.displayLinkDidRefresh(displayLink:)))
+        displayLink?.preferredFramesPerSecond = Int(fps)
+        displayLink?.isPaused = true
+        displayLink?.add(to: RunLoop.main, forMode: RunLoopMode.commonModes)
+        
         //Let's initialize the mode
          //POP
          if !videoModel.isNew {
@@ -515,7 +496,7 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
         // Do any additional setup after loading the view.
 //        cloudKitInitialize()
         
-        displayLink.isPaused = false
+        displayLink?.isPaused = false
         
         NotificationCenter.default.addObserver(self, selector: #selector(appWillWillEnterForeground), name: NSNotification.Name.UIApplicationWillEnterForeground, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(appWillResignActive), name: NSNotification.Name.UIApplicationWillResignActive, object: nil)
@@ -658,7 +639,7 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
     }
     
     @IBAction func savePressed(_ sender: Any) {
-            displayLink.isPaused = true
+            displayLink?.isPaused = true
 
             if let backgroundMutableComposition = backgroundComposition?.copy() as? AVComposition {
 
@@ -821,8 +802,9 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
                     case .cancelled, .failed:
                         print("export session .cancelled or .failed -> \(exportSession?.error?.localizedDescription ?? "no error description")")
                     case .completed:
-                        DispatchQueue.main.async { [unowned self] in
-                            let finalOutputURL = self.videoModel.file
+                        let weakSelf = self
+                        DispatchQueue.main.async {
+                            let finalOutputURL = weakSelf.videoModel.file
                             
                             //If the finalOutput exist, then I do a backup
                             if FileManager.default.fileExists(atPath: finalOutputURL.path) {
@@ -834,7 +816,7 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
                                     do {
                                         try FileManager.default.removeItem(at: backupOutputURL)
                                     } catch let error as NSError {
-                                        self.alert(error, title:"FileSystem Error", message:"Could not delete previous backup file \(backupOutputURL)")
+                                        weakSelf.alert(error, title:"FileSystem Error", message:"Could not delete previous backup file \(backupOutputURL)")
                                         return
                                     }
                                 }
@@ -842,8 +824,8 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
                                 //Finally I move the finalOutput to the backupOutput
                                 do {
                                     try FileManager.default.moveItem(at: finalOutputURL, to: backupOutputURL)
-                                } catch let error as NSError {
-                                    self.alert(error, title:"FileSystem Error", message:"Could not move existing final commposition video file to backup location \(backupOutputURL)")
+                                } catch {
+                                    weakSelf.alert(error, title:"FileSystem Error", message:"Could not move existing final commposition video file to backup location \(backupOutputURL)")
                                     return
                                 }
                             }
@@ -852,18 +834,18 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
                             do {
                                 try FileManager.default.moveItem(at: temporalOutputURL, to: finalOutputURL)
                             } catch let error as NSError {
-                                self.alert(error, title:"FileSystem Error", message:"Could not move recently exported final commposition video file to final location \(finalOutputURL)")
+                                weakSelf.alert(error, title:"FileSystem Error", message:"Could not move recently exported final commposition video file to final location \(finalOutputURL)")
                                 return
                             }
                             
                             weakSelf.persistentContainer.performBackgroundTask() { (context) in
                                 do {
                                     try context.save()
-                                    weakSelf.dismiss(animated: true, completion: nil)
+                                    weakSelf.dismiss(animated: true, completion: {
+                                        weakSelf.close()
+                                    })
                                 } catch {
-                                    weakSelf.alert(error, title: "DB Error", message: "Could not save exported final video") {
-                                        weakSelf.dismiss(animated: true, completion: nil)
-                                    }
+                                    weakSelf.alert(error, title: "DB Error", message: "Could not save exported final video")
                                 }
                             }
                             
@@ -876,39 +858,44 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
     @IBAction func cancelPressed(_ sender: Any) {
         canvasControllerMode.cancel(controller:self)
         
-        dismiss(animated: true, completion: nil)
+        let weakSelf = self
+        dismiss(animated: true) {
+            weakSelf.close()
+        }
     }
     
     @IBAction func menuPressed(_ sender: UIBarButtonItem) {
+        let weakSelf = self
+        
         let alertController = UIAlertController(title: nil, message: "Actions", preferredStyle: .actionSheet)
         
         let goLiveAction = UIAlertAction(title: "Go Live", style: .default, handler: { (alert: UIAlertAction!) -> Void in
-            self.livePressed()
+            weakSelf.livePressed()
         })
         
         goLiveAction.isEnabled = !canvasControllerMode.isLive
         
         let startRecordingAction = UIAlertAction(title: "Start Recording", style: .default, handler: { (alert: UIAlertAction!) -> Void in
-            self.startRecordingPressed()
+            weakSelf.startRecordingPressed()
         })
         
         startRecordingAction.isEnabled = !canvasControllerMode.isRecording
         
         let searchCamAction = UIAlertAction(title: "Connect Camera", style: .default, handler: { (alert: UIAlertAction!) -> Void in
-            self.searchForCam()
+            weakSelf.searchForCam()
         })
         
         searchCamAction.isEnabled = !canvasControllerMode.isRecording
 
         
         let searchMirrorAction = UIAlertAction(title: "Connect Mirror", style: .default, handler: { (alert: UIAlertAction!) -> Void in
-            self.searchForMirror()
+            weakSelf.searchForMirror()
         })
         
         searchMirrorAction.isEnabled = !canvasControllerMode.isRecording
         
         let maskAction = UIAlertAction(title: "Extract Sketch", style: .default, handler: { (alert: UIAlertAction!) -> Void in
-            self.maskPressed()
+            weakSelf.maskPressed()
         })
         
         let calibrateAction = UIAlertAction(title: "Calibrate Chroma", style: .default, handler: { (alert: UIAlertAction!) -> Void in
@@ -916,15 +903,15 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
         })
         
         let userOverlayAction = UIAlertAction(title: "Toggle User Overlay", style: .default, handler: { (alert: UIAlertAction!) -> Void in
-            self.isUserOverlayActive = !self.isUserOverlayActive
+            weakSelf.isUserOverlayActive = !weakSelf.isUserOverlayActive
         })
         
         let swapCamsAction = UIAlertAction(title: "Swap Cams", style: .default, handler: { (alert: UIAlertAction!) -> Void in
-            if let newUserCam = self.wizardCamPeer, let newWizardCam = self.userCamPeer {
-                swap(&self.userCamPeer, &self.wizardCamPeer)
-                self.setRole(peerID: newUserCam, role: .userCam)
-                self.setRole(peerID: newWizardCam, role: .wizardCam)
-                swap(&self.userCamStreamer, &self.wizardCamStreamer)
+            if let newUserCam = weakSelf.wizardCamPeer, let newWizardCam = weakSelf.userCamPeer {
+                swap(&weakSelf.userCamPeer, &weakSelf.wizardCamPeer)
+                weakSelf.setRole(peerID: newUserCam, role: .userCam)
+                weakSelf.setRole(peerID: newWizardCam, role: .wizardCam)
+                swap(&weakSelf.userCamStreamer, &weakSelf.wizardCamStreamer)
             }
         })
         
@@ -944,7 +931,7 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
             popoverController.barButtonItem = sender
         }
         
-        self.present(alertController, animated: true, completion: nil)
+        weakSelf.present(alertController, animated: true, completion: nil)
     }
     
     func livePressed() {
@@ -1016,10 +1003,9 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
         
         recordingControls.isHidden = false
         
-        let timer = Timer(fire: startRecordingDate, interval: 0, repeats: false, block: {  [unowned self](timer) in
-            
-            self.canvasControllerMode.startRecording(controller: self)
-
+        let weakSelf = self
+        let timer = Timer(fire: startRecordingDate, interval: 0, repeats: false, block: { (timer) in
+            weakSelf.canvasControllerMode.startRecording(controller: self)
             timer.invalidate()
         })
         RunLoop.main.add(timer, forMode: RunLoopMode.commonModes)
@@ -1061,12 +1047,12 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
     }
     
     @objc func countDownMethod() {
-        if (recordingLabel.isHidden) {
+        if recordingLabel.isHidden {
             view.bringSubview(toFront: recordingLabel)
             recordingLabel.isHidden = false
             recordingLabel.text = "3"
             self.perform(#selector(countDownMethod), with: nil, afterDelay: 1.0)
-        } else if(recordingLabel.text! == "3") {
+        } else if recordingLabel.text! == "3" {
             recordingLabel.text = "2"
             self.perform(#selector(countDownMethod), with: nil, afterDelay: 1.0)
         } else if recordingLabel.text! == "2" {
@@ -1075,10 +1061,11 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
         } else if recordingLabel.text! == "1" {
             recordingLabel.text = "GO"
             
-            UIView.animate(withDuration: 0.5, animations: {[unowned self] in
-                self.recordingLabel.alpha = 0
-            }, completion: { [unowned self] (completed) in
-                self.recordingLabel.isHidden = true
+            let weakSelf = self
+            UIView.animate(withDuration: 0.5, animations: {
+                weakSelf.recordingLabel.alpha = 0
+            }, completion: { (completed) in
+                weakSelf.recordingLabel.isHidden = true
             })
         }
     }
@@ -1112,7 +1099,8 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
             assetLoadingGroup.leave()
         }
         
-        assetLoadingGroup.notify(queue: DispatchQueue.main) {[unowned self] in
+        let weakSelf = self
+        assetLoadingGroup.notify(queue: DispatchQueue.main) {
             print("Prototype duration \(prototypeAsset.duration.seconds)")
             print("Background duration \(backgroundAsset.duration.seconds)")
             let compositionTotalDuration:CMTime
@@ -1123,14 +1111,14 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
                 compositionTotalDuration = backgroundAsset.duration
             }
 
-            self.prototypeComposition = AVMutableComposition()
-            guard let prototypeCompositionVideoTrack = self.prototypeComposition?.addMutableTrack(withMediaType: .video, preferredTrackID: kCMPersistentTrackID_Invalid) else {
-                self.alert(nil, title: "Playback error", message: "Could not create compositionVideoTrack for prototype")
+            weakSelf.prototypeComposition = AVMutableComposition()
+            guard let prototypeCompositionVideoTrack = weakSelf.prototypeComposition?.addMutableTrack(withMediaType: .video, preferredTrackID: kCMPersistentTrackID_Invalid) else {
+                weakSelf.alert(nil, title: "Playback error", message: "Could not create compositionVideoTrack for prototype")
                 return
             }
             
             guard let prototypeAssetVideoTrack = prototypeAsset.tracks(withMediaType: .video).first else {
-                self.alert(nil, title: "Playback error", message: "The prototype video file does not have any video track")
+                weakSelf.alert(nil, title: "Playback error", message: "The prototype video file does not have any video track")
                 return
             }
             
@@ -1139,38 +1127,38 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
             do {
                 try prototypeCompositionVideoTrack.insertTimeRange(prototypeCompositionVideoTimeRange, of: prototypeAssetVideoTrack, at: kCMTimeZero)
             } catch {
-                self.alert(nil, title: "Playback error", message: "Could not insert video track in prototype  compositionVideoTrack")
+                weakSelf.alert(nil, title: "Playback error", message: "Could not insert video track in prototype  compositionVideoTrack")
                 return
             }
             
-            let aPrototypePlayerItem = AVPlayerItem(asset: self.prototypeComposition!,automaticallyLoadedAssetKeys:["tracks","duration"])
+            let aPrototypePlayerItem = AVPlayerItem(asset: weakSelf.prototypeComposition!,automaticallyLoadedAssetKeys:["tracks","duration"])
             
-            self.prototypePlayer = AVPlayer(playerItem: aPrototypePlayerItem)
-            self.prototypePlayerView.player = self.prototypePlayer
-            self.prototypePlayerView.isHidden = false
-            self.prototypeCanvasView.isHidden = true
-            self.prototypeCanvasView.isUserInteractionEnabled = false
+            weakSelf.prototypePlayer = AVPlayer(playerItem: aPrototypePlayerItem)
+            weakSelf.prototypePlayerView.player = weakSelf.prototypePlayer
+            weakSelf.prototypePlayerView.isHidden = false
+            weakSelf.prototypeCanvasView.isHidden = true
+            weakSelf.prototypeCanvasView.isUserInteractionEnabled = false
             
-            self.prototypePlayerItem.add(self.prototypeVideoOutput)
+            weakSelf.prototypePlayerItem?.add(weakSelf.prototypeVideoOutput)
             
-            self.backgroundComposition = AVMutableComposition()
-            guard let backgroundCompositionVideoTrack = self.backgroundComposition?.addMutableTrack(withMediaType: .video, preferredTrackID: kCMPersistentTrackID_Invalid) else {
-                self.alert(nil, title: "Playback error", message: "Could not create compositionVideoTrack for background")
+            weakSelf.backgroundComposition = AVMutableComposition()
+            guard let backgroundCompositionVideoTrack = weakSelf.backgroundComposition?.addMutableTrack(withMediaType: .video, preferredTrackID: kCMPersistentTrackID_Invalid) else {
+                weakSelf.alert(nil, title: "Playback error", message: "Could not create compositionVideoTrack for background")
                 return
             }
             
-            guard let backgroundCompositionAudioTrack = self.backgroundComposition?.addMutableTrack(withMediaType: .audio, preferredTrackID: kCMPersistentTrackID_Invalid) else {
-                self.alert(nil, title: "Playback error", message: "Could not create compositionAudioTrack for background")
+            guard let backgroundCompositionAudioTrack = weakSelf.backgroundComposition?.addMutableTrack(withMediaType: .audio, preferredTrackID: kCMPersistentTrackID_Invalid) else {
+                weakSelf.alert(nil, title: "Playback error", message: "Could not create compositionAudioTrack for background")
                 return
             }
             
             guard let backgroundAssetVideoTrack = backgroundAsset.tracks(withMediaType: .video).first else {
-                self.alert(nil, title: "Playback error", message: "The background video file does not have any video track")
+                weakSelf.alert(nil, title: "Playback error", message: "The background video file does not have any video track")
                 return
             }
             
             guard let backgroundAssetAudioTrack = backgroundAsset.tracks(withMediaType: .audio).first else {
-                self.alert(nil, title: "Playback error", message: "The background video file does not have any audio track")
+                weakSelf.alert(nil, title: "Playback error", message: "The background video file does not have any audio track")
                 return
             }
             
@@ -1179,22 +1167,22 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
             do {
                 try backgroundCompositionVideoTrack.insertTimeRange(backgroundCompositionTotalTimeRange, of: backgroundAssetVideoTrack, at: kCMTimeZero)
             } catch {
-                self.alert(nil, title: "Playback error", message: "Could not insert video track in background compositionVideoTrack")
+                weakSelf.alert(nil, title: "Playback error", message: "Could not insert video track in background compositionVideoTrack")
                 return
             }
             
             do {
                 try backgroundCompositionAudioTrack.insertTimeRange(backgroundCompositionTotalTimeRange, of: backgroundAssetAudioTrack, at: kCMTimeZero)
             } catch {
-                self.alert(nil, title: "Playback error", message: "Could not insert audio track in background compositionAudioTrack")
+                weakSelf.alert(nil, title: "Playback error", message: "Could not insert audio track in background compositionAudioTrack")
                 return
             }
             
-            let aBackgroundPlayerItem = AVPlayerItem(asset: self.backgroundComposition!,automaticallyLoadedAssetKeys:["tracks","duration"])
-            self.backgroundPlayer = AVPlayer(playerItem: aBackgroundPlayerItem)
+            let aBackgroundPlayerItem = AVPlayerItem(asset: weakSelf.backgroundComposition!,automaticallyLoadedAssetKeys:["tracks","duration"])
+            weakSelf.backgroundPlayer = AVPlayer(playerItem: aBackgroundPlayerItem)
 
-            self.backgroundCanvasView.isHidden = true
-            self.backgroundCanvasView.isUserInteractionEnabled = false
+            weakSelf.backgroundCanvasView.isHidden = true
+            weakSelf.backgroundCanvasView.isUserInteractionEnabled = false
             
             //        let backgroundPlayerView = VideoPlayerView()
             //        backgroundPlayerView.translatesAutoresizingMaskIntoConstraints = false
@@ -1202,52 +1190,52 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
             //        backgroundPlayerView.frame = CGRect(x: 0, y: 500, width: 480, height: 360)
             //        view.addSubview(backgroundPlayerView)
             
-            self.backgroundPlayerItem.add(self.backgroundVideoOutput)
-            self.backgroundVideoOutput.suppressesPlayerRendering = true
+            weakSelf.backgroundPlayerItem?.add(weakSelf.backgroundVideoOutput)
+            weakSelf.backgroundVideoOutput.suppressesPlayerRendering = true
             
             //Prototype Player Canvas View
-            self.prototypePlayerCanvasView.isHidden = false
-            self.prototypePlayerView.syncLayer = AVSynchronizedLayer(playerItem: self.prototypePlayerItem)
+            weakSelf.prototypePlayerCanvasView.isHidden = false
+            weakSelf.prototypePlayerView.syncLayer = AVSynchronizedLayer(playerItem: aPrototypePlayerItem)
 
-            self.prototypePlayerCanvasView?.associatedSyncLayer = self.prototypePlayerView.syncLayer
+            weakSelf.prototypePlayerCanvasView?.associatedSyncLayer = weakSelf.prototypePlayerView.syncLayer
             
-            for tier in self.prototypePlayerCanvasView?.videoTrack.tiers!.array as! [Tier] {
+            for tier in weakSelf.prototypePlayerCanvasView?.videoTrack.tiers!.array as! [Tier] {
                 let shapeLayer = tier.shapeLayer
                 
                 CATransaction.begin()
                 CATransaction.setDisableActions(true)
-                self.prototypePlayerView.syncLayer?.addSublayer(shapeLayer)
+                weakSelf.prototypePlayerView.syncLayer?.addSublayer(shapeLayer)
                 CATransaction.commit()
                 
-                tier.rebuildAnimations(forLayer:shapeLayer, totalRecordingTime:self.prototypeComposition!.duration.seconds)
+                tier.rebuildAnimations(forLayer:shapeLayer, totalRecordingTime:weakSelf.prototypeComposition!.duration.seconds)
             }
             
             //Background Player Canvas View
-            self.backgroundPlayerCanvasView.isHidden = false
+            weakSelf.backgroundPlayerCanvasView.isHidden = false
             
-            self.backgroundPlayerSyncLayer = AVSynchronizedLayer(playerItem: self.backgroundPlayerItem)
-            self.backgroundFrameImageView.layer.addSublayer(self.backgroundPlayerSyncLayer!)
+            weakSelf.backgroundPlayerSyncLayer = AVSynchronizedLayer(playerItem: aBackgroundPlayerItem)
+            weakSelf.backgroundFrameImageView.layer.addSublayer(weakSelf.backgroundPlayerSyncLayer!)
             
-            self.backgroundPlayerCanvasView?.associatedSyncLayer = self.backgroundPlayerSyncLayer
+            weakSelf.backgroundPlayerCanvasView?.associatedSyncLayer = weakSelf.backgroundPlayerSyncLayer
             
-            for tier in self.backgroundPlayerCanvasView!.videoTrack.tiers!.array as! [Tier] {
+            for tier in weakSelf.backgroundPlayerCanvasView!.videoTrack.tiers!.array as! [Tier] {
                 let shapeLayer = tier.shapeLayer
                 
-                self.backgroundPlayerSyncLayer!.addSublayer(shapeLayer)
+                weakSelf.backgroundPlayerSyncLayer!.addSublayer(shapeLayer)
                 
-                tier.rebuildAnimations(forLayer:shapeLayer, totalRecordingTime:self.backgroundComposition!.duration.seconds)
+                tier.rebuildAnimations(forLayer:shapeLayer, totalRecordingTime:weakSelf.backgroundComposition!.duration.seconds)
             }
             
-            self.playButtonContainer.isEnabled = true
-            self.playButton.isEnabled = true
-            self.scrubberSlider.isEnabled = true
-            self.scrubberButtonItem.isEnabled = true
+            weakSelf.playButtonContainer.isEnabled = true
+            weakSelf.playButton.isEnabled = true
+            weakSelf.scrubberSlider.isEnabled = true
+            weakSelf.scrubberButtonItem.isEnabled = true
             
-            self.prototypePlayerItem.addObserver(self, forKeyPath: STATUS_KEYPATH, options: NSKeyValueObservingOptions(rawValue: 0), context: &CameraController.observerContext)
-            self.prototypePlayerItem.addObserver(self, forKeyPath: RATE_KEYPATH, options: NSKeyValueObservingOptions.initial, context: &CameraController.observerContext)
+            weakSelf.prototypePlayerItem?.addObserver(weakSelf, forKeyPath: STATUS_KEYPATH, options: NSKeyValueObservingOptions(rawValue: 0), context: &CameraController.observerContext)
+            weakSelf.prototypePlayerItem?.addObserver(weakSelf, forKeyPath: RATE_KEYPATH, options: NSKeyValueObservingOptions.initial, context: &CameraController.observerContext)
             
-            self.backgroundPlayer.play()
-            self.prototypePlayer.play()
+            weakSelf.backgroundPlayer.play()
+            weakSelf.prototypePlayer.play()
         }
     }
     
@@ -1261,11 +1249,14 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
                 }
                 switch keyPath {
                 case STATUS_KEYPATH:
-                    guard prototypePlayerItem.status == AVPlayerItemStatus.readyToPlay else {
+                    guard prototypePlayerItem?.status == AVPlayerItemStatus.readyToPlay else {
                         print("Error, failed to load video") //TODO check why this is happening sometimes
                         return
                     }
-                    let duration = prototypePlayerItem.duration
+                    guard let duration = prototypePlayerItem?.duration else {
+                        print("Couldn't get prototypePlayerItem?.duration")
+                        return
+                    }
                     
                     let weakSelf = self
                     DispatchQueue.main.async(execute: { () -> Void in
@@ -1345,9 +1336,14 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
 //        var backgroundItemTime = kCMTimeInvalid
         
         // Calculate the nextVsync time which is when the screen will be refreshed next.
-        let nextVSync = displayLink.timestamp + displayLink.duration
-//        let nextVSync = CACurrentMediaTime() + displayLink.duration
         
+//        let nextVSync = CACurrentMediaTime() + displayLink.duration
+
+        guard let timestamp = displayLink?.timestamp, let duration = displayLink?.duration else {
+            print("Error in getFramesForPlayback, couldn't get displayLink")
+            return
+        }
+        let nextVSync = timestamp + duration
         let prototypeItemTime = prototypeVideoOutput.itemTime(forHostTime: nextVSync)
         let backgroundItemTime = backgroundVideoOutput.itemTime(forHostTime: nextVSync)
         
@@ -1409,7 +1405,7 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
     }
 
     func cgImageBackedImage(withCIImage ciImage:CIImage) -> UIImage? {
-        guard let ref = context.createCGImage(ciImage, from: ciImage.extent) else {
+        guard let ref = ciContext?.createCGImage(ciImage, from: ciImage.extent) else {
             return nil
         }
         let image = UIImage(cgImage: ref, scale: UIScreen.main.scale, orientation: UIImageOrientation.up)
@@ -1422,11 +1418,14 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
     }
     
     func setImageOpenGL(view glkView:GLKView, image:CIImage) {
-        let weakSelf = self
+        guard let ciContext = ciContext else {
+            print("Couldn't get ciContext")
+            return
+        }
         drawingQueue.async {
             glkView.bindDrawable()
             let containerBoundsInPixels = glkView.bounds.applying(CGAffineTransform(scaleX: deviceScale, y: deviceScale))
-            weakSelf.context.draw(image, in: containerBoundsInPixels, from: image.extent)
+            ciContext.draw(image, in: containerBoundsInPixels, from: image.extent)
             glkView.display()
         }
     }
@@ -1485,7 +1484,7 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
         composite.activeColor = CIColor(red: 0, green: 1, blue: 0)
         
         if let compositeImage = composite.outputImage {
-            self.setImageOpenGL(view: self.backgroundFrameImageView,image: compositeImage)
+            setImageOpenGL(view: self.backgroundFrameImageView,image: compositeImage)
         }
         //Apple Chroma (not working)
         //            let composite = CIFilter(name:"ChromaKey") as! ChromaKey
@@ -1499,7 +1498,7 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
         
         //GHOST
         guard isUserOverlayActive else {
-            self.setImageOpenGL(view: self.prototypeFrameImageView,image: source)
+            setImageOpenGL(view: self.prototypeFrameImageView,image: source)
             return
         }
         
@@ -1520,7 +1519,7 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
         
         guard let ghost = perspectiveCorrection.outputImage?.oriented(CGImagePropertyOrientation.up) else {
             print("perspectiveCorrection failed - falling back to simple source")
-            self.setImageOpenGL(view: self.prototypeFrameImageView,image: source)
+            setImageOpenGL(view: self.prototypeFrameImageView,image: source)
             return
         }
         
@@ -1547,12 +1546,10 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
         //composite2.activeColor = CIColor(red: 0, green: 1, blue: 0)
         
         if let compositeImage2 = composite2.outputImage {
-            self.setImageOpenGL(view: self.prototypeFrameImageView,image: compositeImage2)
+            setImageOpenGL(view: self.prototypeFrameImageView,image: compositeImage2)
         }
     }
-    
-    
-    
+        
     func exifOrientation(orientation: UIDeviceOrientation) -> UInt32 {
         switch orientation {
         case .portraitUpsideDown:
@@ -1687,18 +1684,23 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
                     orderedTemporalBoxes.sort(by: { (tuple1, tuple2) -> Bool in
                         return CMTimeCompare(tuple1.0, tuple2.0) == -1
                     })
-
-                    persistentContainer.performBackgroundTask { [unowned self] (context) in
+                    
+                    let backgroundTrack = self.videoModel.backgroundTrack!
+                    let existingContext = backgroundTrack.managedObjectContext!
+                    
+                    let weakSelf = self
+                    
+                    persistentContainer.performBackgroundTask { (context) in
                         
                         for (time,box) in orderedTemporalBoxes {
-                            let newBoxObservation = BoxObservation(moc: self.videoModel.backgroundTrack!.managedObjectContext!, time: time, rectangleObservation: box)
-                            self.videoModel.backgroundTrack?.addToBoxes(newBoxObservation)
+                            let newBoxObservation = BoxObservation(moc: existingContext, time: time, rectangleObservation: box)
+                            backgroundTrack.addToBoxes(newBoxObservation)
                         }
                         
                         do {
                             try context.save()
                         } catch {
-                            self.alert(error, title: "DB", message: "Couldn't save DB after receiving boxes from camera")
+                            weakSelf.alert(error, title: "DB", message: "Couldn't save DB after receiving boxes from camera")
                         }
                     }
                 case "ACK":
@@ -1722,8 +1724,9 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
                             sendMessage(peerID: camPeer!, dict:["startRecordingDate":syncTime.addingTimeInterval(countDownTimeInterval - camDelay)])
                         }
                         
-                        DispatchQueue.main.async { [unowned self] in
-                            self.countDownMethod()
+                        let weakSelf = self
+                        DispatchQueue.main.async {
+                            weakSelf.countDownMethod()
                         }
                     }
                 default:
@@ -1757,27 +1760,28 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
             return
         }
         
-        DispatchQueue.main.async {[unowned self] in
-            if peerID == self.wizardCamPeer {
-                self.prototypeCanvasView.isHidden = true
-                self.prototypeCanvasView.isUserInteractionEnabled = false
+        let weakSelf = self
+        DispatchQueue.main.async {
+            if peerID == weakSelf.wizardCamPeer {
+                weakSelf.prototypeCanvasView.isHidden = true
+                weakSelf.prototypeCanvasView.isUserInteractionEnabled = false
                 
-                self.prototypeReceptionProgress = progress
+                weakSelf.prototypeReceptionProgress = progress
                 
                 DispatchQueue.main.async {
-                    self.prototypeReceptionTimer = Timer.scheduledTimer(timeInterval: 0.1, target: self, selector: #selector(self.updatePrototypeReceptionProgress), userInfo: nil, repeats: true)
-                    self.prototypeReceptionTimer?.fire()
+                    weakSelf.prototypeReceptionTimer = Timer.scheduledTimer(timeInterval: 0.1, target: weakSelf, selector: #selector(weakSelf.updatePrototypeReceptionProgress), userInfo: nil, repeats: true)
+                    weakSelf.prototypeReceptionTimer?.fire()
                 }
             }
-            if peerID == self.userCamPeer {
-                self.backgroundCanvasView.isHidden = true
-                self.backgroundCanvasView.isUserInteractionEnabled = false
+            if peerID == weakSelf.userCamPeer {
+                weakSelf.backgroundCanvasView.isHidden = true
+                weakSelf.backgroundCanvasView.isUserInteractionEnabled = false
                 
-                self.backgroundReceptionProgress = progress
+                weakSelf.backgroundReceptionProgress = progress
                 
                 DispatchQueue.main.async {
-                    self.backgroundReceptionTimer = Timer.scheduledTimer(timeInterval: 0.1, target: self, selector: #selector(self.updateBackgroundReceptionProgress), userInfo: nil, repeats: true)
-                    self.backgroundReceptionTimer?.fire()
+                    weakSelf.backgroundReceptionTimer = Timer.scheduledTimer(timeInterval: 0.1, target: weakSelf, selector: #selector(weakSelf.updateBackgroundReceptionProgress), userInfo: nil, repeats: true)
+                    weakSelf.backgroundReceptionTimer?.fire()
                 }
             }
         }
@@ -1874,14 +1878,15 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
         }
         
         if let _ = self.videoModel.prototypeTrack?.hasVideoFile, let _ =  self.videoModel.backgroundTrack?.hasVideoFile {
-            DispatchQueue.main.async {[unowned self] in
-                self.persistentContainer.performBackgroundTask { [unowned self] (context) in
+            let weakSelf = self
+            DispatchQueue.main.async {
+                weakSelf.persistentContainer.performBackgroundTask { [unowned self] (context) in
                     do {
                         try context.save()
                     } catch {
-                        self.alert(error, title: "DB", message: "Couldn't save video tracks after receiving their files")
+                        weakSelf.alert(error, title: "DB", message: "Couldn't save video tracks after receiving their files")
                     }
-                    self.canvasControllerMode = CanvasControllerPlayingMode(controller:self)
+                    weakSelf.canvasControllerMode = CanvasControllerPlayingMode(controller:weakSelf)
                 }
             }
         }
@@ -1928,15 +1933,17 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
     //-MARK: VideoPlayerDelegate
     
     func playPlayer() {
-        let playBlock = { [unowned self] in
-            self.prototypePlayer.play()
-            self.backgroundPlayer.play()
+        let weakSelf = self
+        
+        let playBlock = {
+            weakSelf.prototypePlayer.play()
+            weakSelf.backgroundPlayer.play()
             
-            self.canvasControllerMode.resume(controller: self)
+            weakSelf.canvasControllerMode.resume(controller: weakSelf)
         }
         
         //TODO check this... suspicious
-        if CMTimeCompare(prototypePlayer.currentTime(), prototypePlayerItem.duration) == 0 {
+        if CMTimeCompare(prototypePlayer.currentTime(), prototypePlayerItem!.duration) == 0 {
             scrubbedToTime(0.0, completionBlock: playBlock)
         } else {
             playBlock()
@@ -1984,7 +1991,7 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
     }
     
     func scrubbedToTime(_ time:TimeInterval, completionBlock:(()->Void)? = nil) {
-        prototypePlayerItem.cancelPendingSeeks()
+        prototypePlayerItem?.cancelPendingSeeks()
         
         let seekingGroup = DispatchGroup()
         
@@ -1999,7 +2006,7 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
         }
         
         seekingGroup.enter()
-        backgroundPlayerItem.cancelPendingSeeks()
+        backgroundPlayerItem?.cancelPendingSeeks()
 //        backgroundPlayer.seek(to: CMTimeMakeWithSeconds(time, DEFAULT_TIMESCALE), toleranceBefore: kCMTimeZero, toleranceAfter: kCMTimeZero) { (completed) in
         backgroundPlayer.seek(to: CMTimeMakeWithSeconds(time, DEFAULT_TIMESCALE)) { (completed) in
             guard completed else {
@@ -2032,7 +2039,7 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
         weak var weakSelf:CameraController! = self
         let callback = { (time:CMTime) -> Void in
             let currentTime = CMTimeGetSeconds(time)
-            let duration = CMTimeGetSeconds(weakSelf.prototypePlayerItem.duration)
+            let duration = CMTimeGetSeconds(weakSelf.prototypePlayerItem!.duration)
             weakSelf.setCurrentTime(currentTime,duration:duration)
             //            weakSelf.updateFilmstripScrubber()
         }
@@ -2111,8 +2118,9 @@ extension CameraController:CanvasControllerModeDelegate {
         recordingIndicator.alpha = 0
         
         let options:UIViewAnimationOptions = [.allowUserInteraction,.autoreverse,.repeat]
+        let weakSelf = self
         UIView.animate(withDuration: 0.5, delay: 0, options: options, animations: { () -> Void in
-            self.recordingIndicator.alpha = 1.0
+            weakSelf.recordingIndicator.alpha = 1.0
         }, completion: nil)
         
         saveButton.isEnabled = false
@@ -2186,8 +2194,9 @@ extension CameraController:CanvasControllerModeDelegate {
         recordingIndicator.alpha = 0
         
         let options:UIViewAnimationOptions = [.allowUserInteraction,.autoreverse,.repeat]
+        let aRecordingIndicator = self.recordingIndicator
         UIView.animate(withDuration: 0.5, delay: 0, options: options, animations: { () -> Void in
-            self.recordingIndicator.alpha = 1.0
+            aRecordingIndicator?.alpha = 1.0
         }, completion: nil)
         
         if let pausedTimeRange = pausedTimeRange {
@@ -2217,7 +2226,7 @@ extension CameraController:CanvasControllerModeDelegate {
     }
     
     func playerItemOffset() -> TimeInterval {
-        return prototypePlayerItem.currentTime().seconds
+        return prototypePlayerItem!.currentTime().seconds
     }
 }
 
@@ -2278,16 +2287,16 @@ extension CameraController: CanvasViewDelegate {
         switch prototypePlayer.timeControlStatus {
         case .playing:
             print("canvasTierAdded while playing: we need to create the animations, as always")
-            tier.rebuildAnimations(forLayer:shapeLayer,totalRecordingTime: prototypePlayerItem.duration.seconds)
+            tier.rebuildAnimations(forLayer:shapeLayer,totalRecordingTime: prototypePlayerItem!.duration.seconds)
         case .paused:
-            print("canvasTierAdded while paused: appearedAtTimes = [\(prototypePlayerItem.currentTime().seconds)]")
+            print("canvasTierAdded while paused: appearedAtTimes = [\(prototypePlayerItem!.currentTime().seconds)]")
             if tier.appearAtTimes.isEmpty {
-                tier.shouldAppearAt(time:prototypePlayerItem.currentTime().seconds)
+                tier.shouldAppearAt(time:prototypePlayerItem!.currentTime().seconds)
             } else {
                 print("This is another error and it is happening because canvasTierAdded is called twice, check CanvasView >> touchesBegan/Ended")
             }
             
-            tier.rebuildAnimations(forLayer:shapeLayer,totalRecordingTime: prototypePlayerItem.duration.seconds)
+            tier.rebuildAnimations(forLayer:shapeLayer,totalRecordingTime: prototypePlayerItem!.duration.seconds)
         default:
             print("canvasTierAdded ignoring")
         }
@@ -2306,7 +2315,7 @@ extension CameraController: CanvasViewDelegate {
             }
         case is CanvasControllerPlayingMode:
             //We redo the whole thing
-            tier.rebuildAnimations(forLayer:tier.shapeLayer,totalRecordingTime: prototypePlayerItem.duration.seconds)
+            tier.rebuildAnimations(forLayer:tier.shapeLayer,totalRecordingTime: prototypePlayerItem!.duration.seconds)
         default:
             print("Unrecognized canvasControllerMode")
         }
@@ -2334,7 +2343,8 @@ extension CameraController: CanvasViewDelegate {
         paletteController.popoverPresentationController?.sourceView = canvas
         paletteController.popoverPresentationController?.sourceRect = CGRect(origin: touchLocation, size: CGSize.zero)
         
-        present(paletteController, animated: true) {[unowned self] in
+        let weakSelf = self
+        present(paletteController, animated: true) {
             guard let v1 = paletteController.view?.superview?.superview?.superview else {
                 return
             }
@@ -2344,7 +2354,7 @@ extension CameraController: CanvasViewDelegate {
             }
             for vx in v1.subviews {
                 if vx.isKind(of: dimmingViewClass.self) {
-                    let pan = UIPanGestureRecognizer(target: self, action: #selector(self.pannedOutsidePopopver))
+                    let pan = UIPanGestureRecognizer(target: weakSelf, action: #selector(weakSelf.pannedOutsidePopopver))
                     pan.cancelsTouchesInView = false
                     pan.allowedTouchTypes = [NSNumber(value:UITouchType.stylus.rawValue)]
                     vx.addGestureRecognizer(pan)
