@@ -1339,11 +1339,12 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
         
 //        let nextVSync = CACurrentMediaTime() + displayLink.duration
 
-        guard let timestamp = displayLink?.timestamp, let duration = displayLink?.duration else {
-            print("Error in getFramesForPlayback, couldn't get displayLink")
-            return
-        }
-        let nextVSync = timestamp + duration
+//        guard let timestamp = displayLink?.timestamp, let duration = displayLink?.duration else {
+//            print("Error in getFramesForPlayback, couldn't get displayLink")
+//            return
+//        }
+        
+        let nextVSync = displayLink!.timestamp + displayLink!.duration
         let prototypeItemTime = prototypeVideoOutput.itemTime(forHostTime: nextVSync)
         let backgroundItemTime = backgroundVideoOutput.itemTime(forHostTime: nextVSync)
         
@@ -1352,7 +1353,7 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
             if let copiedSyncLayer = weakSelf.prototypePlayerView.syncLayer?.presentation(), let copiedCanvasLayer = weakSelf.prototypePlayerCanvasView?.canvasLayer.presentation() {
                 weakSelf.snapshotSketchOverlay(layers:[copiedSyncLayer,copiedCanvasLayer],size:weakSelf.prototypePlayerView.frame.size)
             } else {
-                print("Could not get presentation()")
+                print("getFramesForPlayback >> Could not get presentation()")
             }
         }
         
@@ -1691,7 +1692,7 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
                     let weakSelf = self
                     
                     persistentContainer.performBackgroundTask { (context) in
-                        
+                        //TODO bug when the recording starts with locked rectangle
                         for (time,box) in orderedTemporalBoxes {
                             let newBoxObservation = BoxObservation(moc: existingContext, time: time, rectangleObservation: box)
                             backgroundTrack.addToBoxes(newBoxObservation)
@@ -1996,22 +1997,20 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
         let seekingGroup = DispatchGroup()
         
         seekingGroup.enter()
-//        prototypePlayer.seek(to: CMTimeMakeWithSeconds(time, DEFAULT_TIMESCALE), toleranceBefore: kCMTimeZero, toleranceAfter: kCMTimeZero) { (completed) in
-        prototypePlayer.seek(to: CMTimeMakeWithSeconds(time, DEFAULT_TIMESCALE)) { (completed) in
-            guard completed else {
+        prototypePlayer.seek(to: CMTimeMakeWithSeconds(time, DEFAULT_TIMESCALE), toleranceBefore: kCMTimeZero, toleranceAfter: kCMTimeZero) { (completed) in
+//        prototypePlayer.seek(to: CMTimeMakeWithSeconds(time, DEFAULT_TIMESCALE)) { (completed) in
+            if !completed {
                 print("prototypePlayer seek not completed while scrubbed")
-                return
             }
             seekingGroup.leave()
         }
         
         seekingGroup.enter()
         backgroundPlayerItem?.cancelPendingSeeks()
-//        backgroundPlayer.seek(to: CMTimeMakeWithSeconds(time, DEFAULT_TIMESCALE), toleranceBefore: kCMTimeZero, toleranceAfter: kCMTimeZero) { (completed) in
-        backgroundPlayer.seek(to: CMTimeMakeWithSeconds(time, DEFAULT_TIMESCALE)) { (completed) in
-            guard completed else {
+        backgroundPlayer.seek(to: CMTimeMakeWithSeconds(time, DEFAULT_TIMESCALE), toleranceBefore: kCMTimeZero, toleranceAfter: kCMTimeZero) { (completed) in
+//        backgroundPlayer.seek(to: CMTimeMakeWithSeconds(time, DEFAULT_TIMESCALE)) { (completed) in
+            if !completed {
                 print("backgroundPlayer seek not completed while scrubbed")
-                return
             }
             seekingGroup.leave()
         }
@@ -2053,8 +2052,8 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
         weak var weakSelf:CameraController! = self
 
         self.itemEndObserver = NotificationCenter.default.addObserver(forName: NSNotification.Name.AVPlayerItemDidPlayToEndTime, object: prototypePlayerItem, queue: OperationQueue.main, using: { (notification) -> Void in
-//            weakSelf.prototypePlayer.seek(to: kCMTimeZero, toleranceBefore: kCMTimeZero, toleranceAfter: kCMTimeZero, completionHandler: { (finished) in
-            weakSelf.prototypePlayer.seek(to: kCMTimeZero) { (completed) in
+            weakSelf.prototypePlayer.seek(to: kCMTimeZero, toleranceBefore: kCMTimeZero, toleranceAfter: kCMTimeZero) { (finished) in
+//            weakSelf.prototypePlayer.seek(to: kCMTimeZero) { (completed) in
                 weakSelf.playBackComplete()
             }
         })

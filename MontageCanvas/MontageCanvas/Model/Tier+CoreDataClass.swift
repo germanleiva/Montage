@@ -260,7 +260,7 @@ public class Tier: NSManagedObject {
         shapeLayer.didChangeValue(for: \CAShapeLayer.path)
         
         if shouldRecord, let timestamp = timestamp {
-            print("saving addFirstPoint with normalized timestamp \(timestamp)")
+//            print("saving addFirstPoint with normalized timestamp \(timestamp)")
             recordedPathInputs.append((timestamp, .move(point: touchLocation)))
         }
     }
@@ -272,7 +272,7 @@ public class Tier: NSManagedObject {
         shapeLayer.didChangeValue(for: \CAShapeLayer.path)
         
         if shouldRecord, let timestamp = timestamp {
-            print("saving addPoint with normalized timestamp \(timestamp)")
+//            print("saving addPoint with normalized timestamp \(timestamp)")
             recordedPathInputs.append((timestamp, .addLine(point: touchLocation)))
         }
     }
@@ -342,7 +342,7 @@ public class Tier: NSManagedObject {
     }
     
     func buildAnimations(totalRecordingTime:TimeInterval) -> (appearAnimation:CAKeyframeAnimation?,inkAnimation:CAKeyframeAnimation?,strokeEndAnimation:CAKeyframeAnimation?,strokeStartAnimation:CAKeyframeAnimation?,transformationAnimation:CAKeyframeAnimation?) {
-        print("buildAnimations >> START \(self)")
+        print("buildAnimations >> START")
 
         var inkAnimation:CAKeyframeAnimation?
         
@@ -388,7 +388,7 @@ public class Tier: NSManagedObject {
                 
                 inkAnimation = newStrokeEndAnimation
                 
-                print("buildAnimations >> inkAnimation: \(newStrokeEndAnimation.debugDescription)")
+//                print("buildAnimations >> inkAnimation: \(newStrokeEndAnimation.debugDescription)")
             }
         }
         
@@ -426,7 +426,7 @@ public class Tier: NSManagedObject {
                 
                 strokeEndAnimation = newStrokeEndAnimation
                 
-                print("buildAnimations >> strokeEndAnimation: \(newStrokeEndAnimation.debugDescription)")
+//                print("buildAnimations >> strokeEndAnimation: \(newStrokeEndAnimation.debugDescription)")
             }
         }
         
@@ -464,7 +464,7 @@ public class Tier: NSManagedObject {
                 
                 strokeStartAnimation = newStrokeStartAnimation
                 
-                print("buildAnimations >> strokeStartnimation: \(newStrokeStartAnimation.debugDescription)")
+//                print("buildAnimations >> strokeStartnimation: \(newStrokeStartAnimation.debugDescription)")
             }
         }
         
@@ -501,7 +501,7 @@ public class Tier: NSManagedObject {
                 
                 transformationAnimation = newTransformAnimation
                 
-                print("buildAnimations >> transformationAnimation: \(transformationAnimation.debugDescription)")
+//                print("buildAnimations >> transformationAnimation: \(transformationAnimation.debugDescription)")
             }
         }
         
@@ -544,7 +544,7 @@ public class Tier: NSManagedObject {
         toggleAnimation!.fillMode = kCAFillModeForwards //the changes caused by the animation will hang around
         toggleAnimation!.isRemovedOnCompletion = false
         
-        print("buildAnimations >> toggleAnimation: \(toggleAnimation!.debugDescription)")
+//        print("buildAnimations >> toggleAnimation: \(toggleAnimation!.debugDescription)")
         //CAAnimationGroup do not work with AVSyncronizedLayer
         //        let strokeAndMove = CAAnimationGroup()
         //        strokeAndMove.animations = [strokeEndAnimation, transformAnimation]
