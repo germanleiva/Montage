@@ -409,45 +409,45 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
     }
     
     func close() {
+        browser.stopBrowsingForPeers()
+//        browser.delegate = nil
+        
         userCamStreamer?.close()
-        userCamStreamer = nil
+//        userCamStreamer = nil
         wizardCamStreamer?.close()
-        wizardCamStreamer = nil
+//        wizardCamStreamer = nil
         outputStreamerForMirror?.close()
-        outputStreamerForMirror = nil
+//        outputStreamerForMirror = nil
         
         multipeerSession.disconnect()
-        multipeerSession.delegate = nil
-        
-        browser.stopBrowsingForPeers()
-        browser.delegate = nil
+//        multipeerSession.delegate = nil
         
         NotificationCenter.default.removeObserver(self)
         
         //TODO: revise
         deinitPlaybackObjects()
         
+        ciContext = nil
+        
         displayLink?.isPaused = true
         displayLink?.remove(from: RunLoop.main, forMode: RunLoopMode.commonModes)
         displayLink?.invalidate()
         displayLink = nil
         
-        prototypePlayerCanvasView.removeFromSuperview()
-        prototypePlayerCanvasView.delegate = nil
-        prototypeCanvasView.removeFromSuperview()
-        prototypeCanvasView.delegate = nil
-        backgroundPlayerCanvasView.removeFromSuperview()
-        backgroundPlayerCanvasView.delegate = nil
-        backgroundCanvasView.removeFromSuperview()
-        backgroundCanvasView.delegate = nil
+//        prototypePlayerCanvasView.removeFromSuperview()
+//        prototypePlayerCanvasView.delegate = nil
+//        prototypeCanvasView.removeFromSuperview()
+//        prototypeCanvasView.delegate = nil
+//        backgroundPlayerCanvasView.removeFromSuperview()
+//        backgroundPlayerCanvasView.delegate = nil
+//        backgroundCanvasView.removeFromSuperview()
+//        backgroundCanvasView.delegate = nil
         
-        videoModel = nil
-        prototypeTimeline?.delegate = nil
-        prototypeTimeline = nil
-        backgroundTimeline?.delegate = nil
-        backgroundTimeline = nil
-        
-        ciContext = nil
+//        videoModel = nil
+//        prototypeTimeline?.delegate = nil
+//        prototypeTimeline = nil
+//        backgroundTimeline?.delegate = nil
+//        backgroundTimeline = nil
     }
 
     func deinitPlaybackObjects() {
@@ -1549,7 +1549,7 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
             setImageOpenGL(view: self.prototypeFrameImageView,image: compositeImage2)
         }
     }
-        
+    
     func exifOrientation(orientation: UIDeviceOrientation) -> UInt32 {
         switch orientation {
         case .portraitUpsideDown:

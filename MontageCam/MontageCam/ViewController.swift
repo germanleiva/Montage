@@ -53,19 +53,33 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
         }
     }
     
-    lazy var encoder: H264Encoder = {
-        let encoder = H264Encoder()
-        encoder.expectedFPS = fps
-        encoder.width = 480
-        encoder.height = 272
-        encoder.bitrate = 160 * 1024
-        encoder.scalingMode = kVTScalingMode_Trim as String
-        encoder.maxKeyFrameIntervalDuration = 1.0 //in seconds <--- change this for better performance, e.g., 0.2 (200ms) between each KeyFrame
-        encoder.maxKeyFrameInterval = 15//in amount of frames, after X frames we should generate a KeyFrame
-        encoder.profileLevel = kVTProfileLevel_H264_Baseline_3_1 as String
-        encoder.delegate = self
-        return encoder
-    }()
+    var _encoder:H264Encoder? {
+        didSet {
+            if _encoder == nil {
+                initialChunkSPS_PPS = nil
+                formatDescription = nil
+            }
+        }
+    }
+    var encoder: H264Encoder {
+        get {
+            if _encoder == nil {
+                let encoder = H264Encoder()
+                encoder.expectedFPS = fps
+                encoder.width = 480
+                encoder.height = 272
+                encoder.bitrate = 160 * 1024
+                encoder.scalingMode = kVTScalingMode_Trim as String
+                encoder.maxKeyFrameIntervalDuration = 1.0 //in seconds <--- change this for better performance, e.g., 0.2 (200ms) between each KeyFrame
+                encoder.maxKeyFrameInterval = 15//in amount of frames, after X frames we should generate a KeyFrame
+                encoder.profileLevel = kVTProfileLevel_H264_Baseline_3_1 as String
+                encoder.delegate = self
+                _encoder = encoder
+            }
+            return _encoder!
+        }
+    }
+    
     
     var myRole:MontageRole?
     
@@ -75,22 +89,22 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
     var lastDetectedRectangle:VNRectangleObservation?
     var savedBoxes = [(CMTime,VNRectangleObservation)]()
     var mirrorPeer:MCPeerID? = nil
-    var isStreaming:Bool = false {
-        didSet {
-            if isStreaming {
-                if !captureSession.isRunning {
-                    captureSession.startRunning()
-                }
-            } else {
-                if captureSession.isRunning {
-                    captureSession.stopRunning()
-                    stopOutputStreamers()
-                }
-            }
-        }
-    }
+    var isStreaming:Bool = false //{
+//        didSet {
+//            if isStreaming {
+//                if !captureSession.isRunning {
+//                    captureSession.startRunning()
+//                }
+//            } else {
+//                if captureSession.isRunning {
+//                    captureSession.stopRunning()
+//                    closeAndRemoveOutputStreamers()
+//                }
+//            }
+//        }
+//    }
     
-    func stopOutputStreamers() {
+    func closeAndRemoveOutputStreamers() {
         let weakSelf = self
         streamerQueue.async {
             for streamer in weakSelf.outputStreamers {
@@ -150,7 +164,6 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
     
     // MARK: AV
     var outputStreamers = [OutputStreamer]()
-    var inputStreamers = [InputStreamer]()
     
     lazy var captureSession = {
         return AVCaptureSession()
@@ -214,9 +227,12 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
         // Do any additional setup after loading the view, typically from a nib.
         //        cloudKitInitialize()
         
-        if self.setupCamera() {
-            isStreaming = true //This starts the captureSession
+        guard setupCamera() else {
+            alert(nil, title: "AVFoundation", message: "Couldn't setup the camera")
+            return
         }
+        
+        captureSession.startRunning()
         
         NotificationCenter.default.addObserver(self, selector: #selector(appWillWillEnterForeground), name: NSNotification.Name.UIApplicationWillEnterForeground, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(appWillResignActive), name: NSNotification.Name.UIApplicationWillResignActive, object: nil)
@@ -713,10 +729,14 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
             
             let weakSelf = self
             streamerQueue.async {
-                var shouldStartEncoder = false
+                if peerID == weakSelf.serverPeer {
+                    weakSelf.serverIsConnected()
+                }
+                
+                var shouldStartEncoderIfWeAddNewOutputStreamer = false
                 
                 if weakSelf.outputStreamers.isEmpty {
-                    shouldStartEncoder = true
+                    shouldStartEncoderIfWeAddNewOutputStreamer = true
                 }
                 
                 if [weakSelf.serverPeer,weakSelf.mirrorPeer].contains(peerID) {
@@ -732,17 +752,12 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
                         newOutputStreamer.delegate = weakSelf
                         weakSelf.outputStreamers.append(newOutputStreamer)
                         
-                        if shouldStartEncoder {
+                        if shouldStartEncoderIfWeAddNewOutputStreamer {
                             weakSelf.encoder.startRunning()
                         }
                     } catch let error as NSError {
                         print("Couldn't create output stream \(id): \(error.localizedDescription)")
                     }
-                }
-                
-                if peerID == weakSelf.serverPeer {
-                    print("stopAdvertisingPeer")
-                    weakSelf.serviceAdvertiser.stopAdvertisingPeer()
                 }
             }
             
@@ -757,8 +772,7 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
                 
                 if peerID == weakSelf.serverPeer {
                     weakSelf.serverPeer = nil
-                    print("startAdvertisingPeer")
-                    weakSelf.serviceAdvertiser.startAdvertisingPeer()
+                    weakSelf.serverIsDisconnected()
                 }
                 
                 if peerID == weakSelf.mirrorPeer {
@@ -766,6 +780,38 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
                 }
             }
         }
+    }
+    
+    func serverIsConnected() {
+        print("stopAdvertisingPeer")
+        serviceAdvertiser.stopAdvertisingPeer()
+        
+        //The creation of the outputStreamers happens in session(_ session: MCSession, peer peerID: MCPeerID, didChange state: MCSessionState)
+    }
+    
+    func serverIsDisconnected() {
+        encoder.stopRunning()
+        _encoder = nil
+        
+        myRole = nil
+        recordStartedAt = nil
+        firstRecordedFrameTimeStamp = nil
+        
+        lastDetectedRectangle = nil
+        savedBoxes.removeAll()
+        
+        isStreaming = false
+        overlayImage = nil
+        
+        rectangleLocked = false
+        
+        pausedTimeRanges.removeAll()
+        
+        movieWriter = MovieWriter(videoSettings: movieWriter.videoSettings,audioSettings: movieWriter.audioSettings)
+        movieWriter.delegate = self
+
+        print("startAdvertisingPeer")
+        serviceAdvertiser.startAdvertisingPeer()
     }
     
     func sendMessageToServer(dict:[String:Any?]) {
@@ -910,8 +956,6 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
         firstRecordedFrameTimeStamp = atSourceTime
     }
     func movieWriter(didFinishedWriting temporalURL:URL,error:Error?) {
-        isStreaming = false
-        
         guard error == nil else {
             return
         }
@@ -1040,11 +1084,7 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
     @objc func appWillResignActive(_ notification:Notification) {
         print("appWillResignActive")
         
-        stopOutputStreamers()
-        
-        for streamer in outputStreamers {
-            streamer.close()
-        }
+        closeAndRemoveOutputStreamers()
         
         serviceAdvertiser.stopAdvertisingPeer()
         print("stopAdvertisingPeer")
@@ -1053,10 +1093,7 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
     @objc func appWillTerminate(_ notification:Notification) {
         print("appWillTerminate") //I think appWillResignActive is called before
         
-        stopOutputStreamers()
-        for streamer in inputStreamers {
-            streamer.close()
-        }
+        closeAndRemoveOutputStreamers()
         
         serviceAdvertiser.stopAdvertisingPeer()
         print("stopAdvertisingPeer")
@@ -1066,11 +1103,8 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
         print("viewWillDisappear")
         super.viewWillDisappear(animated)
         
-        stopOutputStreamers()
+        closeAndRemoveOutputStreamers()
         
-        for streamer in inputStreamers {
-            streamer.close()
-        }
         serviceAdvertiser.stopAdvertisingPeer()
         print("stopAdvertisingPeer")
     }

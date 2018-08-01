@@ -18,8 +18,8 @@ class MovieWriter: NSObject {
     var isWriting = false
     
     weak var delegate:MovieWriterDelegate?
-    private let videoSettings:[String : Any]
-    private let audioSettings:[String : Any]
+    let videoSettings:[String : Any]
+    let audioSettings:[String : Any]
 
     private var writingDispatchQueue:DispatchQueue
     //    private var ciContex:CIContext
