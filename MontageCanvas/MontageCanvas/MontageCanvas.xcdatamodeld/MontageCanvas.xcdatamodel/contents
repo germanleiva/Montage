@@ -4,7 +4,7 @@
         <attribute name="name" optional="YES" attributeType="String" syncable="YES"/>
         <attribute name="updatedAt" optional="YES" attributeType="Date" usesScalarValueType="NO" syncable="YES"/>
         <relationship name="lines" toMany="YES" deletionRule="Cascade" ordered="YES" destinationEntity="Line" inverseName="board" inverseEntity="Line" syncable="YES"/>
-        <relationship name="sketches" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="Sketch" inverseName="board" inverseEntity="Sketch" syncable="YES"/>
+        <relationship name="sketches" toMany="YES" deletionRule="Cascade" destinationEntity="Sketch" inverseName="board" inverseEntity="Sketch" syncable="YES"/>
     </entity>
     <entity name="BoxObservation" representedClassName="BoxObservation" syncable="YES" codeGenerationType="category">
         <attribute name="observation" optional="YES" attributeType="Transformable" customClassName="RectangleObservation" syncable="YES"/>
@@ -17,7 +17,7 @@
         <attribute name="sortIndex" optional="YES" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="YES" syncable="YES"/>
         <relationship name="alternatives" toMany="YES" deletionRule="Cascade" ordered="YES" destinationEntity="Line" inverseName="parent" inverseEntity="Line" syncable="YES"/>
         <relationship name="board" maxCount="1" deletionRule="Nullify" destinationEntity="Board" inverseName="lines" inverseEntity="Board" syncable="YES"/>
-        <relationship name="elements" optional="YES" toMany="YES" deletionRule="Cascade" ordered="YES" destinationEntity="Video" inverseName="line" inverseEntity="Video" syncable="YES"/>
+        <relationship name="elements" toMany="YES" deletionRule="Cascade" ordered="YES" destinationEntity="Video" inverseName="line" inverseEntity="Video" syncable="YES"/>
         <relationship name="parent" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Line" inverseName="alternatives" inverseEntity="Line" syncable="YES"/>
     </entity>
     <entity name="Sketch" representedClassName="Sketch" syncable="YES" codeGenerationType="category">
@@ -27,7 +27,7 @@
         <attribute name="pathActions" optional="YES" attributeType="Transformable" customClassName="Array&lt;PathAction&gt;" syncable="YES"/>
         <attribute name="strokeColor" optional="YES" attributeType="Transformable" customClassName="UIColor" syncable="YES"/>
         <relationship name="board" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Board" inverseName="sketches" inverseEntity="Board" syncable="YES"/>
-        <relationship name="tiers" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="Tier" inverseName="sketch" inverseEntity="Tier" syncable="YES"/>
+        <relationship name="tiers" toMany="YES" deletionRule="Nullify" destinationEntity="Tier" inverseName="sketch" inverseEntity="Tier" syncable="YES"/>
     </entity>
     <entity name="Tier" representedClassName="Tier" syncable="YES" codeGenerationType="category">
         <attribute name="createdAt" optional="YES" attributeType="Date" usesScalarValueType="NO" syncable="YES"/>
@@ -58,7 +58,7 @@
         <relationship name="prototypeTrack" optional="YES" maxCount="1" deletionRule="Cascade" destinationEntity="VideoTrack" inverseName="inversePrototypeTrack" inverseEntity="VideoTrack" syncable="YES"/>
     </entity>
     <entity name="VideoTrack" representedClassName="VideoTrack" syncable="YES" codeGenerationType="category">
-        <attribute name="hasVideoFile" optional="YES" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES" syncable="YES"/>
+        <attribute name="hasVideoFile" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES" syncable="YES"/>
         <attribute name="isBackground" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES" syncable="YES"/>
         <attribute name="isPrototype" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES" syncable="YES"/>
         <attribute name="name" optional="YES" attributeType="String" syncable="YES"/>
@@ -66,12 +66,12 @@
         <relationship name="boxes" toMany="YES" deletionRule="Cascade" ordered="YES" destinationEntity="BoxObservation" inverseName="track" inverseEntity="BoxObservation" syncable="YES"/>
         <relationship name="inverseBackgroundTrack" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Video" inverseName="backgroundTrack" inverseEntity="Video" syncable="YES"/>
         <relationship name="inversePrototypeTrack" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Video" inverseName="prototypeTrack" inverseEntity="Video" syncable="YES"/>
-        <relationship name="tiers" optional="YES" toMany="YES" deletionRule="Cascade" ordered="YES" destinationEntity="Tier" inverseName="videoTrack" inverseEntity="Tier" syncable="YES"/>
+        <relationship name="tiers" toMany="YES" deletionRule="Cascade" ordered="YES" destinationEntity="Tier" inverseName="videoTrack" inverseEntity="Tier" syncable="YES"/>
     </entity>
     <elements>
-        <element name="Board" positionX="261" positionY="198" width="128" height="103"/>
+        <element name="Board" positionX="261" positionY="198" width="128" height="105"/>
         <element name="BoxObservation" positionX="468" positionY="351" width="128" height="30"/>
-        <element name="Line" positionX="556" positionY="198" width="128" height="133"/>
+        <element name="Line" positionX="556" positionY="198" width="128" height="135"/>
         <element name="Sketch" positionX="603" positionY="536" width="128" height="150"/>
         <element name="Tier" positionX="900" positionY="486" width="128" height="285"/>
         <element name="Video" positionX="835" positionY="224" width="128" height="163"/>

@@ -16,14 +16,4 @@ public class BoxObservation: NSManagedObject {
     lazy var time:CMTime = {
         return CMTime(value:value,timescale:timescale)
     }()
-    
-    convenience init(moc:NSManagedObjectContext, time: CMTime, rectangleObservation: VNRectangleObservation) {
-        let entity = NSEntityDescription.entity(forEntityName: "BoxObservation", in: moc)
-        self.init(entity: entity!, insertInto: moc)
-
-        self.value = time.value
-        self.timescale = time.timescale
-
-        self.observation = rectangleObservation
-    }
 }

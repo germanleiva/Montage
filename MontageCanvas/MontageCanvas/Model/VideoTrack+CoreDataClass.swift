@@ -137,8 +137,10 @@ public class VideoTrack: NSManagedObject {
     func copyEverythingFrom(_ videoTrack:VideoTrack) -> Bool {
         name = videoTrack.name
         
-        if let previousBoxes = videoTrack.boxes {
-            self.addToBoxes(previousBoxes)
+        if let previousBoxes = videoTrack.boxes?.array as? [BoxObservation] {
+            for previousBox in previousBoxes {
+                self.addToBoxes(previousBox)
+            }
         }
         
         isBackground = videoTrack.isBackground
@@ -150,7 +152,7 @@ public class VideoTrack: NSManagedObject {
         if let previousURL = videoTrack.loadedFileURL {
             do {
                 try FileManager.default.copyItem(at: previousURL, to: fileURL)
-                hasVideoFile = videoTrack.hasVideoFile
+                hasVideoFile = true//videoTrack.hasVideoFile
             } catch {
                 return false
             }

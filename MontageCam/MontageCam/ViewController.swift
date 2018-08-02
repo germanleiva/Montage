@@ -356,17 +356,7 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
                         
                         weakSelf.lastDetectedRectangle = detectedRectangle
 
-                        //For live previews we send now
-                        if let aRole = weakSelf.myRole, aRole == .userCam {
-                            weakSelf.sendMessageToServer(dict: ["detectedRectangle":detectedRectangle])
-                            weakSelf.highlightRectangle(box:detectedRectangle)
-                        }
-                        
-                        //For saving to send later
-                        if let presentationTimeStamp = recordedPresentationTime {
-                            weakSelf.savedBoxes.append((presentationTimeStamp, detectedRectangle))
-                        }
-                        
+                        weakSelf.sendAndSave(recordedPresentationTime, detectedRectangle:detectedRectangle)
                     }
                 }
             }
@@ -670,9 +660,8 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
                 self.visionDetection(sampleBufferCameraIntrinsicMatrix, outputImage: outputImage, presentationTimeStamp: presentationTime)
             }
         } else {
-            //For saving to send later
-            if let presentationTimeStamp = presentationTime, let detectedRectangle = lastDetectedRectangle {
-                savedBoxes.append((presentationTimeStamp, detectedRectangle))
+            if let detectedRectangle = lastDetectedRectangle {
+                sendAndSave(presentationTime,detectedRectangle: detectedRectangle)
             }
         }
         /*Vision*/
@@ -690,6 +679,19 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
         //    UIImage *image = [[UIImage alloc] initWithCGImage:newImage scale:1 orientation:UIImageOrientationUpMirrored];
         //    CGImageRelease(newImage);
         //    CVPixelBufferUnlockBaseAddress(imageBuffer,0);
+    }
+    
+    func sendAndSave(_ recordedPresentationTime:CMTime?,detectedRectangle:VNRectangleObservation) {
+        //For live previews we send now
+        if let aRole = myRole, aRole == .userCam {
+            sendMessageToServer(dict: ["detectedRectangle":detectedRectangle])
+            highlightRectangle(box:detectedRectangle)
+        }
+        
+        //For saving to send later
+        if let presentationTimeStamp = recordedPresentationTime {
+            savedBoxes.append((presentationTimeStamp, detectedRectangle))
+        }
     }
     
     // MARK: Multipeer Streaming
@@ -1042,7 +1044,7 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
                         
                         weakSelf.multipeerSession.sendResource(at: theFinalOutputURL, withName: "MONTAGE_CAM_MOVIE", toPeer: serverPeer) { (error) in
                             guard let error = error else {
-                                print("Movie sent succesfully!")
+                                print("*** Movie sent succesfully!")
                                 return
                             }
                             print("Failed to send movie \(theFinalOutputURL): \(error.localizedDescription)")

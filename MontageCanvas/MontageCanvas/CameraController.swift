@@ -15,6 +15,7 @@ import CloudKit
 //import TCMask
 import Streamer
 import GLKit
+import MBProgressHUD
 
 let STATUS_KEYPATH  = "status"
 let RATE_KEYPATH  = "rate"
@@ -196,7 +197,7 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
         }
     }
     
-    let persistentContainer = (UIApplication.shared.delegate as! AppDelegate).persistentContainer
+//    let persistentContainer = (UIApplication.shared.delegate as! AppDelegate).persistentContainer
     let coreDataContext = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
 
     var videoModel:Video!
@@ -224,8 +225,6 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
     
     var periodicTimeObserver:AnyObject? = nil
     var itemEndObserver:NSObjectProtocol? = nil
-    var lastPlaybackRate = Float(0)
-    var previousRate:Float?
 
     private static var observerContext = 0
     
@@ -401,6 +400,8 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
     }
     
     func close() {
+        stopCamsStreaming()
+
         browser.stopBrowsingForPeers()
 //        browser.delegate = nil
         
@@ -622,236 +623,280 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
     
     @IBAction func playPressed(_ sender:AnyObject?) {
         if canvasControllerMode.isPaused {
-            playPlayer()
+            playPlayers()
         } else {
-            pausePlayer()
+            pausePlayers()
         }
     }
     
+    var progressBar:MBProgressHUD!
+    var exportSession:AVAssetExportSession?
+    
     @IBAction func savePressed(_ sender: Any) {
-            displayLink?.isPaused = true
-
-            if let backgroundMutableComposition = backgroundComposition?.copy() as? AVComposition {
-
-                let exportSession = AVAssetExportSession(asset: backgroundMutableComposition, presetName: AVAssetExportPreset1280x720)
-                
-                let weakSelf = self
-                
-                guard let backgroundPlayerItem = self.backgroundPlayerItem else {
-                    return
-                }
-                
-                guard let prototypePlayerItem = self.prototypePlayerItem else {
-                    return
-                }
-                let tolerance = kCMTimeZero
-                
-                let videoComposition = AVVideoComposition(asset: backgroundMutableComposition, applyingCIFiltersWithHandler: { request in
-                    let compositionTime = request.compositionTime
-                    let backgroundFrameImage = request.sourceImage
+        displayLink?.isPaused = true
+        
+        guard let backgroundMutableComposition = backgroundComposition?.copy() as? AVComposition else {
+            alert(nil, title: "Fatal Error", message: "Couldn't create a copy of the background composition to export")
+            return
+        }
+        
+        exportSession = AVAssetExportSession(asset: backgroundMutableComposition, presetName: AVAssetExportPreset1280x720)
+        
+        let weakSelf = self
+        
+        let tolerance = kCMTimeZero
+        
+        let videoComposition = AVVideoComposition(asset: backgroundMutableComposition, applyingCIFiltersWithHandler: { request in
+            let compositionTime = request.compositionTime
+            let backgroundFrameImage = request.sourceImage
+            
+            weakSelf.backgroundPlayerItem?.cancelPendingSeeks()
+            weakSelf.backgroundPlayerItem?.seek(to: compositionTime, toleranceBefore: tolerance, toleranceAfter: tolerance, completionHandler: { (finishedBackgroundPlayerItem) in
+                //                        guard finishedBackgroundPlayerItem else {
+                //                            request.finish(with: NSError(domain: "savePressed", code: 666, userInfo: [NSLocalizedDescriptionKey : "App error - Couldn't seek backgroundPlayerItem"]))
+                //                            return
+                //                        }
+                weakSelf.prototypePlayerItem?.cancelPendingSeeks()
+                weakSelf.prototypePlayerItem?.seek(to: compositionTime, toleranceBefore: tolerance, toleranceAfter: tolerance, completionHandler: { (finishedPrototypePlayerItem) in
                     
-                    backgroundPlayerItem.cancelPendingSeeks()
-                    backgroundPlayerItem.seek(to: compositionTime, toleranceBefore: tolerance, toleranceAfter: tolerance, completionHandler: { (finishedBackgroundPlayerItem) in
-//                        guard finishedBackgroundPlayerItem else {
-//                            request.finish(with: NSError(domain: "savePressed", code: 666, userInfo: [NSLocalizedDescriptionKey : "App error - Couldn't seek backgroundPlayerItem"]))
-//                            return
-//                        }
-                        prototypePlayerItem.cancelPendingSeeks()
-                        prototypePlayerItem.seek(to: compositionTime, toleranceBefore: tolerance, toleranceAfter: tolerance, completionHandler: { (finishedPrototypePlayerItem) in
-                            
-//                            guard finishedPrototypePlayerItem else {
-//                                request.finish(with: NSError(domain: "savePressed", code: 666, userInfo: [NSLocalizedDescriptionKey : "App error - Couldn't seek prototypePlayerItem"]))
-//                                return
-//                            }
-                            
-                            let currentMediaTime = CACurrentMediaTime()
-//                            let currentMediaTime = weakSelf.displayLink.timestamp + weakSelf.displayLink.duration
-
-                            let prototypeItemTime = weakSelf.prototypeVideoOutput.itemTime(forHostTime: currentMediaTime)
-                            
-                            let prototypePixelBuffer:CVPixelBuffer
-                            
-                            if let currentPrototypePixelBuffer = weakSelf.prototypeVideoOutput.copyPixelBuffer(forItemTime: prototypeItemTime, itemTimeForDisplay: nil) {
-                                prototypePixelBuffer = currentPrototypePixelBuffer
-                                weakSelf.lastPrototypePixelBuffer = currentPrototypePixelBuffer
-                            } else {
-                                prototypePixelBuffer = weakSelf.lastPrototypePixelBuffer!
-                            }
-                                
-                            let source = CIImage(cvPixelBuffer: prototypePixelBuffer)
-                            
-                            DispatchQueue.main.async {
-                                guard let copiedSyncLayer = weakSelf.prototypePlayerView.syncLayer?.presentation(), let copiedCanvasLayer = weakSelf.prototypePlayerCanvasView?.canvasLayer.presentation(),
-                                    let copiedBackgroundSyncLayer = weakSelf.backgroundPlayerSyncLayer?.presentation(),
-                                    let copiedBackgroundCanvasLayer = weakSelf.backgroundCanvasView?.canvasLayer.presentation()  else {
-                                        request.finish(with: NSError(domain: "savePressed", code: 666, userInfo: [NSLocalizedDescriptionKey : "App error - Could not get presentation()"]))
-                                        return
-                                }
-                                
-                                weakSelf.snapshotSketchOverlay(layers:[copiedSyncLayer,copiedCanvasLayer],size:weakSelf.prototypePlayerView.frame.size)
-                                
-                                guard let currentBox = weakSelf.videoModel.backgroundTrack?.box(forItemTime: prototypeItemTime) else {
-                                    request.finish(with: NSError(domain: "savePressed", code: 666, userInfo: [NSLocalizedDescriptionKey : "App error - Could not get box"]))
-                                    return
-                                }
-                                
-                                var currentPrototypeAndOverlayFrame:CIImage
-                                
-                                if let overlay = weakSelf.sketchOverlay {
-                                    let scaledSource = source.transformed(by: CGAffineTransform.identity.scaledBy(x: overlay.extent.width / source.extent.width, y: overlay.extent.height / source.extent.height ))
-                                    
-                                    let overlayFilter = CIFilter(name: "CISourceOverCompositing")!
-                                    overlayFilter.setValue(scaledSource, forKey: kCIInputBackgroundImageKey)
-                                    overlayFilter.setValue(overlay, forKey: kCIInputImageKey)
-                                    
-                                    currentPrototypeAndOverlayFrame = overlayFilter.outputImage!
-                                } else {
-                                    currentPrototypeAndOverlayFrame = source
-                                }
-                                
-                                if let normalizedViewportRect = weakSelf.videoModel.prototypeTrack?.viewportRect {
-                                    let totalWidth = currentPrototypeAndOverlayFrame.extent.width
-                                    let totalHeight = currentPrototypeAndOverlayFrame.extent.height
-                                    
-                                    let croppingRect = CGRect(x: normalizedViewportRect.origin.x * totalWidth,
-                                                              y: normalizedViewportRect.origin.y * totalHeight,
-                                                              width: normalizedViewportRect.width * totalWidth,
-                                                              height: normalizedViewportRect.height * totalHeight)
-                                    
-                                    currentPrototypeAndOverlayFrame = currentPrototypeAndOverlayFrame.cropped(to: croppingRect)
-                                }
-                                
-                                let perspectiveTransformFilter = CIFilter(name: "CIPerspectiveTransform")!
-                                
-                                let ciSize = backgroundFrameImage.extent.size
-                                
-                                perspectiveTransformFilter.setValue(CIVector(cgPoint:currentBox.topLeft.scaled(to: ciSize)),
-                                                                    forKey: "inputTopLeft")
-                                perspectiveTransformFilter.setValue(CIVector(cgPoint:currentBox.topRight.scaled(to: ciSize)),
-                                                                    forKey: "inputTopRight")
-                                perspectiveTransformFilter.setValue(CIVector(cgPoint:currentBox.bottomRight.scaled(to: ciSize)),
-                                                                    forKey: "inputBottomRight")
-                                perspectiveTransformFilter.setValue(CIVector(cgPoint:currentBox.bottomLeft.scaled(to: ciSize)),
-                                                                    forKey: "inputBottomLeft")
-                                perspectiveTransformFilter.setValue(currentPrototypeAndOverlayFrame.oriented(CGImagePropertyOrientation.up),
-                                                                    forKey: kCIInputImageKey)
-                                
-                                let finalBackgroundFrameImage:CIImage
-                                
-                                weakSelf.snapshotSketchOverlay(layers: [copiedBackgroundSyncLayer,copiedBackgroundCanvasLayer], size:weakSelf.backgroundCanvasView.frame.size)
-                                
-                                if let backgroundOverlay = weakSelf.sketchOverlay {
-                                    
-                                    let overlayFilter = CIFilter(name: "CISourceOverCompositing")!
-                                    overlayFilter.setValue(backgroundFrameImage, forKey: kCIInputBackgroundImageKey)
-                                    overlayFilter.setValue(backgroundOverlay, forKey: kCIInputImageKey)
-                                    guard let result = overlayFilter.outputImage else {
-                                        request.finish(with: NSError(domain: "savePressed", code: 666, userInfo: [NSLocalizedDescriptionKey : "App error - couldn't get outputImage from CISourceOverCompositing"]))
-                                        return
-                                    }
-                                    finalBackgroundFrameImage = result
-                                } else {
-                                    finalBackgroundFrameImage = backgroundFrameImage
-                                }
-                                
-                                let composite = ChromaKeyFilter()
-                                composite.inputImage = finalBackgroundFrameImage
-                                composite.backgroundImage = perspectiveTransformFilter.outputImage
-                                composite.activeColor = CIColor(red: 0, green: 1, blue: 0)
-                                
-                                // Provide the filter output to the composition
-                                request.finish(with: composite.outputImage, context: nil)
-                            }                            
-                        })
-                    })
-                })
-
-                exportSession?.outputFileType = AVFileType.mov
-                let temporalOutputURL = Globals.temporaryDirectory.appendingPathComponent("currently_exported_movie.mov")
-                
-                if FileManager.default.fileExists(atPath: temporalOutputURL.path) {
-                    do {
-                        try FileManager.default.removeItem(at: temporalOutputURL)
-                    } catch let error as NSError {
-                        self.alert(error, title:"FileSystem Error", message:"Could not clean temporal video file location \(temporalOutputURL)")
-                        return
+                    //                            guard finishedPrototypePlayerItem else {
+                    //                                request.finish(with: NSError(domain: "savePressed", code: 666, userInfo: [NSLocalizedDescriptionKey : "App error - Couldn't seek prototypePlayerItem"]))
+                    //                                return
+                    //                            }
+                    
+                    let currentMediaTime = CACurrentMediaTime() //weakSelf.displayLink.timestamp + weakSelf.displayLink.duration
+                    
+                    let prototypeItemTime = weakSelf.prototypeVideoOutput.itemTime(forHostTime: currentMediaTime)
+                    
+                    let prototypePixelBuffer:CVPixelBuffer
+                    
+                    if let currentPrototypePixelBuffer = weakSelf.prototypeVideoOutput.copyPixelBuffer(forItemTime: prototypeItemTime, itemTimeForDisplay: nil) {
+                        prototypePixelBuffer = currentPrototypePixelBuffer
+                        weakSelf.lastPrototypePixelBuffer = currentPrototypePixelBuffer
+                    } else {
+                        prototypePixelBuffer = weakSelf.lastPrototypePixelBuffer!
                     }
-                }
-                
-                exportSession?.outputURL = temporalOutputURL
-                exportSession?.videoComposition = videoComposition
-
-                exportSession?.exportAsynchronously {
-                    switch exportSession!.status {
-                    case .unknown:
-                        print("exportSession status unknown")
-                    case .waiting:
-                        print("exportSession status waiting")
-                    case .exporting:
-                        print("exportSession status exporting")
-                    case .cancelled, .failed:
-                        print("export session .cancelled or .failed -> \(exportSession?.error?.localizedDescription ?? "no error description")")
-                    case .completed:
-                        let weakSelf = self
-                        DispatchQueue.main.async {
-                            let finalOutputURL = weakSelf.videoModel.file
+                    
+                    let source = CIImage(cvPixelBuffer: prototypePixelBuffer)
+                    
+                    DispatchQueue.main.async {
+                        guard let copiedSyncLayer = weakSelf.prototypePlayerView.syncLayer?.presentation(), let copiedCanvasLayer = weakSelf.prototypePlayerCanvasView?.canvasLayer.presentation(),
+                            let copiedBackgroundSyncLayer = weakSelf.backgroundPlayerSyncLayer?.presentation(),
+                            let copiedBackgroundCanvasLayer = weakSelf.backgroundCanvasView?.canvasLayer.presentation()  else {
+                                request.finish(with: NSError(domain: "savePressed", code: 666, userInfo: [NSLocalizedDescriptionKey : "App error - Could not get presentation()"]))
+                                return
+                        }
+                        
+                        weakSelf.snapshotSketchOverlay(layers:[copiedSyncLayer,copiedCanvasLayer],size:weakSelf.prototypePlayerView.frame.size)
+                        
+                        guard let currentBox = weakSelf.videoModel.backgroundTrack?.box(forItemTime: prototypeItemTime) else {
+                            request.finish(with: NSError(domain: "savePressed", code: 666, userInfo: [NSLocalizedDescriptionKey : "App error - Could not get box"]))
+                            return
+                        }
+                        
+                        var currentPrototypeAndOverlayFrame:CIImage
+                        
+                        if let overlay = weakSelf.sketchOverlay {
+                            let scaledSource = source.transformed(by: CGAffineTransform.identity.scaledBy(x: overlay.extent.width / source.extent.width, y: overlay.extent.height / source.extent.height ))
                             
-                            //If the finalOutput exist, then I do a backup
-                            if FileManager.default.fileExists(atPath: finalOutputURL.path) {
-                                let backupFilePath = finalOutputURL.deletingPathExtension().lastPathComponent + "-backup." + finalOutputURL.pathExtension
-                                let backupOutputURL = finalOutputURL.deletingLastPathComponent().appendingPathComponent(backupFilePath)
-                                
-                                //I delete the last backup if there is one
-                                if FileManager.default.fileExists(atPath: backupOutputURL.path) {
-                                    do {
-                                        try FileManager.default.removeItem(at: backupOutputURL)
-                                    } catch let error as NSError {
-                                        weakSelf.alert(error, title:"FileSystem Error", message:"Could not delete previous backup file \(backupOutputURL)")
-                                        return
-                                    }
-                                }
-                                
-                                //Finally I move the finalOutput to the backupOutput
-                                do {
-                                    try FileManager.default.moveItem(at: finalOutputURL, to: backupOutputURL)
-                                } catch {
-                                    weakSelf.alert(error, title:"FileSystem Error", message:"Could not move existing final commposition video file to backup location \(backupOutputURL)")
-                                    return
-                                }
-                            }
+                            let overlayFilter = CIFilter(name: "CISourceOverCompositing")!
+                            overlayFilter.setValue(scaledSource, forKey: kCIInputBackgroundImageKey)
+                            overlayFilter.setValue(overlay, forKey: kCIInputImageKey)
                             
-                            //Always at the end, I move the temporalOutput to the finalOutput (aka video.file)
-                            do {
-                                try FileManager.default.moveItem(at: temporalOutputURL, to: finalOutputURL)
-                            } catch let error as NSError {
-                                weakSelf.alert(error, title:"FileSystem Error", message:"Could not move recently exported final commposition video file to final location \(finalOutputURL)")
+                            currentPrototypeAndOverlayFrame = overlayFilter.outputImage!
+                        } else {
+                            currentPrototypeAndOverlayFrame = source
+                        }
+                        
+                        if let normalizedViewportRect = weakSelf.videoModel.prototypeTrack?.viewportRect {
+                            let totalWidth = currentPrototypeAndOverlayFrame.extent.width
+                            let totalHeight = currentPrototypeAndOverlayFrame.extent.height
+                            
+                            let croppingRect = CGRect(x: normalizedViewportRect.origin.x * totalWidth,
+                                                      y: normalizedViewportRect.origin.y * totalHeight,
+                                                      width: normalizedViewportRect.width * totalWidth,
+                                                      height: normalizedViewportRect.height * totalHeight)
+                            
+                            currentPrototypeAndOverlayFrame = currentPrototypeAndOverlayFrame.cropped(to: croppingRect)
+                        }
+                        
+                        let perspectiveTransformFilter = CIFilter(name: "CIPerspectiveTransform")!
+                        
+                        let ciSize = backgroundFrameImage.extent.size
+                        
+                        perspectiveTransformFilter.setValue(CIVector(cgPoint:currentBox.topLeft.scaled(to: ciSize)),
+                                                            forKey: "inputTopLeft")
+                        perspectiveTransformFilter.setValue(CIVector(cgPoint:currentBox.topRight.scaled(to: ciSize)),
+                                                            forKey: "inputTopRight")
+                        perspectiveTransformFilter.setValue(CIVector(cgPoint:currentBox.bottomRight.scaled(to: ciSize)),
+                                                            forKey: "inputBottomRight")
+                        perspectiveTransformFilter.setValue(CIVector(cgPoint:currentBox.bottomLeft.scaled(to: ciSize)),
+                                                            forKey: "inputBottomLeft")
+                        perspectiveTransformFilter.setValue(currentPrototypeAndOverlayFrame.oriented(CGImagePropertyOrientation.up),
+                                                            forKey: kCIInputImageKey)
+                        
+                        let finalBackgroundFrameImage:CIImage
+                        
+                        weakSelf.snapshotSketchOverlay(layers: [copiedBackgroundSyncLayer,copiedBackgroundCanvasLayer], size:weakSelf.backgroundCanvasView.frame.size)
+                        
+                        if let backgroundOverlay = weakSelf.sketchOverlay {
+                            
+                            let overlayFilter = CIFilter(name: "CISourceOverCompositing")!
+                            overlayFilter.setValue(backgroundFrameImage, forKey: kCIInputBackgroundImageKey)
+                            overlayFilter.setValue(backgroundOverlay, forKey: kCIInputImageKey)
+                            guard let result = overlayFilter.outputImage else {
+                                request.finish(with: NSError(domain: "savePressed", code: 666, userInfo: [NSLocalizedDescriptionKey : "App error - couldn't get outputImage from CISourceOverCompositing"]))
                                 return
                             }
-                            
-                            weakSelf.persistentContainer.performBackgroundTask() { (context) in
-                                do {
-                                    try context.save()
-                                    weakSelf.dismiss(animated: true, completion: {
-                                        weakSelf.close()
-                                    })
-                                } catch {
-                                    weakSelf.alert(error, title: "DB Error", message: "Could not save exported final video")
-                                }
+                            finalBackgroundFrameImage = result
+                        } else {
+                            finalBackgroundFrameImage = backgroundFrameImage
+                        }
+                        
+                        let composite = ChromaKeyFilter()
+                        composite.inputImage = finalBackgroundFrameImage
+                        composite.backgroundImage = perspectiveTransformFilter.outputImage
+                        composite.activeColor = CIColor(red: 0, green: 1, blue: 0)
+                        
+                        // Provide the filter output to the composition
+                        request.finish(with: composite.outputImage, context: nil)
+                    }
+                })
+            })
+        })
+        
+        exportSession?.outputFileType = AVFileType.mov
+        let temporalOutputURL = Globals.temporaryDirectory.appendingPathComponent("currently_exported_movie.mov")
+        
+        if FileManager.default.fileExists(atPath: temporalOutputURL.path) {
+            do {
+                try FileManager.default.removeItem(at: temporalOutputURL)
+            } catch let error as NSError {
+                self.alert(error, title:"FileSystem Error", message:"Could not clean temporal video file location \(temporalOutputURL)")
+                return
+            }
+        }
+        
+        exportSession?.outputURL = temporalOutputURL
+        exportSession?.videoComposition = videoComposition
+        
+        guard let window = UIApplication.shared.keyWindow else {
+            alert(nil, title: "Fatal Error", message: "Couldn't get the keyWindow of the app")
+            return
+        }
+        
+        self.progressBar = MBProgressHUD.showAdded(to: window, animated: true)
+        self.progressBar.mode = MBProgressHUDMode.determinateHorizontalBar
+        self.progressBar.label.text = "Exporting ..."
+        
+        self.progressBar.detailsLabel.text = "Tap to cancel"
+        self.progressBar.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(self.cancelExport(_:))))
+        
+        exportSession?.exportAsynchronously {
+            switch weakSelf.exportSession!.status {
+            case .unknown:
+                print("exportSession status unknown")
+            case .waiting:
+                print("exportSession status waiting")
+            case .exporting:
+                print("exportSession status exporting")
+            case .cancelled, .failed:
+                weakSelf.alert(weakSelf.exportSession?.error, title: "Export Session", message: "Failed or cancelled")
+            case .completed:
+                DispatchQueue.main.async {
+                    let finalOutputURL = weakSelf.videoModel.file
+                    
+                    //If the finalOutput exist, then I do a backup
+                    if FileManager.default.fileExists(atPath: finalOutputURL.path) {
+                        let backupFilePath = finalOutputURL.deletingPathExtension().lastPathComponent + "-backup." + finalOutputURL.pathExtension
+                        let backupOutputURL = finalOutputURL.deletingLastPathComponent().appendingPathComponent(backupFilePath)
+                        
+                        //I delete the last backup if there is one
+                        if FileManager.default.fileExists(atPath: backupOutputURL.path) {
+                            do {
+                                try FileManager.default.removeItem(at: backupOutputURL)
+                            } catch let error as NSError {
+                                weakSelf.alert(error, title:"FileSystem Error", message:"Could not delete previous backup file \(backupOutputURL)")
+                                return
                             }
-                            
+                        }
+                        
+                        //Finally I move the finalOutput to the backupOutput
+                        do {
+                            try FileManager.default.moveItem(at: finalOutputURL, to: backupOutputURL)
+                        } catch {
+                            weakSelf.alert(error, title:"FileSystem Error", message:"Could not move existing final commposition video file to backup location \(backupOutputURL)")
+                            return
                         }
                     }
+                    
+                    //Always at the end, I move the temporalOutput to the finalOutput (aka video.file)
+                    do {
+                        try FileManager.default.moveItem(at: temporalOutputURL, to: finalOutputURL)
+                    } catch let error as NSError {
+                        weakSelf.alert(error, title:"FileSystem Error", message:"Could not move recently exported final commposition video file to final location \(finalOutputURL)")
+                        return
+                    }
+                    
+                    do {
+                        try weakSelf.coreDataContext.save()
+                        weakSelf.close()
+                        weakSelf.dismiss(animated: true, completion: nil)
+                    } catch {
+                        weakSelf.alert(error, title: "DB Error", message: "Could not save exported final video")
+                    }
+                    
                 }
             }
+        }
+        self.monitorExportProgress(self.exportSession!)
+    }
+    
+    func monitorExportProgress(_ exportSession:AVAssetExportSession) {
+        let delta = Int64(NSEC_PER_SEC / 10)
+        
+        let popTime = DispatchTime.now() + Double(delta) / Double(NSEC_PER_SEC)
+        
+        DispatchQueue.main.asyncAfter(deadline: popTime, execute: { [unowned self] in
+            let status = exportSession.status
+            if status == AVAssetExportSessionStatus.exporting {
+                self.progressBar.progress = exportSession.progress
+                if exportSession.progress == 1 {
+                    self.progressBar.label.text = "Saving ..."
+                }
+                //                print("Exporting progress \(exportSession.progress)")
+                self.monitorExportProgress(exportSession)
+            } else {
+                //Not exporting anymore
+                if let progress = self.progressBar {
+                    progress.label.text = "Done"
+                    progress.hide(animated: true)
+                    self.progressBar = nil
+                }
+            }
+        })
+    }
+    
+    @objc func cancelExport(_ recognizer:UITapGestureRecognizer) {
+        let location = recognizer.location(in: progressBar)
+        
+        let xDist = location.x - progressBar.center.x
+        let yDist = location.y - progressBar.center.y
+        let distanceToCenter = sqrt((xDist * xDist) + (yDist * yDist))
+        
+        if distanceToCenter < 90 {
+            exportSession?.cancelExport()
+            exportSession = nil
+            progressBar.hide(animated:true)
+            progressBar = nil
+        }
     }
     
     @IBAction func cancelPressed(_ sender: Any) {
         canvasControllerMode.cancel(controller:self)
         
-        let weakSelf = self
-        dismiss(animated: true) {
-            weakSelf.close()
-        }
+        close()
+        dismiss(animated: true)
     }
     
     @IBAction func menuPressed(_ sender: UIBarButtonItem) {
@@ -1064,7 +1109,7 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
 //        let trackRect = scrubberSlider.trackRect(forBounds: scrubberSlider.bounds)
 //        let thumbRect = scrubberSlider.thumbRect(forBounds: scrubberSlider.bounds, trackRect: trackRect, value: scrubberSlider.value)
         
-        self.scrubbedToTime(Double(scrubberSlider.value))
+        seekToTime(Double(scrubberSlider.value))
     }
     
     func startPlayback(shouldUseSmallestDuration:Bool = false) {
@@ -1226,8 +1271,7 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
             weakSelf.prototypePlayerItem?.addObserver(weakSelf, forKeyPath: STATUS_KEYPATH, options: NSKeyValueObservingOptions(rawValue: 0), context: &CameraController.observerContext)
             weakSelf.prototypePlayerItem?.addObserver(weakSelf, forKeyPath: RATE_KEYPATH, options: NSKeyValueObservingOptions.initial, context: &CameraController.observerContext)
             
-            weakSelf.backgroundPlayer.play()
-            weakSelf.prototypePlayer.play()
+            weakSelf.playPlayers()
             
             if weakSelf.displayLink?.isPaused != true {
                 print("Weird, displayLink?.isPaused should be true at this point")
@@ -1263,30 +1307,11 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
                         weakSelf.addDidPlayToEndItemEndObserverForPlayerItem()
                     })
                 case RATE_KEYPATH:
-                    print("Not doing anyhting for RATE_KEYPATH")
+                    print("Not doing anyhting for RATE_KEYPATH, prototypePlayer.rate = \(prototypePlayer.rate)")
                 default:
                     print("Unkown observeValue forKeyPath \(keyPath)")
                 }
             }
-//            if prototypePlayer.isEqual(object) {
-//                if let player = object as? AVPlayer {
-//                    let currentRate = player.rate
-//                    if previousRate == nil {
-//                        previousRate = currentRate
-//                    }
-//                    if previousRate! > 0 && currentRate == 0 {
-//                        //paused
-//                        videoModel.backgroundTrack?.stopRecording()
-//                        videoModel.backgroundTrack?.stopRecording()
-//                    }
-//                    if previousRate! == 0 && currentRate > 0 {
-//                        //played
-//                        videoModel.prototypeTrack?.startRecording()
-//                        videoModel.backgroundTrack?.startRecording()
-//                    }
-//                    previousRate = currentRate
-//                }
-//            }
         }
     }
     
@@ -1341,7 +1366,9 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
 //            return
 //        }
         
-        let nextVSync = displayLink!.timestamp + displayLink!.duration
+//        let nextVSync = displayLink!.timestamp + displayLink!.duration
+        
+        let nextVSync = canvasControllerMode.isPaused ? CACurrentMediaTime() : displayLink!.timestamp + displayLink!.duration
         let prototypeItemTime = prototypeVideoOutput.itemTime(forHostTime: nextVSync)
         let backgroundItemTime = backgroundVideoOutput.itemTime(forHostTime: nextVSync)
         
@@ -1500,7 +1527,7 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
             setImageOpenGL(view: self.prototypeFrameImageView,image: source)
             return
         }
-        return
+
         //We do a CIPerspectiveCorrection of the green area finalBackgroundFrameImage
         
         let perspectiveCorrection = CIFilter(name: "CIPerspectiveCorrection")!
@@ -1673,7 +1700,7 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
                         return
                     }
                     
-                    var orderedTemporalBoxes = [(CMTime,VNRectangleObservation)]()
+                    var orderedTemporalBoxes = [(CMTime,RectangleObservation)]()
                     for (timeBoxDictionary,box) in dictionaryOfSavedBoxes {
                         let timeBox = CMTimeMakeFromDictionary(timeBoxDictionary)
                         
@@ -1684,23 +1711,14 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
                         return CMTimeCompare(tuple1.0, tuple2.0) == -1
                     })
                     
-                    let backgroundTrack = self.videoModel.backgroundTrack!
-                    let existingContext = backgroundTrack.managedObjectContext!
-                    
-                    let weakSelf = self
-                    
-                    persistentContainer.performBackgroundTask { (context) in
-                        //TODO bug when the recording starts with locked rectangle
-                        for (time,box) in orderedTemporalBoxes {
-                            let newBoxObservation = BoxObservation(moc: existingContext, time: time, rectangleObservation: box)
-                            backgroundTrack.addToBoxes(newBoxObservation)
-                        }
-                        
-                        do {
-                            try context.save()
-                        } catch {
-                            weakSelf.alert(error, title: "DB", message: "Couldn't save DB after receiving boxes from camera")
-                        }
+                    //TODO bug when the recording starts with locked rectangle
+                    for (time,box) in orderedTemporalBoxes {
+                        let newBoxObservation = BoxObservation(context: coreDataContext)
+                        newBoxObservation.value = time.value
+                        newBoxObservation.timescale = time.timescale
+                        newBoxObservation.observation = box
+
+                        videoModel.backgroundTrack?.addToBoxes(newBoxObservation)
                     }
                 case "ACK":
                     guard let syncTime = syncTime else {
@@ -1837,6 +1855,8 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
             return
         }
         
+        print("*** didFinishReceivingResourceWithName \(resourceName)")
+        
         let fileManager = FileManager.default
         
         if peerID == wizardCamPeer {
@@ -1881,17 +1901,15 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
             }
         }
         
-        if let _ = self.videoModel.prototypeTrack?.hasVideoFile, let _ =  self.videoModel.backgroundTrack?.hasVideoFile {
+        if self.videoModel.prototypeTrack?.hasVideoFile == true && self.videoModel.backgroundTrack?.hasVideoFile == true{
             let weakSelf = self
             DispatchQueue.main.async {
-                weakSelf.persistentContainer.performBackgroundTask { [unowned self] (context) in
-                    do {
-                        try context.save()
-                    } catch {
-                        weakSelf.alert(error, title: "DB", message: "Couldn't save video tracks after receiving their files")
-                    }
-                    weakSelf.canvasControllerMode = CanvasControllerPlayingMode(controller:weakSelf)
+                do {
+                    try weakSelf.coreDataContext.save()
+                } catch {
+                    weakSelf.alert(error, title: "DB", message: "Couldn't save video tracks after receiving their files")
                 }
+                weakSelf.canvasControllerMode = CanvasControllerPlayingMode(controller:weakSelf)
             }
         }
         
@@ -1936,30 +1954,29 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
     
     //-MARK: VideoPlayerDelegate
     
-    func playPlayer() {
+    func playPlayers() {
         let weakSelf = self
         
-        let playBlock = {
+//        let playBlock = {
             weakSelf.prototypePlayer.play()
             weakSelf.backgroundPlayer.play()
             
-            weakSelf.canvasControllerMode.resume(controller: weakSelf)
-        }
-        
-        //TODO check this... suspicious
-        if CMTimeCompare(prototypePlayer.currentTime(), prototypePlayerItem!.duration) == 0 {
-            scrubbedToTime(0.0, completionBlock: playBlock)
-        } else {
-            playBlock()
-        }
+            weakSelf.canvasControllerMode.resume(controller: weakSelf) //To the set the icon image and start recording user inputs
+//        }
+//
+//        //TODO check this... suspicious
+//        if CMTimeCompare(prototypePlayer.currentTime(), prototypePlayerItem!.duration) == 0 {
+//            scrubbedToTime(0.0, completionBlock: playBlock)
+//        } else {
+//            playBlock()
+//        }
     }
     
-    func pausePlayer() {
-        self.lastPlaybackRate = prototypePlayer.rate
+    func pausePlayers() {
         prototypePlayer.pause()
         backgroundPlayer.pause()
         
-        canvasControllerMode.pause(controller: self)
+        canvasControllerMode.pause(controller: self) //This change the icon and stop recording user inputs
     }
     
     func playBackComplete() {
@@ -1967,7 +1984,16 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
         
         //        self.scrubberSlider.value = 0.0
         //        self.togglePlaybackButton.isSelected = false
-        canvasControllerMode.pause(controller: self)
+        let weakSelf = self
+//        backgroundPlayerItem?.cancelPendingSeeks()
+//        backgroundPlayerItem?.seek(to: kCMTimeZero, toleranceBefore: kCMTimeZero, toleranceAfter: kCMTimeZero) { (finishedBackgroundPlayerItem) in
+//            weakSelf.prototypePlayerItem?.cancelPendingSeeks()
+//            weakSelf.prototypePlayerItem?.seek(to: kCMTimeZero, toleranceBefore: kCMTimeZero, toleranceAfter: kCMTimeZero) { (finishedPrototypePlayerItem) in
+//                weakSelf.canvasControllerMode.pause(controller: weakSelf)
+//            }
+//        }
+        pausePlayers()
+        seekToTime(0.0)
     }
     
     func setCurrentTime(_ time:TimeInterval, duration:TimeInterval) {
@@ -1978,7 +2004,7 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
     }
     
     @IBAction func scrubbingDidStart() {
-        self.pausePlayer()
+        self.pausePlayers()
         
         if let observer = self.periodicTimeObserver {
             prototypePlayer.removeTimeObserver(observer)
@@ -1989,12 +2015,9 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
     @IBAction func scrubbingDidEnd() {
         //        self.updateLabels(CMTimeGetSeconds(self.player!.currentTime()),duration: CMTimeGetSeconds(self.playerItem!.duration))
         self.addPlayerItemPeriodicTimeObserver()
-        if self.lastPlaybackRate > 0 {
-            playPlayer()
-        }
     }
     
-    func scrubbedToTime(_ time:TimeInterval, completionBlock:(()->Void)? = nil) {
+    func seekToTime(_ time:TimeInterval, completionBlock:(()->Void)? = nil) {
         prototypePlayerItem?.cancelPendingSeeks()
         
         let seekingGroup = DispatchGroup()
@@ -2003,7 +2026,7 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
         prototypePlayer.seek(to: CMTimeMakeWithSeconds(time, DEFAULT_TIMESCALE), toleranceBefore: kCMTimeZero, toleranceAfter: kCMTimeZero) { (completed) in
 //        prototypePlayer.seek(to: CMTimeMakeWithSeconds(time, DEFAULT_TIMESCALE)) { (completed) in
             if !completed {
-                print("prototypePlayer seek not completed while scrubbed")
+                print("prototypePlayer seek not completed in seekToTime")
             }
             seekingGroup.leave()
         }
@@ -2013,7 +2036,7 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
         backgroundPlayer.seek(to: CMTimeMakeWithSeconds(time, DEFAULT_TIMESCALE), toleranceBefore: kCMTimeZero, toleranceAfter: kCMTimeZero) { (completed) in
 //        backgroundPlayer.seek(to: CMTimeMakeWithSeconds(time, DEFAULT_TIMESCALE)) { (completed) in
             if !completed {
-                print("backgroundPlayer seek not completed while scrubbed")
+                print("backgroundPlayer seek not completed in seekToTime")
             }
             seekingGroup.leave()
         }
@@ -2055,10 +2078,8 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
         weak var weakSelf:CameraController! = self
 
         self.itemEndObserver = NotificationCenter.default.addObserver(forName: NSNotification.Name.AVPlayerItemDidPlayToEndTime, object: prototypePlayerItem, queue: OperationQueue.main, using: { (notification) -> Void in
-            weakSelf.prototypePlayer.seek(to: kCMTimeZero, toleranceBefore: kCMTimeZero, toleranceAfter: kCMTimeZero) { (finished) in
-//            weakSelf.prototypePlayer.seek(to: kCMTimeZero) { (completed) in
-                weakSelf.playBackComplete()
-            }
+            print("TRIGGERED addDidPlayToEndItemEndObserverForPlayerItem OBSERVER")
+            weakSelf.playBackComplete()
         })
     }
     
