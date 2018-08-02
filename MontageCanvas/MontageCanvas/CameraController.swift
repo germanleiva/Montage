@@ -2528,11 +2528,8 @@ class CalendarEvent {
 
 extension CameraController: TimelineDelegate {
     func timelineDidStartViewporting() {
-        if canvasControllerMode.isRecording {
-            self.prototypeCanvasView.isViewporting = true
-        }
-        if canvasControllerMode.isPlayingMode {
-            self.prototypePlayerCanvasView.isViewporting = true
+        if let canvasView = canvasControllerMode.isPlayingMode ? self.prototypePlayerCanvasView : self.prototypeCanvasView {
+            canvasView.isViewporting = true
         }
     }
     
