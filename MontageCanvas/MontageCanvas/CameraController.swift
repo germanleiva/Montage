@@ -188,12 +188,12 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
     func didClose(_ streamer: InputStreamer) {
         if streamer == userCamStreamer {
             userCamStreamer = nil
-            print("didClose userCamStreamer")
+            print("*** didClose userCamStreamer")
         }
         
         if streamer == wizardCamStreamer {
             wizardCamStreamer = nil
-            print("didClose wizardCamStreamer")
+            print("*** didClose wizardCamStreamer")
         }
     }
     
@@ -441,6 +441,7 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
 //        prototypeTimeline = nil
 //        backgroundTimeline?.delegate = nil
 //        backgroundTimeline = nil
+        cleanExportSession()
     }
 
     func deinitPlaybackObjects() {
@@ -629,7 +630,7 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
         }
     }
     
-    var progressBar:MBProgressHUD!
+    var progressBar:MBProgressHUD?
     var exportSession:AVAssetExportSession?
     
     @IBAction func savePressed(_ sender: Any) {
@@ -645,6 +646,11 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
         let weakSelf = self
         
         let tolerance = kCMTimeZero
+        
+        guard let coreImageContext = ciContext else {
+            alert(nil, title: "Fatal Error", message: "Couldn't get core image context")
+            return
+        }
         
         let videoComposition = AVVideoComposition(asset: backgroundMutableComposition, applyingCIFiltersWithHandler: { request in
             let compositionTime = request.compositionTime
@@ -680,20 +686,42 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
                     let source = CIImage(cvPixelBuffer: prototypePixelBuffer)
                     
                     DispatchQueue.main.async {
-                        guard let copiedSyncLayer = weakSelf.prototypePlayerView.syncLayer?.presentation(), let copiedCanvasLayer = weakSelf.prototypePlayerCanvasView?.canvasLayer.presentation(),
-                            let copiedBackgroundSyncLayer = weakSelf.backgroundPlayerSyncLayer?.presentation(),
-                            let copiedBackgroundCanvasLayer = weakSelf.backgroundCanvasView?.canvasLayer.presentation()  else {
-                                request.finish(with: NSError(domain: "savePressed", code: 666, userInfo: [NSLocalizedDescriptionKey : "App error - Could not get presentation()"]))
-                                return
-                        }
                         
-                        weakSelf.snapshotSketchOverlay(layers:[copiedSyncLayer,copiedCanvasLayer],size:weakSelf.prototypePlayerView.frame.size)
-                        
-                        guard let currentBox = weakSelf.videoModel.backgroundTrack?.box(forItemTime: prototypeItemTime) else {
-                            request.finish(with: NSError(domain: "savePressed", code: 666, userInfo: [NSLocalizedDescriptionKey : "App error - Could not get box"]))
+                        guard let copiedBackgroundSyncLayer = weakSelf.backgroundPlayerSyncLayer?.presentation(), let copiedBackgroundCanvasLayer = weakSelf.backgroundCanvasView?.canvasLayer.presentation() else {
+                            request.finish(with: NSError(domain: "savePressed", code: 666, userInfo: [NSLocalizedDescriptionKey : "App error - Could not get background presentation()"]))
                             return
                         }
                         
+                        weakSelf.snapshotSketchOverlay(layers: [copiedBackgroundSyncLayer,copiedBackgroundCanvasLayer], size:weakSelf.backgroundCanvasView.frame.size)
+                        
+                        let finalBackgroundFrameImage:CIImage
+                        
+                        if let backgroundOverlay = weakSelf.sketchOverlay {
+                            
+                            let overlayFilter = CIFilter(name: "CISourceOverCompositing")!
+                            overlayFilter.setValue(backgroundFrameImage, forKey: kCIInputBackgroundImageKey)
+                            overlayFilter.setValue(backgroundOverlay, forKey: kCIInputImageKey)
+                            guard let result = overlayFilter.outputImage else {
+                                request.finish(with: NSError(domain: "savePressed", code: 666, userInfo: [NSLocalizedDescriptionKey : "App error - couldn't get outputImage from CISourceOverCompositing"]))
+                                return
+                            }
+                            finalBackgroundFrameImage = result
+                        } else {
+                            finalBackgroundFrameImage = backgroundFrameImage
+                        }
+                        
+                        guard let currentBox = weakSelf.videoModel.backgroundTrack?.box(forItemTime: prototypeItemTime) else {
+                            request.finish(with: finalBackgroundFrameImage, context: nil)
+                            return
+                        }
+                        
+                        guard let copiedSyncLayer = weakSelf.prototypePlayerView.syncLayer?.presentation(), let copiedCanvasLayer = weakSelf.prototypePlayerCanvasView?.canvasLayer.presentation() else {
+                            request.finish(with: NSError(domain: "savePressed", code: 666, userInfo: [NSLocalizedDescriptionKey : "App error - Could not get prototype presentation()"]))
+                            return
+                        }
+                        
+                        weakSelf.snapshotSketchOverlay(layers:[copiedSyncLayer,copiedCanvasLayer],size:weakSelf.prototypePlayerView.frame.size)
+
                         var currentPrototypeAndOverlayFrame:CIImage
                         
                         if let overlay = weakSelf.sketchOverlay {
@@ -735,31 +763,13 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
                         perspectiveTransformFilter.setValue(currentPrototypeAndOverlayFrame.oriented(CGImagePropertyOrientation.up),
                                                             forKey: kCIInputImageKey)
                         
-                        let finalBackgroundFrameImage:CIImage
-                        
-                        weakSelf.snapshotSketchOverlay(layers: [copiedBackgroundSyncLayer,copiedBackgroundCanvasLayer], size:weakSelf.backgroundCanvasView.frame.size)
-                        
-                        if let backgroundOverlay = weakSelf.sketchOverlay {
-                            
-                            let overlayFilter = CIFilter(name: "CISourceOverCompositing")!
-                            overlayFilter.setValue(backgroundFrameImage, forKey: kCIInputBackgroundImageKey)
-                            overlayFilter.setValue(backgroundOverlay, forKey: kCIInputImageKey)
-                            guard let result = overlayFilter.outputImage else {
-                                request.finish(with: NSError(domain: "savePressed", code: 666, userInfo: [NSLocalizedDescriptionKey : "App error - couldn't get outputImage from CISourceOverCompositing"]))
-                                return
-                            }
-                            finalBackgroundFrameImage = result
-                        } else {
-                            finalBackgroundFrameImage = backgroundFrameImage
-                        }
-                        
                         let composite = ChromaKeyFilter()
                         composite.inputImage = finalBackgroundFrameImage
                         composite.backgroundImage = perspectiveTransformFilter.outputImage
                         composite.activeColor = CIColor(red: 0, green: 1, blue: 0)
                         
                         // Provide the filter output to the composition
-                        request.finish(with: composite.outputImage, context: nil)
+                        request.finish(with: composite.outputImage, context: coreImageContext)
                     }
                 })
             })
@@ -772,7 +782,7 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
             do {
                 try FileManager.default.removeItem(at: temporalOutputURL)
             } catch let error as NSError {
-                self.alert(error, title:"FileSystem Error", message:"Could not clean temporal video file location \(temporalOutputURL)")
+                alert(error, title:"FileSystem Error", message:"Could not clean temporal video file location \(temporalOutputURL)")
                 return
             }
         }
@@ -785,12 +795,12 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
             return
         }
         
-        self.progressBar = MBProgressHUD.showAdded(to: window, animated: true)
-        self.progressBar.mode = MBProgressHUDMode.determinateHorizontalBar
-        self.progressBar.label.text = "Exporting ..."
+        progressBar = MBProgressHUD.showAdded(to: window, animated: true)
+        progressBar?.mode = MBProgressHUDMode.determinateHorizontalBar
+        progressBar?.label.text = "Exporting ..."
         
-        self.progressBar.detailsLabel.text = "Tap to cancel"
-        self.progressBar.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(self.cancelExport(_:))))
+        progressBar?.detailsLabel.text = "Tap to cancel"
+        progressBar?.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(cancelExport(_:))))
         
         exportSession?.exportAsynchronously {
             switch weakSelf.exportSession!.status {
@@ -849,7 +859,7 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
                 }
             }
         }
-        self.monitorExportProgress(self.exportSession!)
+        monitorExportProgress(exportSession!)
     }
     
     func monitorExportProgress(_ exportSession:AVAssetExportSession) {
@@ -857,39 +867,47 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
         
         let popTime = DispatchTime.now() + Double(delta) / Double(NSEC_PER_SEC)
         
-        DispatchQueue.main.asyncAfter(deadline: popTime, execute: { [unowned self] in
+        let weakSelf = self
+        DispatchQueue.main.asyncAfter(deadline: popTime, execute: {
             let status = exportSession.status
             if status == AVAssetExportSessionStatus.exporting {
-                self.progressBar.progress = exportSession.progress
+                weakSelf.progressBar?.progress = exportSession.progress
                 if exportSession.progress == 1 {
-                    self.progressBar.label.text = "Saving ..."
+                    weakSelf.progressBar?.label.text = "Saving ..."
                 }
                 //                print("Exporting progress \(exportSession.progress)")
-                self.monitorExportProgress(exportSession)
+                weakSelf.monitorExportProgress(exportSession)
             } else {
                 //Not exporting anymore
-                if let progress = self.progressBar {
+                if let progress = weakSelf.progressBar {
                     progress.label.text = "Done"
                     progress.hide(animated: true)
-                    self.progressBar = nil
+                    weakSelf.progressBar = nil
                 }
             }
         })
     }
     
     @objc func cancelExport(_ recognizer:UITapGestureRecognizer) {
+        guard let aProgressBar = progressBar else {
+            return
+        }
         let location = recognizer.location(in: progressBar)
         
-        let xDist = location.x - progressBar.center.x
-        let yDist = location.y - progressBar.center.y
+        let xDist = location.x - aProgressBar.center.x
+        let yDist = location.y - aProgressBar.center.y
         let distanceToCenter = sqrt((xDist * xDist) + (yDist * yDist))
         
         if distanceToCenter < 90 {
-            exportSession?.cancelExport()
-            exportSession = nil
-            progressBar.hide(animated:true)
-            progressBar = nil
+            cleanExportSession()
         }
+    }
+    
+    func cleanExportSession() {
+        exportSession?.cancelExport()
+        exportSession = nil
+        progressBar?.hide(animated:true)
+        progressBar = nil
     }
     
     @IBAction func cancelPressed(_ sender: Any) {
@@ -1448,11 +1466,14 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
 //            return
 //        }
         let weakSelf = self
-        drawingQueue.async {
-            glkView.bindDrawable()
-            let containerBoundsInPixels = glkView.bounds.applying(CGAffineTransform(scaleX: deviceScale, y: deviceScale))
-            weakSelf.ciContext?.draw(image, in: containerBoundsInPixels, from: image.extent)
-            glkView.display()
+        DispatchQueue.main.async {
+            let glkViewBounds = glkView.bounds
+            drawingQueue.async {
+                glkView.bindDrawable()
+                let containerBoundsInPixels = glkViewBounds.applying(CGAffineTransform(scaleX: deviceScale, y: deviceScale))
+                weakSelf.ciContext?.draw(image, in: containerBoundsInPixels, from: image.extent)
+                glkView.display()
+            }
         }
     }
     
@@ -1711,20 +1732,22 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
                         return CMTimeCompare(tuple1.0, tuple2.0) == -1
                     })
                     
-                    //TODO bug when the recording starts with locked rectangle
-                    for (time,box) in orderedTemporalBoxes {
-                        let newBoxObservation = BoxObservation(context: coreDataContext)
-                        newBoxObservation.value = time.value
-                        newBoxObservation.timescale = time.timescale
-                        newBoxObservation.observation = box
-
-                        videoModel.backgroundTrack?.addToBoxes(newBoxObservation)
+                    let weakSelf = self
+                    DispatchQueue.main.async {
+                        for (time,box) in orderedTemporalBoxes {
+                            let newBoxObservation = BoxObservation(context: weakSelf.coreDataContext)
+                            newBoxObservation.value = time.value
+                            newBoxObservation.timescale = time.timescale
+                            newBoxObservation.observation = box
+                            
+                            weakSelf.videoModel.backgroundTrack?.addToBoxes(newBoxObservation)
+                        }
                     }
                 case "ACK":
                     guard let syncTime = syncTime else {
                         return
                     }
-                    let delay = NSDate.network().timeIntervalSince(syncTime) /// 2
+                    let delay = NSDate.network().timeIntervalSince(syncTime) / 2
                     switch peerID {
                     case wizardCamPeer:
                         videoModel.prototypeTrack?.camDelay = delay
@@ -1819,9 +1842,13 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
         
         self.prototypeProgressBar.progress = Float(receptionProgress.fractionCompleted)
         if receptionProgress.completedUnitCount >= receptionProgress.totalUnitCount {
-            self.prototypeProgressBar.isHidden = true
-            self.prototypeReceptionTimer?.invalidate()
+            self.cleanPrototypeReception()
         }
+    }
+    
+    func cleanPrototypeReception() {
+        self.prototypeProgressBar.isHidden = true
+        self.prototypeReceptionTimer?.invalidate()
     }
     
     @objc func updateBackgroundReceptionProgress(){
@@ -1834,9 +1861,13 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
         
         self.backgroundProgressBar.progress = Float(receptionProgress.fractionCompleted)
         if receptionProgress.completedUnitCount >= receptionProgress.totalUnitCount {
-            self.backgroundProgressBar.isHidden = true
-            self.backgroundReceptionTimer?.invalidate()
+            cleanBackgroundReception()
         }
+    }
+    
+    func cleanBackgroundReception() {
+        self.backgroundProgressBar.isHidden = true
+        self.backgroundReceptionTimer?.invalidate()
     }
     
     func session(_ session: MCSession, didFinishReceivingResourceWithName resourceName: String, fromPeer peerID: MCPeerID, at localURL: URL?, withError error: Error?) {
@@ -1847,11 +1878,15 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
         
         if let error = error {
             print("didFinishReceivingResourceWithName error:\(error.localizedDescription)")
+            cleanPrototypeReception()
+            cleanBackgroundReception()
             return
         }
         
         guard let localURL = localURL else {
             print("didFinishReceivingResourceWithName did not receive a proper file")
+            cleanPrototypeReception()
+            cleanBackgroundReception()
             return
         }
         
@@ -1901,11 +1936,15 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
             }
         }
         
+        
         if self.videoModel.prototypeTrack?.hasVideoFile == true && self.videoModel.backgroundTrack?.hasVideoFile == true{
+            print("didFinishReceiving BOTH resources - trying to save in the DB")
+
             let weakSelf = self
             DispatchQueue.main.async {
                 do {
                     try weakSelf.coreDataContext.save()
+                    print("Saved successfuly in the DB")
                 } catch {
                     weakSelf.alert(error, title: "DB", message: "Couldn't save video tracks after receiving their files")
                 }
@@ -2164,12 +2203,14 @@ extension CameraController:CanvasControllerModeDelegate {
     }
     
     func deleteVideoModel() {
-        coreDataContext.delete(self.videoModel)
-        
-        do {
-            try coreDataContext.save()
-        } catch {
-            self.alert(error, title: "DB", message: "Couldn't delete cancelled video")
+        let weakSelf = self
+        DispatchQueue.main.async {
+            do {
+                weakSelf.coreDataContext.delete(weakSelf.videoModel)
+                try weakSelf.coreDataContext.save()
+            } catch {
+                weakSelf.alert(error, title: "DB", message: "Couldn't delete cancelled video")
+            }
         }
     }
     

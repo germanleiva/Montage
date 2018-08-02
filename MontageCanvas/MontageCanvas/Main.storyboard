@@ -159,8 +159,8 @@
                                                 <action selector="cancelPressed:" destination="Ck6-q5-ZZf" id="m3v-7h-TfV"/>
                                             </connections>
                                         </barButtonItem>
-                                        <segmentedControl key="titleView" opaque="NO" contentMode="scaleToFill" misplaced="YES" contentHorizontalAlignment="left" contentVerticalAlignment="top" segmentControlStyle="bar" id="fE2-5E-p5y">
-                                            <rect key="frame" x="460.5" y="7.5" width="103" height="29"/>
+                                        <segmentedControl key="titleView" opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="top" segmentControlStyle="bar" id="fE2-5E-p5y">
+                                            <rect key="frame" x="387" y="7" width="250" height="30"/>
                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                             <segments>
                                                 <segment title="Pause"/>

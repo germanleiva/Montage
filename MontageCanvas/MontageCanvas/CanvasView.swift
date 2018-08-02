@@ -159,7 +159,7 @@ class CanvasView: UIView, UIGestureRecognizerDelegate {
     }
     
     func addNewSketchLayer() {
-        currentlyDrawnSketch = createSketchLayer()
+        currentlyDrawnSketch = createSketchLayer() //This should be called in the main thread, it was the case ...
         currentlyDrawnSketch?.strokeColor = selectedStrokeColor
         currentlyDrawnSketch?.fillColor = selectedFillColor
         currentlyDrawnSketch?.lineWidth = selectedLineWidth

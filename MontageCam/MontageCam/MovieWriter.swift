@@ -11,7 +11,7 @@ import AVFoundation
 
 protocol MovieWriterDelegate:class {
     func movieWriter(didStartedWriting atSourceTime: CMTime)
-    func movieWriter(didFinishedWriting temporalURL:URL,error:Error?)
+    func movieWriter(didFinishedWriting temporalURL:URL,error:Error?,completionHandler:((Error?)->Void)?)
 }
 
 class MovieWriter: NSObject {
@@ -49,10 +49,10 @@ class MovieWriter: NSObject {
         return filePath
     }
     
-    private var assetWriter:AVAssetWriter!
-    private var assetWriterVideoInput:AVAssetWriterInput!
-    private var assetWriterAudioInput:AVAssetWriterInput!
-    private var assetWriterInputPixelBufferAdaptor:AVAssetWriterInputPixelBufferAdaptor!
+    private var assetWriter:AVAssetWriter?
+    private var assetWriterVideoInput:AVAssetWriterInput?
+    private var assetWriterAudioInput:AVAssetWriterInput?
+    private var assetWriterInputPixelBufferAdaptor:AVAssetWriterInputPixelBufferAdaptor?
     
     func transformForDeviceOrientation(_ orientation:UIDeviceOrientation) -> CGAffineTransform {
         let result:CGAffineTransform
@@ -81,19 +81,22 @@ class MovieWriter: NSObject {
     func setupWriter() {
         let fileType = AVFileType.mov
         
+        let newAssetWriter:AVAssetWriter
         do {
-            assetWriter = try AVAssetWriter(url: outputURL, fileType: fileType)
+            newAssetWriter = try AVAssetWriter(url: outputURL, fileType: fileType)
+            assetWriter = newAssetWriter
         } catch let error as NSError {
             print("Could not create AVAssetWriter: \(error.localizedDescription)")
             return
         }
         
-        assetWriterVideoInput = AVAssetWriterInput(mediaType: AVMediaType.video, outputSettings: videoSettings)
+        let newAssetWriterVideoInput = AVAssetWriterInput(mediaType: AVMediaType.video, outputSettings: videoSettings)
+        assetWriterVideoInput = newAssetWriterVideoInput
         
         //This it is recommended to be true when recording a movie file but false when processing the frames
-        assetWriterVideoInput.expectsMediaDataInRealTime = false
+        newAssetWriterVideoInput.expectsMediaDataInRealTime = false
         
-        assetWriterVideoInput.transform = transformForDeviceOrientation(UIDevice.current.orientation)
+        newAssetWriterVideoInput.transform = transformForDeviceOrientation(UIDevice.current.orientation)
         
         //To ensure maximum efficiency, the values in this dictionary should correspond to the source pixel format used when configuring the AVCaptureVideoDataOutput
         let attributes = [
@@ -103,21 +106,22 @@ class MovieWriter: NSObject {
             //                kCVPixelFormatOpenGLESCompatibility : kCFBooleanTrue
             ] as [String : Any]
         
-        assetWriterInputPixelBufferAdaptor = AVAssetWriterInputPixelBufferAdaptor(assetWriterInput: assetWriterVideoInput, sourcePixelBufferAttributes: attributes)
+        assetWriterInputPixelBufferAdaptor = AVAssetWriterInputPixelBufferAdaptor(assetWriterInput: newAssetWriterVideoInput, sourcePixelBufferAttributes: attributes)
         
-        if assetWriter.canAdd(assetWriterVideoInput) {
-            assetWriter.add(assetWriterVideoInput)
+        if newAssetWriter.canAdd(newAssetWriterVideoInput) {
+            newAssetWriter.add(newAssetWriterVideoInput)
         } else {
             print("Unable to add video input to assetWriter")
             return
         }
         
-        assetWriterAudioInput =  AVAssetWriterInput(mediaType: AVMediaType.audio, outputSettings: audioSettings)
+        let newAssetWriterAudioInput =  AVAssetWriterInput(mediaType: AVMediaType.audio, outputSettings: audioSettings)
+        assetWriterAudioInput = newAssetWriterAudioInput
         
-        assetWriterAudioInput.expectsMediaDataInRealTime = true
+        newAssetWriterAudioInput.expectsMediaDataInRealTime = true
         
-        if assetWriter.canAdd(assetWriterAudioInput) {
-            assetWriter.add(assetWriterAudioInput)
+        if newAssetWriter.canAdd(newAssetWriterAudioInput) {
+            newAssetWriter.add(newAssetWriterAudioInput)
         } else {
             print("Unable to add audio input to assetWriter")
             return
@@ -152,12 +156,13 @@ class MovieWriter: NSObject {
         switch mediaType {
         case kCMMediaType_Video:
             
-            if (self.firstSample) {
-                if self.assetWriter.startWriting() {
-                    self.assetWriter.startSession(atSourceTime: timestamp)
+            if self.firstSample {
+                if self.assetWriter!.startWriting() {
+                    self.assetWriter?.startSession(atSourceTime: timestamp)
                     delegate?.movieWriter(didStartedWriting: timestamp)
                 } else {
                     print("Failed to start writing.")
+                    return nil
                 }
                 self.firstSample = false
             }
@@ -207,12 +212,12 @@ class MovieWriter: NSObject {
             //            }
             //            self.ciContext.render(filteredImage, to: outputRenderBuffer, bounds: filteredImage.extent, colorSpace: self.colorSpace)
             
-            if self.assetWriterVideoInput.isReadyForMoreMediaData {
+            if self.assetWriterVideoInput!.isReadyForMoreMediaData {
                 guard let imageBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else {
                     print("Couldn't get CMSampleBufferGetImageBuffer")
                     return nil
                 }
-                if self.assetWriterInputPixelBufferAdaptor.append(imageBuffer, withPresentationTime: timestamp) {
+                if self.assetWriterInputPixelBufferAdaptor!.append(imageBuffer, withPresentationTime: timestamp) {
                     return imageBuffer
                 }
                 print("Error appending pixel buffer.")
@@ -221,8 +226,8 @@ class MovieWriter: NSObject {
         //            outputRenderBuffer = nil
         case kCMMediaType_Audio:
             if !self.firstSample {
-                if self.assetWriterAudioInput.isReadyForMoreMediaData {
-                    if !self.assetWriterAudioInput.append(sampleBuffer) {
+                if self.assetWriterAudioInput!.isReadyForMoreMediaData {
+                    if !self.assetWriterAudioInput!.append(sampleBuffer) {
                         print("Error appending audio sample buffer.")
                     }
                 }
@@ -234,7 +239,7 @@ class MovieWriter: NSObject {
         return nil
     }
     
-    func stopWriting() {
+    func stopWriting(completionHandler:((Error?)->Void)?) {
         guard self.isWriting else {
             return
         }
@@ -259,9 +264,17 @@ class MovieWriter: NSObject {
                 }
                 
                 DispatchQueue.main.async {
-                    delegate?.movieWriter(didFinishedWriting: assetWriter.outputURL,error:assetWriterError)
+                    delegate?.movieWriter(didFinishedWriting: assetWriter.outputURL,error:assetWriterError,completionHandler:completionHandler)
                 }
             }
         }
+    }
+    
+    func close() {
+        assetWriter?.cancelWriting()
+        assetWriter = nil
+        assetWriterVideoInput = nil
+        assetWriterAudioInput = nil
+        assetWriterInputPixelBufferAdaptor = nil
     }
 }

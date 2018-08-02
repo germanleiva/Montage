@@ -37,23 +37,23 @@
                                 </subviews>
                             </stackView>
                             <stackView hidden="YES" opaque="NO" contentMode="scaleToFill" fixedFrame="YES" distribution="fillEqually" spacing="10" translatesAutoresizingMaskIntoConstraints="NO" id="c1R-2E-mHZ">
-                                <rect key="frame" x="0.0" y="587" width="515" height="30"/>
+                                <rect key="frame" x="0.0" y="587" width="615" height="30"/>
                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                 <subviews>
                                     <slider opaque="NO" contentMode="scaleToFill" ambiguous="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" value="0.5" minValue="0.0" maxValue="1" translatesAutoresizingMaskIntoConstraints="NO" id="Owi-6w-ga9">
-                                        <rect key="frame" x="-2" y="0.0" width="99" height="31"/>
+                                        <rect key="frame" x="-2" y="0.0" width="119" height="31"/>
                                     </slider>
                                     <slider opaque="NO" contentMode="scaleToFill" ambiguous="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" value="1" minValue="0.0" maxValue="1" translatesAutoresizingMaskIntoConstraints="NO" id="Rxo-kc-4Bg">
-                                        <rect key="frame" x="103" y="0.0" width="99" height="31"/>
+                                        <rect key="frame" x="123" y="0.0" width="119" height="31"/>
                                     </slider>
                                     <slider opaque="NO" contentMode="scaleToFill" ambiguous="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" value="0.14999999999999999" minValue="0.0" maxValue="1" translatesAutoresizingMaskIntoConstraints="NO" id="Qhf-p0-Iv1">
-                                        <rect key="frame" x="208" y="0.0" width="99" height="31"/>
+                                        <rect key="frame" x="248" y="0.0" width="119" height="31"/>
                                     </slider>
                                     <slider opaque="NO" contentMode="scaleToFill" ambiguous="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" value="1" minValue="0.0" maxValue="1" translatesAutoresizingMaskIntoConstraints="NO" id="qCr-K4-KpP">
-                                        <rect key="frame" x="313" y="0.0" width="99" height="31"/>
+                                        <rect key="frame" x="373" y="0.0" width="119" height="31"/>
                                     </slider>
                                     <slider opaque="NO" contentMode="scaleToFill" ambiguous="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" value="45" minValue="0.0" maxValue="45" translatesAutoresizingMaskIntoConstraints="NO" id="2qn-qF-qUW">
-                                        <rect key="frame" x="418" y="0.0" width="99" height="31"/>
+                                        <rect key="frame" x="498" y="0.0" width="119" height="31"/>
                                     </slider>
                                 </subviews>
                             </stackView>
@@ -61,6 +61,7 @@
                         <color key="backgroundColor" red="0.0" green="0.0" blue="0.0" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                         <viewLayoutGuide key="safeArea" id="6Tk-OE-BBY"/>
                     </view>
+                    <navigationItem key="navigationItem" id="sop-AH-IXT"/>
                     <connections>
                         <outlet property="slider0" destination="Owi-6w-ga9" id="UEm-qQ-Ey1"/>
                         <outlet property="slider1" destination="Rxo-kc-4Bg" id="X8T-Eq-QTi"/>
@@ -71,7 +72,7 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="dkx-z0-nzr" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="32.799999999999997" y="43.628185907046479"/>
+            <point key="canvasLocation" x="185" y="18"/>
         </scene>
     </scenes>
 </document>

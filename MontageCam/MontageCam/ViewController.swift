@@ -92,11 +92,8 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
     var shouldBeStreaming:Bool = false
 
     func closeAndRemoveOutputStreamers() {
-        let weakSelf = self
-        streamerQueue.async {
-            for streamer in weakSelf.outputStreamers {
-                streamer.close()
-            }
+        for streamer in outputStreamers {
+            streamer.close()
         }
     }
     
@@ -370,7 +367,7 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
 //            try imageRequestHandler.perform(self.requests)
             try imageRequestHandler.perform([rectangleRequest])
         } catch let error as NSError {
-            print(error.localizedDescription)
+            print("imageRequestHandler.perform([rectangleRequest]) \(error.localizedDescription)")
         }
     }
     
@@ -785,7 +782,6 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
         encoder.stopRunning()
         _encoder = nil
         
-        myRole = nil
         recordStartedAt = nil
         firstRecordedFrameTimeStamp = nil
         
@@ -799,6 +795,7 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
         
         pausedTimeRanges.removeAll()
         
+        movieWriter.close()
         movieWriter = MovieWriter(videoSettings: movieWriter.videoSettings,audioSettings: movieWriter.audioSettings)
         movieWriter.delegate = self
 
@@ -856,17 +853,16 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
                     self.pausedTimeRanges.removeAll()
                     
                     let receivedPausedTimeRanges = value as! [NSDictionary]
-                    for (index,eachTimeRangeDictionary) in receivedPausedTimeRanges.enumerated() {
-                        let obtainedTimeRange = CMTimeRangeMakeFromDictionary(eachTimeRangeDictionary)
-                        print("reading pausedTimeRange \(index): \(obtainedTimeRange)")
-                        for (index,(boxTime,_)) in Array(savedBoxes).enumerated() {
-                            if obtainedTimeRange.containsTime(boxTime) {
-                                savedBoxes.remove(at: index)
-                            }
-                        }
-                        self.pausedTimeRanges.append(obtainedTimeRange)
+                    
+                    for eachTimeRangeDictionary in receivedPausedTimeRanges {
+                        self.pausedTimeRanges.append(CMTimeRangeMakeFromDictionary(eachTimeRangeDictionary))
                     }
-
+                    
+                    //We just keep/filter the boxes that are not contained in any of the pausedTimeRanges
+                    savedBoxes = savedBoxes.filter { (boxTime,_) -> Bool in
+                        return !self.pausedTimeRanges.contains { $0.containsTime(boxTime) }
+                    }
+                    
                     if let aRole = self.myRole, aRole == .userCam {
                         var savedBoxesDictionaryWithCMTimeToDictionary = [NSDictionary:VNRectangleObservation]()
 
@@ -879,9 +875,15 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
                         sendMessageToServer(dict: ["savedBoxes":savedBoxesDictionaryWithCMTimeToDictionary])
                     }
                     
-                    self.movieWriter.stopWriting()
+                    let weakSelf = self
+                    movieWriter.stopWriting { (error) in
+                        self.closeAndRemoveOutputStreamers()
+                    }
                     
-                    self.closeAndRemoveOutputStreamers()
+//                    self.closeAndRemoveOutputStreamers {
+//                        weakSelf.movieWriter.stopWriting()
+//                    }
+                    
                 case "mirrorMode":
                     mirrorPeer = value as? MCPeerID
                 case "ARE_YOU_WIZARD_CAM":
@@ -959,9 +961,10 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
     func movieWriter(didStartedWriting atSourceTime: CMTime) {
         firstRecordedFrameTimeStamp = atSourceTime
     }
-    func movieWriter(didFinishedWriting temporalURL:URL,error:Error?) {
+    func movieWriter(didFinishedWriting temporalURL:URL,error:Error?,completionHandler:((Error?)->Void)?) {
         guard error == nil else {
             alert(error, title: "movieWriter", message: "movieWriter(didFinishedWriting ...")
+            completionHandler?(error)
             return
         }
         
@@ -977,12 +980,14 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
             //Let's remove the pausedTimeRanges
             let finalComposition = AVMutableComposition()
             guard let compositionVideoTrack = finalComposition.addMutableTrack(withMediaType: .video, preferredTrackID: kCMPersistentTrackID_Invalid) else {
-                self.alert(nil, title: "Playback error", message: "Could not create compositionVideoTrack for final video")
+                self.alert(nil, title: "Export error", message: "Could not create compositionVideoTrack for final video")
+                completionHandler?(NSError(domain: "Export", code: 666, userInfo: [NSLocalizedDescriptionKey : "Could not create compositionVideoTrack for final video"]))
                 return
             }
             
             guard let assetVideoTrack = asset.tracks(withMediaType: .video).first else {
-                self.alert(nil, title: "Playback error", message: "The prototype video file does not have any video track")
+                self.alert(nil, title: "Export error", message: "The prototype video file does not have any video track")
+                completionHandler?(NSError(domain: "Export", code: 666, userInfo: [NSLocalizedDescriptionKey : "The prototype video file does not have any video track"]))
                 return
             }
             
@@ -990,12 +995,14 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
             if let role = self.myRole, .userCam == role {
                 //We only add audio from the userCam
                 guard let compositionAudioTrack = finalComposition.addMutableTrack(withMediaType: .audio, preferredTrackID: kCMPersistentTrackID_Invalid) else {
-                    self.alert(nil, title: "Playback error", message: "Could not create compositionAudioTrack for final video")
+                    self.alert(nil, title: "Export error", message: "The prototype video file does not have any audio track")
+                    completionHandler?(NSError(domain: "Export", code: 666, userInfo: [NSLocalizedDescriptionKey : "The prototype video file does not have any audio track"]))
                     return
                 }
                 
                 guard let assetAudioTrack = asset.tracks(withMediaType: .audio).first else {
-                    self.alert(nil, title: "Playback error", message: "The prototype video file does not have any audio track")
+                    self.alert(nil, title: "Export error", message: "The prototype video file does not have any audio track")
+                    completionHandler?(NSError(domain: "Export", code: 666, userInfo: [NSLocalizedDescriptionKey : "The prototype video file does not have any audio track"]))
                     return
                 }
                 
@@ -1008,7 +1015,8 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
                 do {
                     try compositionTrack.insertTimeRange(compositionTrackTimeRange, of: assetTrack, at: kCMTimeZero)
                 } catch {
-                    self.alert(nil, title: "Playback error", message: "Could not insert asset track in compositionTrack")
+                    self.alert(nil, title: "Export error", message: "Could not insert asset track in compositionTrack")
+                    completionHandler?(NSError(domain: "Export", code: 666, userInfo: [NSLocalizedDescriptionKey : "Could not insert asset track in compositionTrack"]))
                     return
                 }
                 
@@ -1019,7 +1027,8 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
             }
             
             guard let session = AVAssetExportSession(asset: finalComposition, presetName: AVAssetExportPreset1280x720) else {
-                self.alert(nil, title: "Playback error", message: "Could not create AVAssetExportSession")
+                self.alert(nil, title: "Export error", message: "Could not create AVAssetExportSession")
+                completionHandler?(NSError(domain: "Export", code: 666, userInfo: [NSLocalizedDescriptionKey : "Could not create AVAssetExportSession"]))
                 return
             }
             
@@ -1031,8 +1040,10 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
                 switch session.status {
                 case .failed:
                     print("Export failed: \(session.error?.localizedDescription ?? "unknown error")")
+                    completionHandler?(session.error)
                 case .cancelled:
                     print("Export canceled")
+                    completionHandler?(NSError(domain: "UI", code: 666, userInfo: [NSLocalizedDescriptionKey : "Export cancelled"]))
                 default:
                     print("Export succeded")
                     let weakSelf = self
@@ -1045,9 +1056,12 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
                         weakSelf.multipeerSession.sendResource(at: theFinalOutputURL, withName: "MONTAGE_CAM_MOVIE", toPeer: serverPeer) { (error) in
                             guard let error = error else {
                                 print("*** Movie sent succesfully!")
+                                completionHandler?(nil)
                                 return
                             }
                             print("Failed to send movie \(theFinalOutputURL): \(error.localizedDescription)")
+                            completionHandler?(error)
+
                         }
                     }
                     //        let cloudKitAsset = CKAsset(fileURL: outputURL)

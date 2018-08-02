@@ -93,7 +93,7 @@ class DetailLineController: UIViewController, UICollectionViewDelegate, UICollec
         let video:Video
         switch segue.identifier {
         case "SEGUE_NEW_COMPOSITION":
-            video = Video(context: coreDataContext)
+            video = Video(context: coreDataContext) //We should be in the main thread, so no worries ...
             line?.addToElements(video)
             video.sequenceNumber = Int32(line?.elements?.index(of: video) ?? 0)
             
@@ -218,13 +218,16 @@ class DetailLineController: UIViewController, UICollectionViewDelegate, UICollec
     func deleteRecordingVideo() {
         if let recordedVideo = self.recordingVideo {
             //when recording is cancelled, we need to delete recordingVideo from the DB
-            line?.removeFromElements(recordedVideo)
-            coreDataContext.delete(recordedVideo)
-            do {
-                try coreDataContext.save()
-                self.recordingVideo = nil
-            } catch {
-                alert(error, title: "DB Error", message: "Could not delete cancelled recording video")
+            let weakSelf = self
+            DispatchQueue.main.async {
+                weakSelf.line?.removeFromElements(recordedVideo)
+                weakSelf.coreDataContext.delete(recordedVideo)
+                do {
+                    try weakSelf.coreDataContext.save()
+                    weakSelf.recordingVideo = nil
+                } catch {
+                    weakSelf.alert(error, title: "DB Error", message: "Could not delete cancelled recording video")
+                }
             }
         }
     }
@@ -250,17 +253,16 @@ class DetailLineController: UIViewController, UICollectionViewDelegate, UICollec
             return
         }
         
-        let newVideo = line?.addNewVideo(context: coreDataContext)
-        
-        do {
-            try coreDataContext.save()
-            recordingVideo = newVideo
-        } catch let error as NSError {
-            print("Could not save new video: \(error.localizedDescription)")
-        }
-        
-        present(imagePickerController, animated: true) {
-            //Something
+        let weakSelf = self
+        DispatchQueue.main.async {
+            do {
+                let newVideo = weakSelf.line?.addNewVideo(context: weakSelf.coreDataContext)
+                try weakSelf.coreDataContext.save()
+                weakSelf.recordingVideo = newVideo
+                weakSelf.present(weakSelf.imagePickerController, animated: true)
+            } catch {
+                weakSelf.alert(error, title: "DB Error", message: "Could not save new video")
+            }
         }
     }
     
