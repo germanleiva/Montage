@@ -11,7 +11,7 @@ import MultipeerConnectivity
 import Streamer
 import WatchConnectivity
 
-let fps = 30.0
+let fps = 15.0//30.0
 
 let watchQueue = DispatchQueue(label: "fr.lri.ex-situ.Montage.serial_watch_queue", qos: DispatchQoS.userInteractive)
 
@@ -27,40 +27,37 @@ class ViewController: UIViewController, MCSessionDelegate, InputStreamerDelegate
         didSet {
             //WATCH
             if self.watchConnectivitySession?.isReachable ?? false {
-                guard let finalImage = lastPrototypeFrame else {
+                guard let prototypeFrame = lastPrototypeFrame else {
                     return
                 }
                 
                 watchQueue.async {[unowned self] in
-                    guard let scaleFilter = CIFilter(name: "CILanczosScaleTransform") else {
-                        return
+                    let mirrorFrame:CIImage
+
+                    if let sketchesOverlay = self.lastSketchFrame {
+                        let overlayFilter = CIFilter(name: "CISourceOverCompositing")!
+                        overlayFilter.setValue(prototypeFrame, forKey: kCIInputBackgroundImageKey)
+                        overlayFilter.setValue(sketchesOverlay, forKey: kCIInputImageKey)
+                        if let obtainedImage = overlayFilter.outputImage {
+                            mirrorFrame = obtainedImage
+                        } else {
+                            mirrorFrame = prototypeFrame
+                        }
+                    } else {
+                        mirrorFrame = prototypeFrame
                     }
-                    scaleFilter.setValue(finalImage, forKey: "inputImage")
+                    
+                    let scaleFilter = CIFilter(name: "CILanczosScaleTransform")!
+                    scaleFilter.setValue(mirrorFrame, forKey: "inputImage")
                     let scaleFactor = 0.5
                     scaleFilter.setValue(scaleFactor, forKey: "inputScale")
                     scaleFilter.setValue(1.0, forKey: "inputAspectRatio")
                     
-                    guard let scaledFinalImage = scaleFilter.outputImage else {
+                    guard let scaledMirrorFrame = scaleFilter.outputImage else {
                         return
                     }
                     
-                    let currentMirroredImage:CIImage
-                    
-                    if let currentOverlayImage = self.lastSketchFrame {
-                        let scaledOverlay = currentOverlayImage.transformed(by: CGAffineTransform.identity.scaledBy(x: scaledFinalImage.extent.width / currentOverlayImage.extent.width, y: scaledFinalImage.extent.height / currentOverlayImage.extent.height))
-                        let overlayFilter = CIFilter(name: "CISourceOverCompositing")!
-                        overlayFilter.setValue(scaledFinalImage, forKey: kCIInputBackgroundImageKey)
-                        overlayFilter.setValue(scaledOverlay, forKey: kCIInputImageKey)
-                        if let obtainedImage = overlayFilter.outputImage {
-                            currentMirroredImage = obtainedImage
-                        } else {
-                            currentMirroredImage = scaledFinalImage
-                        }
-                    } else {
-                        currentMirroredImage = scaledFinalImage
-                    }
-                    
-                    guard let image = self.cgImageBackedImage(withCIImage: currentMirroredImage) else {
+                    guard let image = self.cgImageBackedImage(withCIImage: scaledMirrorFrame) else {
                         return
                     }
                     

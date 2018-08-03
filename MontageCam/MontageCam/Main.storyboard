@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="14113" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="BYZ-38-t0r">
-    <device id="retina4_7" orientation="portrait">
+    <device id="retina4_7" orientation="landscape">
         <adaptation id="fullscreen"/>
     </device>
     <dependencies>
@@ -15,50 +15,59 @@
             <objects>
                 <viewController id="BYZ-38-t0r" customClass="ViewController" customModule="MontageCam" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="8bC-Xf-vdC">
-                        <rect key="frame" x="0.0" y="0.0" width="375" height="667"/>
+                        <rect key="frame" x="0.0" y="0.0" width="667" height="375"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
-                            <stackView opaque="NO" contentMode="scaleToFill" fixedFrame="YES" alignment="bottom" spacing="19" translatesAutoresizingMaskIntoConstraints="NO" id="EwJ-76-pU7">
-                                <rect key="frame" x="135.5" y="20" width="104.5" height="31"/>
-                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                            <stackView opaque="NO" contentMode="scaleToFill" alignment="bottom" spacing="5" translatesAutoresizingMaskIntoConstraints="NO" id="EwJ-76-pU7">
+                                <rect key="frame" x="268.5" y="20" width="90.5" height="31"/>
                                 <subviews>
-                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" ambiguous="YES" text="Lock" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="ASa-C5-FcB">
-                                        <rect key="frame" x="0.0" y="10.5" width="36.5" height="20.5"/>
+                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Lock" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="ASa-C5-FcB">
+                                        <rect key="frame" x="0.0" y="0.0" width="36.5" height="31"/>
                                         <fontDescription key="fontDescription" type="system" pointSize="17"/>
                                         <color key="textColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                                         <nil key="highlightedColor"/>
                                     </label>
-                                    <switch opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" ambiguous="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" translatesAutoresizingMaskIntoConstraints="NO" id="Isn-y3-Igv">
-                                        <rect key="frame" x="55.5" y="0.0" width="51" height="31"/>
+                                    <switch opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" contentHorizontalAlignment="center" contentVerticalAlignment="center" translatesAutoresizingMaskIntoConstraints="NO" id="Isn-y3-Igv">
+                                        <rect key="frame" x="41.5" y="0.0" width="51" height="31"/>
                                         <connections>
                                             <action selector="lockPressed:" destination="BYZ-38-t0r" eventType="valueChanged" id="6Qi-er-zQQ"/>
                                         </connections>
                                     </switch>
                                 </subviews>
+                                <constraints>
+                                    <constraint firstItem="ASa-C5-FcB" firstAttribute="centerY" secondItem="EwJ-76-pU7" secondAttribute="centerY" id="VUC-vh-eue"/>
+                                </constraints>
                             </stackView>
-                            <stackView hidden="YES" opaque="NO" contentMode="scaleToFill" fixedFrame="YES" distribution="fillEqually" spacing="10" translatesAutoresizingMaskIntoConstraints="NO" id="c1R-2E-mHZ">
-                                <rect key="frame" x="0.0" y="587" width="615" height="30"/>
-                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                            <stackView hidden="YES" opaque="NO" contentMode="scaleToFill" distribution="fillEqually" spacing="10" translatesAutoresizingMaskIntoConstraints="NO" id="c1R-2E-mHZ">
+                                <rect key="frame" x="0.0" y="345" width="667" height="30"/>
                                 <subviews>
-                                    <slider opaque="NO" contentMode="scaleToFill" ambiguous="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" value="0.5" minValue="0.0" maxValue="1" translatesAutoresizingMaskIntoConstraints="NO" id="Owi-6w-ga9">
-                                        <rect key="frame" x="-2" y="0.0" width="119" height="31"/>
+                                    <slider opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" value="0.5" minValue="0.0" maxValue="1" translatesAutoresizingMaskIntoConstraints="NO" id="Owi-6w-ga9">
+                                        <rect key="frame" x="-2" y="0.0" width="129.5" height="31"/>
                                     </slider>
-                                    <slider opaque="NO" contentMode="scaleToFill" ambiguous="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" value="1" minValue="0.0" maxValue="1" translatesAutoresizingMaskIntoConstraints="NO" id="Rxo-kc-4Bg">
-                                        <rect key="frame" x="123" y="0.0" width="119" height="31"/>
+                                    <slider opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" value="1" minValue="0.0" maxValue="1" translatesAutoresizingMaskIntoConstraints="NO" id="Rxo-kc-4Bg">
+                                        <rect key="frame" x="133.5" y="0.0" width="129.5" height="31"/>
                                     </slider>
-                                    <slider opaque="NO" contentMode="scaleToFill" ambiguous="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" value="0.14999999999999999" minValue="0.0" maxValue="1" translatesAutoresizingMaskIntoConstraints="NO" id="Qhf-p0-Iv1">
-                                        <rect key="frame" x="248" y="0.0" width="119" height="31"/>
+                                    <slider opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" value="0.14999999999999999" minValue="0.0" maxValue="1" translatesAutoresizingMaskIntoConstraints="NO" id="Qhf-p0-Iv1">
+                                        <rect key="frame" x="269" y="0.0" width="129" height="31"/>
                                     </slider>
-                                    <slider opaque="NO" contentMode="scaleToFill" ambiguous="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" value="1" minValue="0.0" maxValue="1" translatesAutoresizingMaskIntoConstraints="NO" id="qCr-K4-KpP">
-                                        <rect key="frame" x="373" y="0.0" width="119" height="31"/>
+                                    <slider opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" value="1" minValue="0.0" maxValue="1" translatesAutoresizingMaskIntoConstraints="NO" id="qCr-K4-KpP">
+                                        <rect key="frame" x="404" y="0.0" width="129.5" height="31"/>
                                     </slider>
-                                    <slider opaque="NO" contentMode="scaleToFill" ambiguous="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" value="45" minValue="0.0" maxValue="45" translatesAutoresizingMaskIntoConstraints="NO" id="2qn-qF-qUW">
-                                        <rect key="frame" x="498" y="0.0" width="119" height="31"/>
+                                    <slider opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" value="45" minValue="0.0" maxValue="45" translatesAutoresizingMaskIntoConstraints="NO" id="2qn-qF-qUW">
+                                        <rect key="frame" x="539.5" y="0.0" width="129.5" height="31"/>
                                     </slider>
                                 </subviews>
                             </stackView>
                         </subviews>
                         <color key="backgroundColor" red="0.0" green="0.0" blue="0.0" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                        <constraints>
+                            <constraint firstItem="c1R-2E-mHZ" firstAttribute="bottom" secondItem="6Tk-OE-BBY" secondAttribute="bottom" id="9m9-rG-llc"/>
+                            <constraint firstAttribute="trailing" secondItem="c1R-2E-mHZ" secondAttribute="trailing" id="W7m-Su-x76"/>
+                            <constraint firstAttribute="bottom" secondItem="c1R-2E-mHZ" secondAttribute="bottom" id="hxt-gb-roD"/>
+                            <constraint firstItem="c1R-2E-mHZ" firstAttribute="leading" secondItem="6Tk-OE-BBY" secondAttribute="leading" id="ikf-9Z-u9p"/>
+                            <constraint firstItem="EwJ-76-pU7" firstAttribute="top" secondItem="6Tk-OE-BBY" secondAttribute="top" constant="20" id="lt2-MZ-ucT"/>
+                            <constraint firstItem="EwJ-76-pU7" firstAttribute="centerX" secondItem="6Tk-OE-BBY" secondAttribute="centerX" constant="-20" id="yJj-zx-sRu"/>
+                        </constraints>
                         <viewLayoutGuide key="safeArea" id="6Tk-OE-BBY"/>
                     </view>
                     <navigationItem key="navigationItem" id="sop-AH-IXT"/>

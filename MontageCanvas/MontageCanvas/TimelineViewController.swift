@@ -328,6 +328,9 @@ class TimelineViewController: UIViewController, NSFetchedResultsControllerDelega
     // MARK: - Actions
     
     @IBAction func viewportButtonPressed(_ sender:AnyObject?) {
+        if let viewportButton = sender as? UIBarButtonItem {
+            viewportButton.tintColor = viewportButton.tintColor == UIColor.red ? view.tintColor : UIColor.red
+        }
         delegate?.timelineDidPressViewporting()
     }
     
