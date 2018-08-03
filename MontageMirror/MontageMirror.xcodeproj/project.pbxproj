@@ -21,7 +21,6 @@
 		A4D59BC82084C47F002350B5 /* MontageMirrorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4D59BC72084C47F002350B5 /* MontageMirrorTests.swift */; };
 		A4D59BD32084C47F002350B5 /* MontageMirrorUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4D59BD22084C47F002350B5 /* MontageMirrorUITests.swift */; };
 		A4F50D6B2084D91400E2E200 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = A4F50D6A2084D91400E2E200 /* Main.storyboard */; };
-		A4F50D6D2084D92300E2E200 /* InputStreamHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4F50D6C2084D92200E2E200 /* InputStreamHandler.swift */; };
 		A4F50D742084DE3900E2E200 /* Interface.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = A4F50D722084DE3900E2E200 /* Interface.storyboard */; };
 		A4F50D762084DE3A00E2E200 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A4F50D752084DE3A00E2E200 /* Assets.xcassets */; };
 		A4F50D7D2084DE3A00E2E200 /* MontageWatch Extension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = A4F50D7C2084DE3A00E2E200 /* MontageWatch Extension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -158,7 +157,6 @@
 		A4D59BD22084C47F002350B5 /* MontageMirrorUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MontageMirrorUITests.swift; sourceTree = "<group>"; };
 		A4D59BD42084C47F002350B5 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A4F50D6A2084D91400E2E200 /* Main.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; path = Main.storyboard; sourceTree = "<group>"; };
-		A4F50D6C2084D92200E2E200 /* InputStreamHandler.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = InputStreamHandler.swift; sourceTree = "<group>"; };
 		A4F50D702084DE3900E2E200 /* MontageWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MontageWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A4F50D732084DE3900E2E200 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Interface.storyboard; sourceTree = "<group>"; };
 		A4F50D752084DE3A00E2E200 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -313,7 +311,6 @@
 		A4D59BAE2084C47E002350B5 /* MontageMirror */ = {
 			isa = PBXGroup;
 			children = (
-				A4F50D6C2084D92200E2E200 /* InputStreamHandler.swift */,
 				A4D59BAF2084C47E002350B5 /* AppDelegate.swift */,
 				A4D59BB12084C47E002350B5 /* ViewController.swift */,
 				A4F50D6A2084D91400E2E200 /* Main.storyboard */,
@@ -749,7 +746,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				A4D59BB22084C47E002350B5 /* ViewController.swift in Sources */,
-				A4F50D6D2084D92300E2E200 /* InputStreamHandler.swift in Sources */,
 				A4D59BB82084C47E002350B5 /* MontageMirror.xcdatamodeld in Sources */,
 				A4D59BB02084C47E002350B5 /* AppDelegate.swift in Sources */,
 			);

@@ -157,6 +157,18 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
                             }
                             overlay = scaledFinalImage
                             
+                            if let normalizedViewportRect = weakSelf.videoModel.prototypeTrack?.viewportRect {
+                                let totalWidth = overlay.extent.width
+                                let totalHeight = overlay.extent.height
+                                
+                                let croppingRect = CGRect(x: normalizedViewportRect.origin.x * totalWidth,
+                                                          y: normalizedViewportRect.origin.y * totalHeight,
+                                                          width: normalizedViewportRect.width * totalWidth,
+                                                          height: normalizedViewportRect.height * totalHeight)
+                                
+                                overlay = overlay.cropped(to: croppingRect)
+                            }
+                            
                             guard let image = weakSelf.cgImageBackedImage(withCIImage: overlay) else {
                                 print("Could not build overly image to mirror")
                                 return
@@ -2435,6 +2447,9 @@ extension CameraController: CanvasViewDelegate {
     
     func canvasTierViewport(normalizedRect: CGRect) {
         videoModel.prototypeTrack?.viewportRect = normalizedRect
+        if let connectedMirrorPeer = mirrorPeer {
+            sendMessage(peerID: connectedMirrorPeer, dict: ["viewport" : normalizedRect])
+        }
     }
     
     var currentTime: TimeInterval {
