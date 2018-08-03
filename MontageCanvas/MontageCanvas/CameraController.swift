@@ -2527,9 +2527,9 @@ class CalendarEvent {
 }
 
 extension CameraController: TimelineDelegate {
-    func timelineDidStartViewporting() {
+    func timelineDidPressViewporting() {
         if let canvasView = canvasControllerMode.isPlayingMode ? self.prototypePlayerCanvasView : self.prototypeCanvasView {
-            canvasView.isViewporting = true
+            canvasView.toggleViewporting()
         }
     }
     

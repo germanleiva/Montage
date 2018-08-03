@@ -36,11 +36,16 @@ class CanvasView: UIView, UIGestureRecognizerDelegate {
             if isViewporting == willBeViewporting {
                 return
             }
+            print("Setting isViewporting in \(willBeViewporting)")
             
-            let shouldEnable = isViewporting && !willBeViewporting
-            setRecognizers(isEnabled: shouldEnable)
+            rotationRecognizer.isEnabled = !willBeViewporting
+            longPressRecognizer.isEnabled = !willBeViewporting
         }
     }
+    func toggleViewporting() {
+        isViewporting = !isViewporting
+    }
+    
     var viewportLayer:CAShapeLayer?
     
     weak var delegate:CanvasViewDelegate?
@@ -80,13 +85,6 @@ class CanvasView: UIView, UIGestureRecognizerDelegate {
         panRecognizer.allowedTouchTypes = [NSNumber(value:UITouchType.direct.rawValue)]
         return panRecognizer
     }()
-    
-    func setRecognizers(isEnabled:Bool) {
-        rotationRecognizer.isEnabled = isEnabled
-        pinchRecognizer.isEnabled = isEnabled
-        panRecognizer.isEnabled = isEnabled
-        longPressRecognizer.isEnabled = isEnabled
-    }
     
     lazy var longPressRecognizer:UILongPressGestureRecognizer = {
         let longPressRecognizer = UILongPressGestureRecognizer(target: self, action: #selector(CanvasView.longPressDetected))
@@ -310,18 +308,8 @@ class CanvasView: UIView, UIGestureRecognizerDelegate {
                         mutablePath.closeSubpath()
                         viewportLayer?.path = mutablePath
                         
-                        if let viewportRect = viewportLayer?.path?.boundingBoxOfPath {
-                            viewportLayer?.path = CGPath(rect: viewportRect, transform: nil)
-                            
-                            let normalizedViewportRect = CGRect(x: viewportRect.origin.x / bounds.width,
-                                                                y: 1 - (viewportRect.origin.y + viewportRect.height) / bounds.height,
-                                                                width: viewportRect.width / bounds.width,
-                                                                height: viewportRect.height / bounds.height)
-                            
-                            delegate?.canvasTierViewport(normalizedRect: normalizedViewportRect)
-                        }
+                        updateViewport()
                     }
-                    isViewporting = false
                     return
                 }
                 
@@ -347,6 +335,19 @@ class CanvasView: UIView, UIGestureRecognizerDelegate {
                     }
                 }
             }
+        }
+    }
+    
+    func updateViewport() {
+        if let viewportRect = viewportLayer?.path?.boundingBoxOfPath {
+            viewportLayer?.path = CGPath(rect: viewportRect, transform: nil)
+            
+            let normalizedViewportRect = CGRect(x: viewportRect.origin.x / bounds.width,
+                                                y: 1 - (viewportRect.origin.y + viewportRect.height) / bounds.height,
+                                                width: viewportRect.width / bounds.width,
+                                                height: viewportRect.height / bounds.height)
+            
+            delegate?.canvasTierViewport(normalizedRect: normalizedViewportRect)
         }
     }
     
@@ -444,6 +445,7 @@ class CanvasView: UIView, UIGestureRecognizerDelegate {
             break
         }
     }
+    
     @objc func pinchDetected(recognizer:UIPinchGestureRecognizer) {
         switch recognizer.state {
         case .possible:
@@ -452,6 +454,10 @@ class CanvasView: UIView, UIGestureRecognizerDelegate {
             
         case .began:
             print("pinchDetected began")
+            if isViewporting {
+                return
+            }
+            
             eraseFutureTransformations()
 
             break
@@ -459,20 +465,58 @@ class CanvasView: UIView, UIGestureRecognizerDelegate {
         case .changed:
             print("pinchDetected changed")
             
-            guard let _ = delegate?.shouldRecordInking else {
+            let scale = recognizer.scale
+            recognizer.scale = 1
+            
+            let thresholdPercentage = CGFloat(0.1)
+            var scaleVector = CGPoint(x:scale,y:scale)
+
+            if recognizer.numberOfTouches >= 2 {
+                let firstTouch = recognizer.location(ofTouch: 0, in: self)
+                let secondTouch = recognizer.location(ofTouch: 1, in: self)
+                
+                if firstTouch.distance(secondTouch) >
+                    thresholdPercentage * max(frame.size.width,frame.size.height) {
+                    if abs(firstTouch.x - secondTouch.x) < thresholdPercentage * frame.size.width {
+                        scaleVector.x = 1
+                    }
+                    if abs(firstTouch.y - secondTouch.y) < thresholdPercentage * frame.size.height {
+                        scaleVector.y = 1
+                    }
+                }
+            }
+            
+            if isViewporting {
+                guard let boundingBoxOfPath = viewportLayer?.path?.boundingBoxOfPath else {
+                    return
+                }
+                
+//                var scaleTransform = CGAffineTransform(scaleX: scale, y: scale)
+                let center = CGPoint(x: boundingBoxOfPath.origin.x + boundingBoxOfPath.width / 2, y: boundingBoxOfPath.origin.y + boundingBoxOfPath.height / 2)
+                //                var scaleTransform = CGAffineTransform(translationX: center.x, y: center.y).scaledBy(x: scale, y: scale).translatedBy(x: -center.x, y: -center.y)
+                var scaleTransform = CGAffineTransform(translationX: center.x, y: center.y).scaledBy(x: scaleVector.x, y: scaleVector.y).translatedBy(x: -center.x, y: -center.y)
+//                    CGAffineTransform(translationX: center.x, y: center.y).scaledBy(x: scale, y: scale).translatedBy(x: -center.x, y: -center.y)
+
+                viewportLayer?.path = CGPath(rect: boundingBoxOfPath, transform: &scaleTransform)
+                
+                updateViewport()
                 return
             }
             
-            let scale = recognizer.scale
-            recognizer.scale = 1
+            guard let _ = delegate?.shouldRecordInking else {
+                return
+            }
 
             for aSelectedSketch in selectedSketches {
-                aSelectedSketch.scalingDelta(CGPoint(x: scale,y: scale),timestamp: normalizeTime())
+                aSelectedSketch.scalingDelta(CGPoint(x: scaleVector.x, y: scaleVector.y),timestamp: normalizeTime())
             }
             break
             
         case .ended:
             print("pinchDetected ended")
+            if isViewporting {
+                return
+            }
             
             if let delegate = delegate, !delegate.shouldRecordInking {
                 let scale = recognizer.scale
@@ -504,6 +548,10 @@ class CanvasView: UIView, UIGestureRecognizerDelegate {
             
         case .began:
             print("panDetected began")
+            if isViewporting {
+                return
+            }
+            
             let touchLocation = recognizer.location(in: self)
             
             for tier in (videoTrack.tiers!.array as! [Tier]).reversed() {
@@ -523,13 +571,24 @@ class CanvasView: UIView, UIGestureRecognizerDelegate {
             
         case .changed:
             print("panDetected changed")
+            let delta = recognizer.translation(in: self)
+            recognizer.setTranslation(CGPoint.zero, in: self)
+            
+            if isViewporting {
+                guard let boundingBoxOfPath = viewportLayer?.path?.boundingBoxOfPath else {
+                    return
+                }
+                
+                var translateTransform = CGAffineTransform(translationX: delta.x, y: delta.y)
+                viewportLayer?.path = CGPath(rect: boundingBoxOfPath, transform: &translateTransform)
+                
+                updateViewport()
+                return
+            }
             
             guard let _ = delegate?.shouldRecordInking else {
                 return
             }
-
-            let delta = recognizer.translation(in: self)
-            recognizer.setTranslation(CGPoint.zero, in: self)
             
             for aSelectedSketch in selectedSketches {
                 aSelectedSketch.translationDelta(delta,timestamp: normalizeTime())
@@ -538,6 +597,9 @@ class CanvasView: UIView, UIGestureRecognizerDelegate {
             
         case .ended:
             print("panDetected ended")
+            if isViewporting {
+                return
+            }
             
             if let delegate = delegate, !delegate.shouldRecordInking {
                 let delta = recognizer.translation(in: self)

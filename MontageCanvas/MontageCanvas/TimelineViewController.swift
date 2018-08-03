@@ -12,7 +12,7 @@ import CoreData
 protocol TimelineDelegate: AnyObject {
     func timeline(didSelectPrototypeTrack prototypeTrack:VideoTrack)
     func timeline(didSelectNewVideo video:Video)
-    func timelineDidStartViewporting()
+    func timelineDidPressViewporting()
 }
 
 class TimelineViewController: UIViewController, NSFetchedResultsControllerDelegate, UITableViewDataSource, UITableViewDelegate {
@@ -34,7 +34,6 @@ class TimelineViewController: UIViewController, NSFetchedResultsControllerDelega
     
     @IBOutlet weak var reuseButton:UIBarButtonItem!
     @IBOutlet weak var viewportButton:UIBarButtonItem!
-    var isViewporting = false
     
     @IBOutlet weak var tableView:UITableView! {
         didSet {
@@ -328,7 +327,7 @@ class TimelineViewController: UIViewController, NSFetchedResultsControllerDelega
     // MARK: - Actions
     
     @IBAction func viewportButtonPressed(_ sender:AnyObject?) {
-        delegate?.timelineDidStartViewporting()
+        delegate?.timelineDidPressViewporting()
     }
     
     @IBAction func outButtonPressed(_ sender:AnyObject?) {
