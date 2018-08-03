@@ -22,7 +22,7 @@ public class Sketch: NSManagedObject {
         fillColor = Globals.initialFillColor
         lineWidth = Globals.initialLineWidth
         
-        pathActions = [PathAction]()
+        pathActions = [PathAction]() //This is needed because for some reason is initialized in nil
     }
     
     func clone() -> Sketch {
@@ -35,8 +35,10 @@ public class Sketch: NSManagedObject {
         clonedSketch.fillColor = fillColor
         clonedSketch.strokeColor = strokeColor
         
-        if let existingPathActions = pathActions {
-            clonedSketch.pathActions?.append(contentsOf: existingPathActions)
+        if let pathActionsToClone = pathActions {
+            for clonedPathAction in (pathActionsToClone.map {$0.clone()}) {
+                clonedSketch.pathActions!.append(clonedPathAction)
+            }
         }
         
         return clonedSketch

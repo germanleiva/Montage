@@ -45,7 +45,7 @@ public typealias RectangleObservation = VNRectangleObservation
 public typealias Time = CMTime
 public typealias TimeRange = CMTimeRange
 
-public enum MutablePathAction:Int {
+public enum MutablePathAction:Int32 {
     case move = 0
     case addLine
 }
@@ -68,11 +68,16 @@ public class PathAction: NSObject, NSCoding {
     }
 
     public required init?(coder aDecoder: NSCoder) {
-        action = MutablePathAction(rawValue: aDecoder.decodeInteger(forKey: "action"))!
+        action = MutablePathAction(rawValue: aDecoder.decodeInt32(forKey: "action"))!
         cgPoint = aDecoder.decodeCGPoint(forKey: "cgPoint")
         relativeTimeStamp = aDecoder.decodeDouble(forKey: "relativeTimeStamp")
         
         super.init()
+    }
+    
+    func clone() -> PathAction {
+        return PathAction(action,cgPoint,relativeTimeStamp)
+        
     }
 }
 
@@ -92,6 +97,23 @@ public class PointWrapper: NSObject, NSCoding {
         super.init()
     }
 
+}
+
+public class AffineTransformWrapper: NSObject, NSCoding {
+    var cgAffineTransform:CGAffineTransform
+    
+    init(_ affineTransform:CGAffineTransform) {
+        self.cgAffineTransform = affineTransform
+    }
+    
+    public func encode(with aCoder: NSCoder) {
+        aCoder.encode(cgAffineTransform, forKey: "cgAffineTransform")
+    }
+    
+    public required init?(coder aDecoder: NSCoder) {
+        cgAffineTransform = aDecoder.decodeCGAffineTransform(forKey: "cgAffineTransform")
+        super.init()
+    }
 }
 
 extension CGPoint {

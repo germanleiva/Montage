@@ -10,7 +10,7 @@ import UIKit
 import CoreData
 
 protocol TimelineDelegate: AnyObject {
-    func timeline(didSelectPrototypeTrack prototypeTrack:VideoTrack)
+    func timeline(didUpdateVideo video:Video)
     func timeline(didSelectNewVideo video:Video)
     func timelineDidPressViewporting()
 }
@@ -19,6 +19,7 @@ class TimelineViewController: UIViewController, NSFetchedResultsControllerDelega
     var videoTrack:VideoTrack! {
         didSet {
             if isViewLoaded {
+                _fetchedResultsController = nil
                 tableView.reloadData()
             }
         }
@@ -348,12 +349,12 @@ class TimelineViewController: UIViewController, NSFetchedResultsControllerDelega
     
     @IBAction func strokeStartSliderChanged(_ sender:UISlider) {
         print("strokeStartSliderChanged")
-        let percentage = CGFloat(sender.value)
+        let percentage = sender.value
         for selectedTier in canvasView.selectedSketches {
             selectedTier.strokeStartChanged(percentage, timestamp: canvasView.normalizeTime(Date().timeIntervalSince1970))
             CATransaction.begin()
             CATransaction.setDisableActions(true)
-            selectedTier.shapeLayer.strokeStart = percentage
+            selectedTier.shapeLayer.strokeStart = CGFloat(percentage)
             CATransaction.commit()
         }
     }
@@ -368,12 +369,12 @@ class TimelineViewController: UIViewController, NSFetchedResultsControllerDelega
     
     @IBAction func strokeEndSliderChanged(_ sender:UISlider) {
         print("strokeEndSliderChanged")
-        let percentage = CGFloat(sender.value)
+        let percentage = sender.value
         for selectedTier in canvasView.selectedSketches {
             selectedTier.strokeEndChanged(percentage, timestamp: canvasView.normalizeTime(Date().timeIntervalSince1970))
             CATransaction.begin()
             CATransaction.setDisableActions(true)
-            selectedTier.shapeLayer.strokeEnd = percentage
+            selectedTier.shapeLayer.strokeEnd = CGFloat(percentage)
             CATransaction.commit()
         }
     }
@@ -388,8 +389,8 @@ class TimelineViewController: UIViewController, NSFetchedResultsControllerDelega
 }
 
 extension TimelineViewController: VideoCatalogDelegate {
-    func videoCatalog(didSelectPrototypeTrack prototypeTrack: VideoTrack) {
-        delegate?.timeline(didSelectPrototypeTrack: prototypeTrack)
+    func videoCatalog(didSelectPrototypeTrack prototypeTrackToCopyFrom: VideoTrack, for video: Video) {
+        delegate?.timeline(didUpdateVideo:video)
     }
     func videoCatalog(didSelectNewVideo video: Video) {
         delegate?.timeline(didSelectNewVideo: video)

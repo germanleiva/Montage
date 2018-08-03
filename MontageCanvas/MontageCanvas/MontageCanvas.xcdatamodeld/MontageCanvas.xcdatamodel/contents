@@ -24,7 +24,7 @@
         <attribute name="fillColor" optional="YES" attributeType="Transformable" customClassName="UIColor" syncable="YES"/>
         <attribute name="lineCap" optional="YES" attributeType="String" syncable="YES"/>
         <attribute name="lineWidth" optional="YES" attributeType="Float" defaultValueString="0.0" usesScalarValueType="YES" syncable="YES"/>
-        <attribute name="pathActions" optional="YES" attributeType="Transformable" customClassName="Array&lt;PathAction&gt;" syncable="YES"/>
+        <attribute name="pathActions" attributeType="Transformable" customClassName="Array&lt;PathAction&gt;" syncable="YES"/>
         <attribute name="strokeColor" optional="YES" attributeType="Transformable" customClassName="UIColor" syncable="YES"/>
         <relationship name="board" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Board" inverseName="sketches" inverseEntity="Board" syncable="YES"/>
         <relationship name="tiers" toMany="YES" deletionRule="Nullify" destinationEntity="Tier" inverseName="sketch" inverseEntity="Tier" syncable="YES"/>
@@ -44,8 +44,33 @@
         <attribute name="strokeColor" optional="YES" attributeType="Transformable" customClassName="UIColor" syncable="YES"/>
         <attribute name="translationValue" optional="YES" attributeType="Transformable" customClassName="PointWrapper" syncable="YES"/>
         <attribute name="zIndex" optional="YES" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="YES" syncable="YES"/>
+        <relationship name="savedPathInputs" toMany="YES" deletionRule="Nullify" ordered="YES" destinationEntity="UserInputPath" inverseName="inverseUserInputPath" inverseEntity="UserInputPath" syncable="YES"/>
+        <relationship name="savedRotateTransformInputs" toMany="YES" deletionRule="Nullify" ordered="YES" destinationEntity="UserInputTransform" inverseName="inverseUserInputRotate" inverseEntity="UserInputTransform" syncable="YES"/>
+        <relationship name="savedScaleTransformInputs" toMany="YES" deletionRule="Nullify" ordered="YES" destinationEntity="UserInputTransform" inverseName="inverseUserInputScale" inverseEntity="UserInputTransform" syncable="YES"/>
+        <relationship name="savedStrokeEndInputs" toMany="YES" deletionRule="Nullify" ordered="YES" destinationEntity="UserInputStroke" inverseName="inverseUserInputStrokeEnd" inverseEntity="UserInputStroke" syncable="YES"/>
+        <relationship name="savedStrokeStartInputs" toMany="YES" deletionRule="Nullify" ordered="YES" destinationEntity="UserInputStroke" inverseName="inverseUserInputStrokeStart" inverseEntity="UserInputStroke" syncable="YES"/>
+        <relationship name="savedTranslateTransformInputs" toMany="YES" deletionRule="Nullify" ordered="YES" destinationEntity="UserInputTransform" inverseName="inverseUserInputTranslate" inverseEntity="UserInputTransform" syncable="YES"/>
         <relationship name="sketch" maxCount="1" deletionRule="Cascade" destinationEntity="Sketch" inverseName="tiers" inverseEntity="Sketch" syncable="YES"/>
         <relationship name="videoTrack" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="VideoTrack" inverseName="tiers" inverseEntity="VideoTrack" syncable="YES"/>
+    </entity>
+    <entity name="UserInput" representedClassName="UserInput" syncable="YES" codeGenerationType="category">
+        <attribute name="timestamp" optional="YES" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES" syncable="YES"/>
+    </entity>
+    <entity name="UserInputPath" representedClassName="UserInputPath" parentEntity="UserInput" syncable="YES" codeGenerationType="category">
+        <attribute name="action" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="YES" customClassName="MutablePathAction" syncable="YES"/>
+        <attribute name="value" optional="YES" attributeType="Transformable" customClassName="PointWrapper" syncable="YES"/>
+        <relationship name="inverseUserInputPath" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Tier" inverseName="savedPathInputs" inverseEntity="Tier" syncable="YES"/>
+    </entity>
+    <entity name="UserInputStroke" representedClassName="UserInputStroke" parentEntity="UserInput" syncable="YES" codeGenerationType="category">
+        <attribute name="value" optional="YES" attributeType="Float" defaultValueString="0.0" usesScalarValueType="YES" syncable="YES"/>
+        <relationship name="inverseUserInputStrokeEnd" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Tier" inverseName="savedStrokeEndInputs" inverseEntity="Tier" syncable="YES"/>
+        <relationship name="inverseUserInputStrokeStart" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Tier" inverseName="savedStrokeStartInputs" inverseEntity="Tier" syncable="YES"/>
+    </entity>
+    <entity name="UserInputTransform" representedClassName="UserInputTransform" parentEntity="UserInput" syncable="YES" codeGenerationType="category">
+        <attribute name="value" optional="YES" attributeType="Transformable" customClassName="AffineTransformWrapper" syncable="YES"/>
+        <relationship name="inverseUserInputRotate" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Tier" inverseName="savedRotateTransformInputs" inverseEntity="Tier" syncable="YES"/>
+        <relationship name="inverseUserInputScale" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Tier" inverseName="savedScaleTransformInputs" inverseEntity="Tier" syncable="YES"/>
+        <relationship name="inverseUserInputTranslate" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Tier" inverseName="savedTranslateTransformInputs" inverseEntity="Tier" syncable="YES"/>
     </entity>
     <entity name="Video" representedClassName="Video" syncable="YES" codeGenerationType="category">
         <attribute name="identifier" optional="YES" attributeType="UUID" usesScalarValueType="NO" syncable="YES"/>
@@ -70,10 +95,14 @@
     </entity>
     <elements>
         <element name="Board" positionX="261" positionY="198" width="128" height="105"/>
-        <element name="BoxObservation" positionX="468" positionY="351" width="128" height="30"/>
-        <element name="Line" positionX="556" positionY="198" width="128" height="135"/>
-        <element name="Sketch" positionX="603" positionY="536" width="128" height="150"/>
-        <element name="Tier" positionX="900" positionY="486" width="128" height="285"/>
+        <element name="BoxObservation" positionX="1395" positionY="294" width="128" height="30"/>
+        <element name="Line" positionX="556" positionY="198" width="128" height="133"/>
+        <element name="Sketch" positionX="603" positionY="536" width="128" height="148"/>
+        <element name="Tier" positionX="846" positionY="620" width="128" height="373"/>
+        <element name="UserInput" positionX="1359" positionY="486" width="128" height="58"/>
+        <element name="UserInputPath" positionX="1645" positionY="927" width="128" height="88"/>
+        <element name="UserInputStroke" positionX="1350" positionY="750" width="128" height="88"/>
+        <element name="UserInputTransform" positionX="1179" positionY="576" width="128" height="103"/>
         <element name="Video" positionX="835" positionY="224" width="128" height="163"/>
         <element name="VideoTrack" positionX="1123" positionY="296" width="128" height="180"/>
     </elements>

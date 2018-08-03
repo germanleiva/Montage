@@ -148,11 +148,7 @@ class CanvasView: UIView, UIGestureRecognizerDelegate {
     
     func createSketchLayer() -> Tier {
         let newTier = Tier(context: coreDataContext)
-        newTier.createdAt = Date()
-        
-        videoTrack.addToTiers(newTier)
-        newTier.zIndex = Int32(videoTrack.tiers?.count ?? 0) //Int32(videoTrack.tiers!.index(of: newTier))
-        
+        videoTrack.addTier(aTier: newTier)
         return newTier
     }
     
@@ -285,8 +281,8 @@ class CanvasView: UIView, UIGestureRecognizerDelegate {
                     let invisibleXSliderValue = abs(startingLocation.x - touchLocation.x)
                     if invisibleXSliderValue > 0 {
                         for selectedTier in selectedSketches {
-                            let percentage = CGFloat(1) - invisibleXSliderValue / selectedTier.shapeLayer.path!.boundingBoxOfPath.width
-                            selectedTier.strokeEndChanged(percentage, timestamp: normalizeTime(touch.timestamp1970))
+                            let percentage = 1.0 - invisibleXSliderValue / selectedTier.shapeLayer.path!.boundingBoxOfPath.width
+                            selectedTier.strokeEndChanged(Float(percentage), timestamp: normalizeTime(touch.timestamp1970))
                             
                             selectedTier.shapeLayer.strokeEnd = percentage
                         }
@@ -354,39 +350,22 @@ class CanvasView: UIView, UIGestureRecognizerDelegate {
     func eraseFutureTransformations() {
         if let currentTime = delegate?.currentTime {
             for aSelectedSketch in selectedSketches {
-                aSelectedSketch.recordedTransformInputs = aSelectedSketch.recordedTransformInputs.filter {
-                    let (timestamp,_) = $0
-                    return timestamp < currentTime
-                }
-                
-                func lastTransformation(withType aType:TierModification) -> CGAffineTransform? {
-                    if let (_,transformEnum) = aSelectedSketch.recordedTransformInputs.reversed().first(where: { (_,transformation) -> Bool in
-                        guard case let .transform(type,_) = transformation else {
-                            return false
-                        }
-                        return type == aType
-                    }) {
-                        if case let .transform(_,t) = transformEnum {
-                            return t
-                        }
-                    }
-                    return nil
-                }
+                aSelectedSketch.deleteTransformationInputs(withTimestampSmallerThan:currentTime)
                 
                 var newTranslation = CGPoint.zero
-                if let t = lastTransformation(withType: .moved) {
+                if let t = aSelectedSketch.recordedTranslateTransformInputs.last?.value?.cgAffineTransform {
                     newTranslation = CGPoint(x: t.tx, y: t.ty)
                 }
                 aSelectedSketch.translation = newTranslation
                 
                 var newScaling = CGPoint(x:1,y:1)
-                if let t = lastTransformation(withType: .scaled) {
+                if let t = aSelectedSketch.recordedScaleTransformInputs.last?.value?.cgAffineTransform {
                     newScaling = CGPoint(x: t.a, y: t.d)
                 }
                 aSelectedSketch.scaling = newScaling
                 
                 var newRotation = CGFloat(0)
-                if let t = lastTransformation(withType: .rotated) {
+                if let t = aSelectedSketch.recordedRotateTransformInputs.last?.value?.cgAffineTransform {
                     newRotation = atan2(t.b, t.a)
                 }
                 aSelectedSketch.rotation = newRotation

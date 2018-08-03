@@ -44,6 +44,11 @@ public class VideoTrack: NSManagedObject {
         return []
     }
     
+    func addTier(aTier:Tier)  {
+        addToTiers(aTier)
+        aTier.zIndex = Int32(tiers?.count ?? 0) //Int32(tiers!.index(of: newTier))
+    }
+    
     func box(forItemTime lookUpTime:CMTime) -> VNRectangleObservation? {
         if recordedBoxes.isEmpty {
             return nil
@@ -149,11 +154,33 @@ public class VideoTrack: NSManagedObject {
         viewportRect = videoTrack.viewportRect
         
         //Copy the files
-        if let previousURL = videoTrack.loadedFileURL {
+        if let urlToCopy = videoTrack.loadedFileURL {
+            let myFileURL = fileURL
+            
+            let backupFileName = myFileURL.deletingPathExtension().lastPathComponent + "-backup." + myFileURL.pathExtension
+            let backupFileURL = myFileURL.deletingLastPathComponent().appendingPathComponent(backupFileName)
+            
+            if FileManager.default.fileExists(atPath: backupFileURL.path) {
+                do {
+                    try FileManager.default.removeItem(at: backupFileURL)
+                } catch {
+                    print("There is a previous backupFileURL that we couldn't delete")
+                    return false
+                }
+            }
+            
             do {
-                try FileManager.default.copyItem(at: previousURL, to: fileURL)
+                try FileManager.default.moveItem(at: myFileURL, to: backupFileURL)
+            } catch {
+                print("Couldn't backup the prototype video track \(myFileURL) to \(backupFileURL)")
+                return false
+            }
+            
+            do {
+                try FileManager.default.copyItem(at: urlToCopy, to: myFileURL)
                 hasVideoFile = true//videoTrack.hasVideoFile
             } catch {
+                print("Couldn't copy the selected prototype video track \(urlToCopy) to \(myFileURL)")
                 return false
             }
         }
@@ -165,7 +192,7 @@ public class VideoTrack: NSManagedObject {
     
     func copyTiersFrom(_ videoTrack:VideoTrack) {
         for tier in videoTrack.tiers?.array as! [Tier] {
-            addToTiers(tier.clone())
+            addTier(aTier: tier.clone())
         }
     }
 }

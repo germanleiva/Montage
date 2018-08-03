@@ -634,6 +634,8 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
     var exportSession:AVAssetExportSession?
     
     @IBAction func savePressed(_ sender: Any) {
+        pausePlayers()
+        
         displayLink?.isPaused = true
         
         guard let backgroundMutableComposition = backgroundComposition?.copy() as? AVComposition else {
@@ -2533,25 +2535,26 @@ extension CameraController: TimelineDelegate {
         }
     }
     
-    func timeline(didSelectPrototypeTrack prototypeTrack:VideoTrack) {
-        guard let selectedFileURL = prototypeTrack.loadedFileURL, let myFileURL = videoModel.prototypeTrack?.loadedFileURL else {
-            return
-        }
+    func timeline(didUpdateVideo video:Video) {
+        assert(videoModel == video)
         
-        let backupFileName = myFileURL.deletingPathExtension().lastPathComponent + "-backup." + myFileURL.pathExtension
-        let backupFileURL = myFileURL.deletingLastPathComponent().appendingPathComponent(backupFileName)
-        do {
-            try FileManager.default.moveItem(at: myFileURL, to: backupFileURL)
-        } catch {
-            self.alert(error, title: "FileManager", message: "Couldn't backup the prototype video track \(myFileURL) to \(backupFileURL)")
-            return
-        }
+//        backgroundCanvasView.videoTrack = videoModel.backgroundTrack
+//        prototypeCanvasView.videoTrack = videoModel.prototypeTrack
+        
+//        backgroundPlayerCanvasView.videoTrack = videoModel.backgroundTrack
+//        prototypePlayerCanvasView.videoTrack = videoModel.prototypeTrack
+        
+//        for prototypeTier in newTiers {
+//            canvasTierAdded(prototypePlayerCanvasView, tier: prototypeTier)
+//        }
+        
+//        backgroundTimeline?.videoTrack = videoModel.backgroundTrack
+//        prototypeTimeline?.videoTrack = videoModel.prototypeTrack
         
         do {
-            try FileManager.default.copyItem(at: selectedFileURL, to: myFileURL)
+            try coreDataContext.save()
         } catch {
-            self.alert(error, title: "FileManager", message: "Couldn't copy the selected prototype video track \(selectedFileURL) to \(myFileURL)")
-            return
+            alert(error, title: "DB", message: "Couldn't save DB after updating/creating a video with a copied video track")
         }
         
         if canvasControllerMode.isPlayingMode {
@@ -2563,12 +2566,8 @@ extension CameraController: TimelineDelegate {
     
     func timeline(didSelectNewVideo video: Video) {
         videoModel = video
-        
-        if canvasControllerMode.isPlayingMode {
-            deinitPlaybackObjects()
-            
-            self.startPlayback()
-        }
+        //This code shouldn't work because we are not updating the background
+        timeline(didUpdateVideo: videoModel)
     }
 }
 

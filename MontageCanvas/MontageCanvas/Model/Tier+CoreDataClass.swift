@@ -31,16 +31,82 @@ enum TierModification {
 
 @objc(Tier)
 public class Tier: NSManagedObject {
-    var recordedPathInputs = [(TimeInterval,Transformation)]()
-    var recordedStrokeStartInputs = [(TimeInterval,Transformation)]()
-    var recordedStrokeEndInputs = [(TimeInterval,Transformation)]()
-//    var recordedOpacityInputs = [(TimeInterval,Transformation)]()
-    var recordedTransformInputs = [(TimeInterval,Transformation)]()
-
+//    var recordedPathInputs = [(TimeInterval,Transformation)]()
+//    var recordedStrokeStartInputs = [(TimeInterval,Transformation)]()
+//    var recordedStrokeEndInputs = [(TimeInterval,Transformation)]()
+//    var recordedTransformInputs = [(TimeInterval,Transformation)]()
+    var recordedPathInputs:[UserInputPath] {
+        get {
+            guard let pathInputs = savedPathInputs?.array as? [UserInputPath] else {
+                return []
+            }
+            return pathInputs
+        }
+    }
+    var recordedStrokeStartInputs:[UserInputStroke] {
+        get {
+            guard let strokeInputs = savedStrokeStartInputs?.array as? [UserInputStroke] else {
+                return []
+            }
+            return strokeInputs
+        }
+    }
+    var recordedStrokeEndInputs:[UserInputStroke] {
+        get {
+            guard let strokeInputs = savedStrokeEndInputs?.array as? [UserInputStroke] else {
+                return []
+            }
+            return strokeInputs
+        }
+    }
+    var recordedTranslateTransformInputs: [UserInputTransform] {
+        get {
+            guard let translateInputs = savedTranslateTransformInputs?.array as? [UserInputTransform] else {
+                return []
+            }
+            return translateInputs
+        }
+    }
+    var recordedRotateTransformInputs: [UserInputTransform] {
+        get {
+            guard let rotateInputs = savedRotateTransformInputs?.array as? [UserInputTransform] else {
+                return []
+            }
+            return rotateInputs
+        }
+    }
+    var recordedScaleTransformInputs: [UserInputTransform] {
+        get {
+            guard let scaleInputs = savedScaleTransformInputs?.array as? [UserInputTransform] else {
+                return []
+            }
+            return scaleInputs
+        }
+    }
     
+    var recordedTransformInputs: [UserInputTransform] {
+        return recordedTranslateTransformInputs + recordedRotateTransformInputs + recordedScaleTransformInputs
+    }
+    
+//    aSelectedSketch.recordedTransformInputs = aSelectedSketch.recordedTransformInputs.filter {
+//    let (timestamp,_) = $0
+//    return timestamp < currentTime
+//    }
+    func deleteTransformationInputs(withTimestampSmallerThan currentTime:TimeInterval) {
+        let predicate = NSPredicate(format: "timestamp < %lf", currentTime)
+
+        mutableOrderedSetValue(forKey: "savedTranslateTransformInputs").filter(using: predicate)
+        mutableOrderedSetValue(forKey: "savedScaleTransformInputs").filter(using: predicate)
+        mutableOrderedSetValue(forKey: "savedRotateTransformInputs").filter(using: predicate)
+    }
+
     func clone() -> Tier {
+        assert(Thread.isMainThread)
+
         let clonedTier = Tier(context: managedObjectContext!)
-        
+
+        clonedTier.sketch = sketch?.clone()
+
         clonedTier.zIndex = zIndex
         clonedTier.end = end
         clonedTier.lineWidth = lineWidth
@@ -48,7 +114,7 @@ public class Tier: NSManagedObject {
         clonedTier.start = start
         clonedTier.hasDrawnPath = hasDrawnPath
         clonedTier.selected = selected
-        clonedTier.createdAt = createdAt
+//        clonedTier.createdAt = createdAt
         clonedTier.fillColor = fillColor
         if let appearAtTimes = innerAppearAtTimes {
             clonedTier.innerAppearAtTimes = [NSNumber](appearAtTimes)
@@ -60,7 +126,12 @@ public class Tier: NSManagedObject {
         clonedTier.strokeColor = strokeColor
         clonedTier.translationValue = translationValue
         
-        sketch = sketch?.clone()
+        clonedTier.savedPathInputs = NSOrderedSet(array:recordedPathInputs.map { $0.clone() })
+        clonedTier.savedStrokeStartInputs = NSOrderedSet(array:recordedStrokeStartInputs.map { $0.clone() })
+        clonedTier.savedStrokeEndInputs = NSOrderedSet(array:recordedStrokeEndInputs.map { $0.clone() })
+        clonedTier.savedTranslateTransformInputs = NSOrderedSet(array:recordedTranslateTransformInputs.map { $0.clone() })
+        clonedTier.savedScaleTransformInputs = NSOrderedSet(array:recordedScaleTransformInputs.map { $0.clone() })
+        clonedTier.savedRotateTransformInputs = NSOrderedSet(array:recordedRotateTransformInputs.map { $0.clone() })
         
         return clonedTier
     }
@@ -101,7 +172,10 @@ public class Tier: NSManagedObject {
     public override func awakeFromInsert() {
         super.awakeFromInsert()
         
+        assert(Thread.isMainThread)
+
         sketch = Sketch(context: managedObjectContext!)
+        createdAt = Date()
     }
     
     var appearAtTimes:[TimeInterval] {
@@ -118,22 +192,13 @@ public class Tier: NSManagedObject {
     }
     
     func shouldAppearAt(time newAppearedAt:TimeInterval) {
-        if let firstTimeStamp = recordedPathInputs.first?.0 ?? appearAtTimes.first {
+        if let firstTimeStamp = recordedPathInputs.first?.timestamp ?? appearAtTimes.first {
             let offset = newAppearedAt - firstTimeStamp
-            for (index,_) in recordedPathInputs.enumerated() {
-                recordedPathInputs[index].0 += offset
-            }
             
-            for (index,_) in recordedStrokeStartInputs.enumerated() {
-                recordedStrokeStartInputs[index].0 += offset
-            }
-            
-            for (index,_) in recordedStrokeEndInputs.enumerated() {
-                recordedStrokeEndInputs[index].0 += offset
-            }
-            
-            for (index,_) in recordedTransformInputs.enumerated() {
-                recordedTransformInputs[index].0 += offset
+            for userInputOrderedSet in [savedPathInputs!, savedStrokeStartInputs!, savedStrokeEndInputs!, savedTranslateTransformInputs!, savedScaleTransformInputs!, savedRotateTransformInputs!] {
+                for userInput in userInputOrderedSet.array as! [UserInput] {
+                    userInput.timestamp += offset
+                }
             }
         }
         
@@ -223,8 +288,13 @@ public class Tier: NSManagedObject {
         self.translation = CGPoint(x: translation.x + delta.x,y: translation.y + delta.y)
         
         if let timestamp = timestamp {
-//            recordedInputs.append((Date().timeIntervalSince1970,.translation(delta: delta)))
-            recordedTransformInputs.append((timestamp,.transform(type:.moved,affineTransform: currentTransformation)))
+//            recordedTransformInputs.append((timestamp,.transform(type:.moved,affineTransform: currentTransformation)))
+            assert(Thread.isMainThread)
+
+            let newUserInputTransform = UserInputTransform(context: managedObjectContext!)
+            newUserInputTransform.timestamp = timestamp
+            newUserInputTransform.value = AffineTransformWrapper(currentTransformation)
+            addToSavedTranslateTransformInputs(newUserInputTransform)
         }
     }
     
@@ -233,8 +303,11 @@ public class Tier: NSManagedObject {
         self.rotation = rotation + delta
         
         if let timestamp = timestamp {
-//            recordedInputs.append((Date().timeIntervalSince1970,.rotation(angle: delta)))
-            recordedTransformInputs.append((timestamp,.transform(type:.rotated,affineTransform: currentTransformation)))
+//            recordedTransformInputs.append((timestamp,.transform(type:.rotated,affineTransform: currentTransformation)))
+            let newUserInputTransform = UserInputTransform(context: managedObjectContext!)
+            newUserInputTransform.timestamp = timestamp
+            newUserInputTransform.value = AffineTransformWrapper(currentTransformation)
+            addToSavedRotateTransformInputs(newUserInputTransform)
         }
     }
     
@@ -243,8 +316,13 @@ public class Tier: NSManagedObject {
         self.scaling = CGPoint(x: scaling.x * delta.x,y: scaling.y * delta.y)
         
         if let timestamp = timestamp {
-//            recordedInputs.append((Date().timeIntervalSince1970,.scaling(delta: delta)))
-            recordedTransformInputs.append((timestamp,.transform(type:.scaled,affineTransform: currentTransformation)))
+//            recordedTransformInputs.append((timestamp,.transform(type:.scaled,affineTransform: currentTransformation)))
+            assert(Thread.isMainThread)
+
+            let newUserInputTransform = UserInputTransform(context: managedObjectContext!)
+            newUserInputTransform.timestamp = timestamp
+            newUserInputTransform.value = AffineTransformWrapper(currentTransformation)
+            addToSavedScaleTransformInputs(newUserInputTransform)
         }
     }
     
@@ -261,7 +339,15 @@ public class Tier: NSManagedObject {
         
         if shouldRecord, let timestamp = timestamp {
 //            print("saving addFirstPoint with normalized timestamp \(timestamp)")
-            recordedPathInputs.append((timestamp, .move(point: touchLocation)))
+//            recordedPathInputs.append((timestamp, .move(point: touchLocation)))
+            
+            assert(Thread.isMainThread)
+            
+            let newUserInputPath = UserInputPath(context: managedObjectContext!)
+            newUserInputPath.timestamp = timestamp
+            newUserInputPath.value = PointWrapper(touchLocation)
+            newUserInputPath.action = MutablePathAction.move.rawValue
+            addToSavedPathInputs(newUserInputPath)
         }
     }
     
@@ -273,19 +359,38 @@ public class Tier: NSManagedObject {
         
         if shouldRecord, let timestamp = timestamp {
 //            print("saving addPoint with normalized timestamp \(timestamp)")
-            recordedPathInputs.append((timestamp, .addLine(point: touchLocation)))
+//            recordedPathInputs.append((timestamp, .addLine(point: touchLocation)))
+            assert(Thread.isMainThread)
+
+            let newUserInputPath = UserInputPath(context: managedObjectContext!)
+            newUserInputPath.timestamp = timestamp
+            newUserInputPath.value = PointWrapper(touchLocation)
+            newUserInputPath.action = MutablePathAction.addLine.rawValue
+            addToSavedPathInputs(newUserInputPath)
         }
     }
     
-    func strokeEndChanged(_ percentage:CGFloat, timestamp:TimeInterval?) {
+    func strokeEndChanged(_ percentage:Float, timestamp:TimeInterval?) {
         if let timestamp = timestamp {
-            recordedStrokeEndInputs.append((timestamp, .changeStrokeEnd(strokeEndPercentage: percentage)))
+//            recordedStrokeEndInputs.append((timestamp, .changeStrokeEnd(strokeEndPercentage: percentage)))
+            assert(Thread.isMainThread)
+
+            let newUserInputStroke = UserInputStroke(context: managedObjectContext!)
+            newUserInputStroke.timestamp = timestamp
+            newUserInputStroke.value = percentage
+            addToSavedStrokeEndInputs(newUserInputStroke)
         }
     }
     
-    func strokeStartChanged(_ percentage:CGFloat, timestamp:TimeInterval?) {
+    func strokeStartChanged(_ percentage:Float, timestamp:TimeInterval?) {
         if let timestamp = timestamp {
-            recordedStrokeStartInputs.append((timestamp, .changeStrokeStart(strokeStartPercentage: percentage)))
+//            recordedStrokeStartInputs.append((timestamp, .changeStrokeStart(strokeStartPercentage: percentage)))
+            assert(Thread.isMainThread)
+
+            let newUserInputStroke = UserInputStroke(context: managedObjectContext!)
+            newUserInputStroke.timestamp = timestamp
+            newUserInputStroke.value = percentage
+            addToSavedStrokeStartInputs(newUserInputStroke)
         }
     }
     
@@ -356,19 +461,21 @@ public class Tier: NSManagedObject {
             var inkValues = [CGFloat(0)]
             var keyTimes = [NSNumber(value:0)]
             
-            for (timestamp, pathTransformation) in recordedPathInputs {
-                switch pathTransformation {
-                case let .move(point):
+            for userInputPath in recordedPathInputs {
+                let point = userInputPath.value!.cgPoint
+                
+                switch userInputPath.action {
+                case MutablePathAction.move.rawValue:
                     currentPoint = point
-                    let percentage = timestamp / animationDuration
+                    let percentage = userInputPath.timestamp / animationDuration
                     keyTimes.append(NSNumber(value:percentage))
-                case let .addLine(point):
+                case MutablePathAction.addLine.rawValue:
                     inkValues.append(CGFloat(accumDistance/totalDistance))
                     if let lastPoint = currentPoint {
                         accumDistance += point.distance(lastPoint)
                     }
                     currentPoint = point
-                    let percentage = timestamp / animationDuration
+                    let percentage = userInputPath.timestamp / animationDuration
                     keyTimes.append(NSNumber(value:percentage))
                 default:
                     print("does not apply to recordedPathInputs")
@@ -398,19 +505,15 @@ public class Tier: NSManagedObject {
             
             let animationDuration = totalRecordingTime
             
-            var strokeEndValues = [CGFloat(1)]
+            var strokeEndValues = [Float(1)]
             var keyTimes = [NSNumber(value:0)]
 
-            for (timestamp, strokeChangedTransformation) in recordedStrokeEndInputs {
-                switch strokeChangedTransformation {
-                case let .changeStrokeEnd(strokeEndPercentage):
-                    strokeEndValues.append(strokeEndPercentage)
-                    
-                    let percentage = timestamp / animationDuration
-                    keyTimes.append(NSNumber(value:percentage))
-                default:
-                    print("does not apply to recordedStrokeEndInputs")
-                }
+            for userInputStroke in recordedStrokeEndInputs {
+                let strokeEndPercentage = userInputStroke.value
+                strokeEndValues.append(strokeEndPercentage)
+                
+                let percentage = userInputStroke.timestamp / animationDuration
+                keyTimes.append(NSNumber(value:percentage))
             }
             
             if !strokeEndValues.isEmpty {
@@ -436,19 +539,16 @@ public class Tier: NSManagedObject {
             
             let animationDuration = totalRecordingTime
             
-            var strokeStartValues = [CGFloat(0)]
+            var strokeStartValues = [Float(0)]
             var keyTimes = [NSNumber(value:0)]
             
-            for (timestamp, strokeChangedTransformation) in recordedStrokeStartInputs {
-                switch strokeChangedTransformation {
-                case let .changeStrokeStart(strokeStartPercentage):
-                    strokeStartValues.append(strokeStartPercentage)
-                    
-                    let percentage = timestamp / animationDuration
-                    keyTimes.append(NSNumber(value:percentage))
-                default:
-                    print("does not apply to recordedStrokeStartInputs")
-                }
+            for userInputStroke in recordedStrokeStartInputs {
+                let strokeStartPercentage = userInputStroke.value
+
+                strokeStartValues.append(strokeStartPercentage)
+                
+                let percentage = userInputStroke.timestamp / animationDuration
+                keyTimes.append(NSNumber(value:percentage))
             }
             
             if !strokeStartValues.isEmpty {
@@ -477,15 +577,11 @@ public class Tier: NSManagedObject {
             var transformValues = [CATransform3DIdentity]
             var transformKeyTimes = [NSNumber(value:0)]
             
-            for (timestamp, transformTransformation) in recordedTransformInputs {
-                switch transformTransformation {
-                case let .transform(_,affineTransform):
-                    transformValues.append(CATransform3DMakeAffineTransform(affineTransform))
-                    let percentage = timestamp / animationDuration
-                    transformKeyTimes.append(NSNumber(value:percentage))
-                default:
-                    print("does not apply to recordedTransformInputs")
-                }
+            for userInputTransform in recordedTransformInputs {
+                let affineTransform = userInputTransform.value!.cgAffineTransform
+                transformValues.append(CATransform3DMakeAffineTransform(affineTransform))
+                let percentage = userInputTransform.timestamp / animationDuration
+                transformKeyTimes.append(NSNumber(value:percentage))
             }
             
             if !transformValues.isEmpty {

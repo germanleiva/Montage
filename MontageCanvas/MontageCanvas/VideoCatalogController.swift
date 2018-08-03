@@ -11,7 +11,7 @@ import CoreData
 import AVKit
 
 protocol VideoCatalogDelegate: AnyObject {
-    func videoCatalog(didSelectPrototypeTrack prototypeTrack:VideoTrack)
+    func videoCatalog(didSelectPrototypeTrack prototypeTrackToCopyFrom:VideoTrack, for video:Video)
     func videoCatalog(didSelectNewVideo video:Video)
 }
 
@@ -78,8 +78,14 @@ class VideoCatalogController: UIViewController, UICollectionViewDelegate, UIColl
         return cell
     }
     
+    func reuseVideoTrack(trackToCopy:VideoTrack, destinationTrack:VideoTrack) {
+        if destinationTrack.copyEverythingFrom(trackToCopy) {
+            self.alert(nil, title: "DB", message: "Couldn't copy attributes & file from the selected prototypeTrack")
+        }
+    }
+    
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        let selectedVideoTrack = fetchedResultController.object(at: indexPath)
+        let prototypeTrackToCopyFrom = fetchedResultController.object(at: indexPath)
 //
 //        let player = AVPlayer(url: videoURL)
 //        let playerViewController = AVPlayerViewController()
@@ -93,7 +99,9 @@ class VideoCatalogController: UIViewController, UICollectionViewDelegate, UIColl
         alert.addAction(UIAlertAction(title: "Override", style: UIAlertActionStyle.destructive, handler: { [unowned self] (overrideAction) in
             alert.dismiss(animated: true, completion: nil)
             
-            self.delegate?.videoCatalog(didSelectPrototypeTrack: selectedVideoTrack)
+            self.reuseVideoTrack(trackToCopy:prototypeTrackToCopyFrom, destinationTrack:self.myVideoTrack)
+            
+            self.delegate?.videoCatalog(didSelectPrototypeTrack: prototypeTrackToCopyFrom, for:self.myVideoTrack.video)
             self.dismiss(animated: true, completion: nil)
         }))
         alert.addAction(UIAlertAction(title: "Copy videos", style: UIAlertActionStyle.default, handler: { [unowned self] (copyAction) in
@@ -114,16 +122,18 @@ class VideoCatalogController: UIViewController, UICollectionViewDelegate, UIColl
             
             if let previousPrototypeTrack = videoToCopy.prototypeTrack {
                 guard copiedVideo.prototypeTrack!.copyEverythingFrom(previousPrototypeTrack) else {
-                    self.alert(nil, title: "DB", message: "Couldn't copy attributes from the prototypeTrack")
+                    self.alert(nil, title: "DB", message: "Couldn't copy attributes & file from the prototypeTrack")
                     return
                 }
             }
             if let previousBackgroundTrack = videoToCopy.backgroundTrack {
                 guard copiedVideo.backgroundTrack!.copyEverythingFrom(previousBackgroundTrack) else {
-                    self.alert(nil, title: "DB", message: "Couldn't copy attributes from the backgroundTrack")
+                    self.alert(nil, title: "DB", message: "Couldn't copy attributes & file from the backgroundTrack")
                     return
                 }
             }
+            
+            self.reuseVideoTrack(trackToCopy:prototypeTrackToCopyFrom, destinationTrack:copiedVideo.prototypeTrack!)
             
             self.delegate?.videoCatalog(didSelectNewVideo: copiedVideo)
 
