@@ -17,11 +17,27 @@ class ViewController: NSViewController, MCSessionDelegate, InputStreamerDelegate
     // MARK: InputStreamerDelegate
     var inputStreamer:InputStreamer?
     var inputStreamerSketches:InputStreamer?
-    
+    var viewportRect:CGRect? //normalized
+
     func inputStreamer(_ streamer: InputStreamer, decodedImage ciImage: CIImage) {
         switch streamer {
         case inputStreamer:
-            imageView.image = ciImage
+            let finalProtoypeFrame:CIImage
+            if let normalizedViewportRect = viewportRect {
+                let totalWidth = ciImage.extent.width
+                let totalHeight = ciImage.extent.height
+
+                let croppingRect = CGRect(x: normalizedViewportRect.origin.x * totalWidth,
+                                          y: normalizedViewportRect.origin.y * totalHeight,
+                                          width: normalizedViewportRect.width * totalWidth,
+                                          height: normalizedViewportRect.height * totalHeight)
+
+                finalProtoypeFrame = ciImage.cropped(to: croppingRect)
+            } else {
+                finalProtoypeFrame = ciImage
+            }
+            
+            imageView.image = finalProtoypeFrame
         case inputStreamerSketches:
             guard let overlayImageView = overlayImageView else {
                 return
@@ -167,6 +183,8 @@ class ViewController: NSViewController, MCSessionDelegate, InputStreamerDelegate
                     //                    }
                     print("\(peerID.displayName) is the new wizardCam")
                     connectedWizardCam = peerID
+                case "viewport":
+                    viewportRect = value as? CGRect
                 default:
                     print("Unrecognized message in receivedDict \(messageType)")
                 }

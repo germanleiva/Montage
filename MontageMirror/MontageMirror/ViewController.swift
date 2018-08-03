@@ -263,9 +263,6 @@ class ViewController: UIViewController, MCSessionDelegate, InputStreamerDelegate
                     print("\(peerID.displayName) is the new wizardCam")
                     connectedWizardCam = peerID
                 case "viewport":
-                    //                    if let currentRectangle = value as? VNRectangleObservation {
-                    //                        box = currentRectangle
-                    //                    }
                     viewportRect = value as? CGRect
                 default:
                     print("Unrecognized message in receivedDict \(messageType)")
