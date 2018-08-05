@@ -49,6 +49,13 @@ public class VideoTrack: NSManagedObject {
         aTier.zIndex = Int32(tiers?.count ?? 0) //Int32(tiers!.index(of: newTier))
     }
     
+    var selectedTiers:[Tier] {
+        guard let currentTiers = tiers?.array as? [Tier] else {
+            return []
+        }
+        return currentTiers.filter {$0.isSelected}
+    }
+    
     func box(forItemTime lookUpTime:CMTime) -> VNRectangleObservation? {
         if recordedBoxes.isEmpty {
             return nil

@@ -2335,18 +2335,18 @@ extension CameraController: CanvasViewDelegate {
     }
     
     func canvasTierAdded(_ canvas: CanvasView, tier: Tier) {
-        tier.videoTrack?.deselectAllTiers()
+//        tier.videoTrack?.deselectAllTiers()
         
         switch canvas {
         case prototypeCanvasView:
-            prototypeTimeline?.select(tier:tier)
+            prototypeTimeline?.scrollTo(tier:tier, animated:true)
         case backgroundCanvasView:
-            backgroundTimeline?.select(tier:tier)
+            backgroundTimeline?.scrollTo(tier:tier, animated:true)
         default:
             print("timeline for \(canvas) not found")
         }
         
-         guard canvasControllerMode.isPlayingMode else {
+        guard canvasControllerMode.isPlayingMode else {
             if canvasControllerMode.isRecording && canvasControllerMode.isPaused {
                 if tier.appearAtTimes.isEmpty {
                     tier.shouldAppearAt(time:canvasControllerMode.currentTime)

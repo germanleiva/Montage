@@ -147,7 +147,9 @@ class CanvasView: UIView, UIGestureRecognizerDelegate {
     }()
     
     func createSketchLayer() -> Tier {
+        videoTrack.deselectAllTiers()
         let newTier = Tier(context: coreDataContext)
+        newTier.isSelected = true
         videoTrack.addTier(aTier: newTier)
         return newTier
     }

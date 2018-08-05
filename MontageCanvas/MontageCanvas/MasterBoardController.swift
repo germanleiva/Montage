@@ -325,7 +325,7 @@ class MasterBoardController: UIViewController, NSFetchedResultsControllerDelegat
             if let updatedCell = tableView.cellForRow(at: indexPath!) {
                 configureCell(updatedCell, withLine: anObject as! Line)
             } else {
-                print("It should not call didChange for this row, because there is no associated UITableViewCell - BIG PROBLEM")
+                print("\(className) It should not call didChange for this row \(indexPath!.row), because there is no associated UITableViewCell - BIG PROBLEM")
             }
         case .move:
             print("\(className) >> it was a move \(indexPath!.row) \(newIndexPath!.row)")

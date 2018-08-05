@@ -200,10 +200,9 @@ class TimelineViewController: UIViewController, NSFetchedResultsControllerDelega
         tableView.deselectRow(at: selectedIndexPath, animated: true)
     }
     
-    func select(tier: Tier) {
-        tier.isSelected = true
+    func scrollTo(tier: Tier, animated:Bool) {
         if let tierIndexPath = fetchedResultsController.indexPath(forObject: tier) {
-            tableView.scrollToRow(at: tierIndexPath, at: .bottom, animated: true)
+            tableView.scrollToRow(at: tierIndexPath, at: .top, animated: animated)
         }
     }
     
@@ -291,7 +290,8 @@ class TimelineViewController: UIViewController, NSFetchedResultsControllerDelega
         
         switch type {
         case .insert:
-            tableView.insertRows(at: [newIndexPath!], with: .fade)
+            print("\(className) >> it was an insert \(newIndexPath!.row)")
+            tableView.insertRows(at: [newIndexPath!], with: .top)
         case .delete:
             tableView.deleteRows(at: [indexPath!], with: .fade)
         case .update:
@@ -299,7 +299,7 @@ class TimelineViewController: UIViewController, NSFetchedResultsControllerDelega
             if let updatedCell = tableView.cellForRow(at: indexPath!) {
                 configureCell(updatedCell as! TierTableCell, withTier: anObject as! Tier)
             } else {
-                print("It should not call didChange for this row, because there is no associated UITableViewCell - BIG PROBLEM")
+                print("\(className) It should not call didChange for this row \(indexPath!.row), because there is no associated UITableViewCell - BIG PROBLEM")
             }
         case .move:
             print("\(className) >> it was a move \(indexPath!.row) \(newIndexPath!.row)")
@@ -326,6 +326,18 @@ class TimelineViewController: UIViewController, NSFetchedResultsControllerDelega
      */
     
     // MARK: - Actions
+    
+    @IBAction func mergeButtonPressed(_ sender:AnyObject?) {
+        print("Not yet implemented")
+//        var tiersToMerge = videoTrack.selectedTiers
+//        if tiersToMerge.count >= 2 {
+//            let baseTier = tiersToMerge.removeFirst()
+//
+//            for mergedTier in tiersToMerge {
+//                baseTier
+//            }
+//        }
+    }
     
     @IBAction func viewportButtonPressed(_ sender:AnyObject?) {
         if let viewportButton = sender as? UIBarButtonItem {
