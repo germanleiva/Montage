@@ -34,11 +34,25 @@ class ViewController: UIViewController, MCSessionDelegate, InputStreamerDelegate
                 watchQueue.async {[unowned self] in
                     let mirrorFrame:CIImage
 
-                    if let sketchesOverlay = self.lastSketchFrame {
-                        let overlayFilter = CIFilter(name: "CISourceOverCompositing")!
-                        overlayFilter.setValue(prototypeFrame, forKey: kCIInputBackgroundImageKey)
-                        overlayFilter.setValue(sketchesOverlay, forKey: kCIInputImageKey)
-                        if let obtainedImage = overlayFilter.outputImage {
+                    if let overlay = self.lastSketchFrame {
+                        print("before overlay \(overlay)")
+                        print("before prototypeFrame \(prototypeFrame)")
+                        let xFactor = prototypeFrame.extent.width / overlay.extent.width
+                        let yFactor =  prototypeFrame.extent.height / overlay.extent.height
+                        
+                        let overlayCenter = CGPoint(x: overlay.extent.width / 2, y: overlay.extent.height / 2)
+//                        let scaledOverlay = overlay.transformed(by: CGAffineTransform.identity.translatedBy(x: overlayCenter.x, y: overlayCenter.y).scaledBy(x: xFactor, y: yFactor).translatedBy(x: -overlayCenter.x, y: -overlayCenter.y))
+                        let scaledOverlay = overlay.transformed(by: CGAffineTransform.identity.scaledBy(x: xFactor, y: yFactor))
+                        
+                        print("scaling overlay x-factor \(xFactor) y-factor \(yFactor)")
+                        
+                        print("after scaledOverlay \(scaledOverlay)")
+                        print("after =prototypeFrame \(prototypeFrame)")
+                        
+                        let overCompositionFilter = CIFilter(name: "CISourceOverCompositing")!
+                        overCompositionFilter.setValue(prototypeFrame, forKey: kCIInputBackgroundImageKey)
+                        overCompositionFilter.setValue(scaledOverlay, forKey: kCIInputImageKey)
+                        if let obtainedImage = overCompositionFilter.outputImage {
                             mirrorFrame = obtainedImage
                         } else {
                             mirrorFrame = prototypeFrame
@@ -47,22 +61,24 @@ class ViewController: UIViewController, MCSessionDelegate, InputStreamerDelegate
                         mirrorFrame = prototypeFrame
                     }
                     
-                    let scaleFilter = CIFilter(name: "CILanczosScaleTransform")!
-                    scaleFilter.setValue(mirrorFrame, forKey: "inputImage")
-                    let scaleFactor = 0.5
-                    scaleFilter.setValue(scaleFactor, forKey: "inputScale")
-                    scaleFilter.setValue(1.0, forKey: "inputAspectRatio")
+                    print("final mirrorFrame \(mirrorFrame)")
                     
-                    guard let scaledMirrorFrame = scaleFilter.outputImage else {
-                        return
-                    }
+//                    let scaleFilter = CIFilter(name: "CILanczosScaleTransform")!
+//                    scaleFilter.setValue(mirrorFrame, forKey: "inputImage")
+//                    let scaleFactor = 0.5
+//                    scaleFilter.setValue(scaleFactor, forKey: "inputScale")
+//                    scaleFilter.setValue(1.0, forKey: "inputAspectRatio")
+//
+//                    guard let scaledMirrorFrame = scaleFilter.outputImage else {
+//                        return
+//                    }
                     
-                    guard let image = self.cgImageBackedImage(withCIImage: scaledMirrorFrame) else {
+                    guard let image = self.cgImageBackedImage(withCIImage: mirrorFrame) else {
                         return
                     }
                     
                     if Date().timeIntervalSince(self.lastTimeSent) >= (1 / fps) {
-                        if let smallData = UIImageJPEGRepresentation(image, 0.1) {
+                        if let smallData = UIImageJPEGRepresentation(image, 0.5) {
                             self.watchConnectivitySession?.sendMessageData(smallData, replyHandler: nil, errorHandler: { (error) in
                                 print("*** watchConnectivitySession sendMessage error: \(error)")
                             })
@@ -88,6 +104,7 @@ class ViewController: UIViewController, MCSessionDelegate, InputStreamerDelegate
         switch streamer {
         case inputStreamer:
             let finalProtoypeFrame:CIImage
+
             if let normalizedViewportRect = viewportRect {
                 let totalWidth = ciImage.extent.width
                 let totalHeight = ciImage.extent.height
@@ -97,14 +114,17 @@ class ViewController: UIViewController, MCSessionDelegate, InputStreamerDelegate
                                           width: normalizedViewportRect.width * totalWidth,
                                           height: normalizedViewportRect.height * totalHeight)
                 
-                finalProtoypeFrame = ciImage.cropped(to: croppingRect)
+                let croppedPrototypeFrame = ciImage.cropped(to: croppingRect)
+                finalProtoypeFrame = croppedPrototypeFrame.transformed(by: CGAffineTransform(translationX: -croppedPrototypeFrame.extent.origin.x, y: -croppedPrototypeFrame.extent.origin.y))
             } else {
                 finalProtoypeFrame = ciImage
             }
             
+            print("*** lastPrototypeFrame \(finalProtoypeFrame)")
             lastPrototypeFrame = finalProtoypeFrame
             imageView.image = finalProtoypeFrame
         case inputStreamerSketches:
+            print("*** lastSketchFrame \(ciImage)")
             lastSketchFrame = ciImage
 
             guard let overlayImageView = overlayImageView else {
