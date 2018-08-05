@@ -291,7 +291,7 @@ class TimelineViewController: UIViewController, NSFetchedResultsControllerDelega
         switch type {
         case .insert:
             print("\(className) >> it was an insert \(newIndexPath!.row)")
-            tableView.insertRows(at: [newIndexPath!], with: .top)
+            tableView.insertRows(at: [newIndexPath!], with: .fade)
         case .delete:
             tableView.deleteRows(at: [indexPath!], with: .fade)
         case .update:
