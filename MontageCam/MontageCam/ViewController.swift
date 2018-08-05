@@ -247,10 +247,49 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
         NotificationCenter.default.addObserver(self, selector: #selector(appWillResignActive), name: NSNotification.Name.UIApplicationWillResignActive, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(appWillTerminate), name: NSNotification.Name.UIApplicationWillTerminate, object: nil)
         
+        let tapGestureRecognizer = UITapGestureRecognizer(target: self, action: #selector(singleTapped))
+//        tapGestureRecognizer.delegate = self
+        tapGestureRecognizer.numberOfTapsRequired = 1
+        self.view.addGestureRecognizer(tapGestureRecognizer)
+        
         let doubleTapGestureRecognizer = UITapGestureRecognizer(target: self, action: #selector(doubleTapped))
+//        doubleTapGestureRecognizer.delegate = self
         doubleTapGestureRecognizer.numberOfTapsRequired = 2
         self.view.addGestureRecognizer(doubleTapGestureRecognizer)
         //        setupVisionDetection()
+        
+        tapGestureRecognizer.require(toFail: doubleTapGestureRecognizer)
+    }
+    
+    @objc func singleTapped(recognizer:UITapGestureRecognizer) {
+        if recognizer.state == UIGestureRecognizerState.recognized {
+            let touchPoint = recognizer.location(in: view)
+            guard let pointOfInterest = videoLayer?.captureDevicePointConverted(fromLayerPoint: touchPoint) else {
+                return
+            }
+
+            guard let videoDevice = AVCaptureDevice.default(for: .video) else {
+                let alert = UIAlertController(title: "Fatal error", message: "This device cannot capture video", preferredStyle: UIAlertControllerStyle.alert)
+                self.present(alert, animated: true, completion: nil)
+                return
+            }
+            
+            do {
+                try videoDevice.lockForConfiguration()
+            } catch {
+                let alert = UIAlertController(title: "Fatal error", message: "Couldn't lock the video device to focus", preferredStyle: UIAlertControllerStyle.alert)
+                self.present(alert, animated: true, completion: nil)
+                return
+            }
+            
+            videoDevice.focusPointOfInterest = pointOfInterest
+            videoDevice.focusMode = AVCaptureDevice.FocusMode.autoFocus
+            
+            videoDevice.exposurePointOfInterest = pointOfInterest
+            videoDevice.exposureMode = AVCaptureDevice.ExposureMode.autoExpose
+
+            videoDevice.unlockForConfiguration()
+        }
     }
     
     @objc func doubleTapped(recognizer:UITapGestureRecognizer) {
@@ -259,7 +298,6 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
             print("RectangleLock \(rectangleLocked)")
         }
     }
-    
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         print("viewWillAppear")
@@ -501,8 +539,8 @@ class ViewController: UIViewController, MovieWriterDelegate, AVCaptureVideoDataO
 
         // Set up default camera device
 
-        // get list of devices; connect to front-facing camera
-        guard let videoDevice = AVCaptureDevice.default(for: AVMediaType.video) else {
+        // get list of devices; connect to back-facing camera
+        guard let videoDevice = AVCaptureDevice.default(for: .video) else {
             let alert = UIAlertController(title: "Fatal error", message: "This device cannot capture video", preferredStyle: UIAlertControllerStyle.alert)
             self.present(alert, animated: true, completion: nil)
             return false
