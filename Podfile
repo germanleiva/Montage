@@ -29,6 +29,7 @@ end
 
 target 'MontageCanvas' do
     project 'MontageCanvas/MontageCanvas.xcodeproj'
+    pod 'GSTouchesShowingWindow-Swift'
     common_ui_pods
     common_pods
 end

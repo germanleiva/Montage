@@ -164,6 +164,7 @@ class TimelineViewController: UIViewController, NSFetchedResultsControllerDelega
     
     // MARK: - Table View Delegate
     
+    
     func configureCell(_ cell: TierTableCell, withTier tier: Tier) {
 //        cell.textLabel!.text = tier.createdAt!.description
         

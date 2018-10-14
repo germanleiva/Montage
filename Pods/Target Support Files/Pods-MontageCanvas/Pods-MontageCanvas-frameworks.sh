@@ -144,11 +144,13 @@ strip_invalid_archs() {
 
 if [[ "$CONFIGURATION" == "Debug" ]]; then
   install_framework "${BUILT_PRODUCTS_DIR}/CocoaAsyncSocket/CocoaAsyncSocket.framework"
+  install_framework "${BUILT_PRODUCTS_DIR}/GSTouchesShowingWindow-Swift/GSTouchesShowingWindow_Swift.framework"
   install_framework "${BUILT_PRODUCTS_DIR}/MBProgressHUD/MBProgressHUD.framework"
   install_framework "${BUILT_PRODUCTS_DIR}/NHNetworkTime/NHNetworkTime.framework"
 fi
 if [[ "$CONFIGURATION" == "Release" ]]; then
   install_framework "${BUILT_PRODUCTS_DIR}/CocoaAsyncSocket/CocoaAsyncSocket.framework"
+  install_framework "${BUILT_PRODUCTS_DIR}/GSTouchesShowingWindow-Swift/GSTouchesShowingWindow_Swift.framework"
   install_framework "${BUILT_PRODUCTS_DIR}/MBProgressHUD/MBProgressHUD.framework"
   install_framework "${BUILT_PRODUCTS_DIR}/NHNetworkTime/NHNetworkTime.framework"
 fi

@@ -195,6 +195,10 @@ class CanvasView: UIView, UIGestureRecognizerDelegate {
     
     func normalizeTime(_ aTime: TimeInterval? = nil) -> TimeInterval? {
 //        return delegate?.normalizeTime1970(time: aTime == nil ? Date().timeIntervalSince1970 : aTime!)
+        if let controller = delegate as? CameraController, controller.canvasControllerMode.isLive {
+            print("This should only happen in LiveMode")
+            return nil
+        }
         return delegate?.currentTime
     }
     
@@ -352,25 +356,32 @@ class CanvasView: UIView, UIGestureRecognizerDelegate {
     func eraseFutureTransformations() {
         if let currentTime = delegate?.currentTime {
             for aSelectedSketch in selectedSketches {
-                aSelectedSketch.deleteTransformationInputs(withTimestampSmallerThan:currentTime)
-                
-                var newTranslation = CGPoint.zero
-                if let t = aSelectedSketch.recordedTranslateTransformInputs.last?.value?.cgAffineTransform {
-                    newTranslation = CGPoint(x: t.tx, y: t.ty)
+                if aSelectedSketch.hasTransformationInputs {
+                    aSelectedSketch.deleteTransformationInputs(withTimestampSmallerThan:currentTime)
+                    
+                    var newTranslation = CGPoint.zero
+                    if let t = aSelectedSketch.recordedTranslateTransformInputs.last?.value?.cgAffineTransform {
+                        newTranslation = CGPoint(x: t.tx, y: t.ty)
+                    }
+//                    aSelectedSketch.translation = newTranslation
+                    aSelectedSketch.translationValue = PointWrapper(newTranslation)
+                    
+                    var newScaling = CGPoint(x:1,y:1)
+                    if let t = aSelectedSketch.recordedScaleTransformInputs.last?.value?.cgAffineTransform {
+                        newScaling = CGPoint(x: t.a, y: t.d)
+                    }
+//                    aSelectedSketch.scaling = newScaling
+                    aSelectedSketch.scalingValue = PointWrapper(newScaling)
+
+                    var newRotation = CGFloat(0)
+                    if let t = aSelectedSketch.recordedRotateTransformInputs.last?.value?.cgAffineTransform {
+                        newRotation = atan2(t.b, t.a)
+                    }
+//                    aSelectedSketch.rotation = newRotation
+                    aSelectedSketch.rotationValue = Float(newRotation)
+                    
+                    aSelectedSketch.applyCurrentTransformation()
                 }
-                aSelectedSketch.translation = newTranslation
-                
-                var newScaling = CGPoint(x:1,y:1)
-                if let t = aSelectedSketch.recordedScaleTransformInputs.last?.value?.cgAffineTransform {
-                    newScaling = CGPoint(x: t.a, y: t.d)
-                }
-                aSelectedSketch.scaling = newScaling
-                
-                var newRotation = CGFloat(0)
-                if let t = aSelectedSketch.recordedRotateTransformInputs.last?.value?.cgAffineTransform {
-                    newRotation = atan2(t.b, t.a)
-                }
-                aSelectedSketch.rotation = newRotation
             }
         }
     }
@@ -383,8 +394,10 @@ class CanvasView: UIView, UIGestureRecognizerDelegate {
             
         case .began:
             print("rotateDetected began")
-            eraseFutureTransformations()
-
+            
+            if delegate?.shouldRecordInking ?? false {
+                eraseFutureTransformations()
+            }
             break
             
         case .changed:
@@ -439,8 +452,10 @@ class CanvasView: UIView, UIGestureRecognizerDelegate {
                 return
             }
             
-            eraseFutureTransformations()
-
+            if delegate?.shouldRecordInking ?? false {
+                eraseFutureTransformations()
+            }
+            
             break
             
         case .changed:
@@ -535,6 +550,10 @@ class CanvasView: UIView, UIGestureRecognizerDelegate {
             
             let touchLocation = recognizer.location(in: self)
             
+            if delegate?.shouldRecordInking == true {
+                eraseFutureTransformations()
+            }
+            
             for tier in (videoTrack.tiers!.array as! [Tier]).reversed() {
                 let p = canvasLayer.convert(touchLocation, to: tier.shapeLayer)
                 if tier.shapeLayer.path!.boundingBoxOfPath.contains(p) {
@@ -545,8 +564,6 @@ class CanvasView: UIView, UIGestureRecognizerDelegate {
                     return
                 }
             }
-            
-            eraseFutureTransformations()
             
             break
             

@@ -57,6 +57,8 @@ public class VideoTrack: NSManagedObject {
     }
     
     func box(forItemTime lookUpTime:CMTime) -> VNRectangleObservation? {
+//        let lookUpTime = CMTime(seconds: lookUpTime2.seconds + 14.16, preferredTimescale: DEFAULT_TIMESCALE)
+        
         if recordedBoxes.isEmpty {
             return nil
         }

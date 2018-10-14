@@ -99,6 +99,18 @@ public class Tier: NSManagedObject {
         mutableOrderedSetValue(forKey: "savedScaleTransformInputs").filter(using: predicate)
         mutableOrderedSetValue(forKey: "savedRotateTransformInputs").filter(using: predicate)
     }
+    var hasTransformationInputs:Bool {
+        guard let translations = savedTranslateTransformInputs, translations.count > 0 else {
+            return true
+        }
+        guard let scales = savedScaleTransformInputs, scales.count > 0 else {
+            return true
+        }
+        guard let rotations = savedRotateTransformInputs, rotations.count > 0 else {
+            return true
+        }
+        return false
+    }
 
     func clone() -> Tier {
         assert(Thread.isMainThread)

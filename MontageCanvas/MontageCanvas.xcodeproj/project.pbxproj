@@ -125,7 +125,7 @@
 		A4F50D3D2084CA2200E2E200 /* VideoPlayerView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = VideoPlayerView.swift; sourceTree = "<group>"; };
 		A4F50D3E2084CA2300E2E200 /* Palette.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Palette.swift; sourceTree = "<group>"; };
 		A4F50D3F2084CA2300E2E200 /* TimelineViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TimelineViewController.swift; sourceTree = "<group>"; };
-		A4F50D402084CA2300E2E200 /* AppDelegate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = ../../../../../Desktop/Montage/Montage/AppDelegate.swift; sourceTree = "<group>"; };
+		A4F50D402084CA2300E2E200 /* AppDelegate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		A4F50D412084CA2300E2E200 /* ChromaKeyFilter.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ChromaKeyFilter.swift; sourceTree = "<group>"; };
 		A4F50D422084CA2300E2E200 /* MasterBoardController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MasterBoardController.swift; sourceTree = "<group>"; };
 		A4F50D442084CA2400E2E200 /* TierTableCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TierTableCell.swift; sourceTree = "<group>"; };
@@ -428,12 +428,14 @@
 			inputPaths = (
 				"${SRCROOT}/../Pods/Target Support Files/Pods-MontageCanvas/Pods-MontageCanvas-frameworks.sh",
 				"${BUILT_PRODUCTS_DIR}/CocoaAsyncSocket/CocoaAsyncSocket.framework",
+				"${BUILT_PRODUCTS_DIR}/GSTouchesShowingWindow-Swift/GSTouchesShowingWindow_Swift.framework",
 				"${BUILT_PRODUCTS_DIR}/MBProgressHUD/MBProgressHUD.framework",
 				"${BUILT_PRODUCTS_DIR}/NHNetworkTime/NHNetworkTime.framework",
 			);
 			name = "[CP] Embed Pods Frameworks";
 			outputPaths = (
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/CocoaAsyncSocket.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/GSTouchesShowingWindow_Swift.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/MBProgressHUD.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/NHNetworkTime.framework",
 			);
