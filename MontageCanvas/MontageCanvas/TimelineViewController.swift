@@ -51,6 +51,42 @@ class TimelineViewController: UIViewController, NSFetchedResultsControllerDelega
             reuseButton.isEnabled = true
             viewportButton.isEnabled = true
         }
+        
+        let longPressGesture = UILongPressGestureRecognizer(target: self, action: #selector(longPressDetected))
+        tableView.addGestureRecognizer(longPressGesture)
+    }
+    
+    lazy var paletteView:Palette = {
+        let paletteView = Palette()
+        paletteView.delegate = self
+        paletteView.setup()
+        self.paletteView = paletteView
+        return paletteView
+    }()
+    
+    @objc func longPressDetected(recognizer:UILongPressGestureRecognizer) {
+        if recognizer.state == .began {
+            let touchLocation = recognizer.location(in:tableView)
+            let paletteController = UIViewController()
+            
+            paletteController.view.translatesAutoresizingMaskIntoConstraints = false
+            paletteController.modalPresentationStyle = UIModalPresentationStyle.popover
+            let paletteHeight = paletteView.paletteHeight()
+            
+            paletteController.preferredContentSize = CGSize(width:Palette.initialWidth,height:paletteHeight)
+            paletteController.view.frame = CGRect(x:0,y:0,width:Palette.initialWidth,height:paletteHeight)
+            paletteView.frame = CGRect(x: 0, y: 0, width: paletteController.view.frame.width, height: paletteController.view.frame.height)
+            paletteController.view.addSubview(paletteView)
+            //        paletteView.frame = CGRect(x: 0, y: paletteController.view.frame.height - paletteHeight, width: paletteController.view.frame.width, height: paletteHeight)
+            
+            if let selectedIndexPath = tableView.indexPathForSelectedRow {
+                paletteController.popoverPresentationController?.sourceView = tableView.cellForRow(at: selectedIndexPath)
+            }
+            paletteController.popoverPresentationController?.sourceRect = CGRect(origin: touchLocation, size: CGSize.zero)
+            
+            present(paletteController, animated: true)
+
+        }
     }
 
     override func didReceiveMemoryWarning() {
@@ -410,5 +446,38 @@ extension TimelineViewController: VideoCatalogDelegate {
     }
     func videoCatalog(didSelectNewVideo video: Video) {
         delegate?.timeline(didSelectNewVideo: video)
+    }
+}
+
+extension TimelineViewController:PaletteDelegate {
+    func didChangeBrushAlpha(_ alpha: CGFloat) {
+        
+    }
+    func didChangeBrushColor(_ color: UIColor) {
+        //        currentlyDrawnSketch.sketch?.strokeColor = color
+        guard let tiers = fetchedResultsController.fetchedObjects else {
+            return
+        }
+        for aTier in tiers {
+            if aTier.isSelected {
+                aTier.strokeColor = color
+                aTier.sketch?.strokeColor = color
+                aTier.shapeLayer.strokeColor = color.cgColor
+            }
+        }
+    }
+    
+    func didChangeBrushWidth(_ width: CGFloat) {
+        //        currentlyDrawnSketch.sketch?.lineWidth = Float(width)
+        guard let tiers = fetchedResultsController.fetchedObjects else {
+            return
+        }
+        for aTier in tiers {
+            if aTier.isSelected {
+                aTier.lineWidth = Float(width)
+                aTier.sketch?.lineWidth = Float(width)
+                aTier.shapeLayer.lineWidth = width
+            }
+        }
     }
 }
