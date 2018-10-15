@@ -178,18 +178,20 @@ public class VideoTrack: NSManagedObject {
                 }
             }
             
-            do {
-                try FileManager.default.moveItem(at: myFileURL, to: backupFileURL)
-            } catch {
-                print("Couldn't backup the prototype video track \(myFileURL) to \(backupFileURL)")
-                return false
+            if FileManager.default.fileExists(atPath: myFileURL.path) {
+                do {
+                    try FileManager.default.moveItem(at: myFileURL, to: backupFileURL)
+                } catch let error as NSError {
+                    print("Couldn't backup the prototype video track \(myFileURL) to \(backupFileURL): \(error.localizedDescription)")
+                    return false
+                }
             }
             
             do {
                 try FileManager.default.copyItem(at: urlToCopy, to: myFileURL)
                 hasVideoFile = true//videoTrack.hasVideoFile
-            } catch {
-                print("Couldn't copy the selected prototype video track \(urlToCopy) to \(myFileURL)")
+            } catch let error as NSError {
+                print("Couldn't copy the selected prototype video track \(urlToCopy) to \(myFileURL): \(error.localizedDescription)")
                 return false
             }
         }

@@ -8,6 +8,7 @@
 
 import UIKit
 import CoreData
+import MBProgressHUD
 
 class MasterBoardController: UIViewController, NSFetchedResultsControllerDelegate, UITableViewDelegate, UITableViewDataSource {
 
@@ -176,25 +177,100 @@ class MasterBoardController: UIViewController, NSFetchedResultsControllerDelegat
 //    }
     
     func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCellEditingStyle, forRowAt indexPath: IndexPath) {
-        if editingStyle == .delete {
-            let context = fetchedResultsController.managedObjectContext
-            
-            let lineToDelete = fetchedResultsController.object(at: indexPath)
-            
-            //I need to delete all the alternatives also
-            for each in lineToDelete.alternatives!.array as! [Line] {
-                context.delete(each)
+//        if editingStyle == .delete {
+//            self.deleteStoryLine(indexPath)
+//        }
+        //We need to keep this method to have the editActions to appear, the deleteAction is in editActionsForRowAt now
+    }
+    
+    func tableView(_ tableView: UITableView, editActionsForRowAt indexPath: IndexPath) -> [UITableViewRowAction]? {
+        let baseStoryLine = fetchedResultsController.object(at: indexPath)
+        
+        let cloneAction = UITableViewRowAction(style: .default, title: "Clone") { [unowned self] action, index in
+            self.isEditing = false
+
+            guard let window = UIApplication.shared.keyWindow else {
+                self.alert(nil, title: "Fatal Error", message: "Couldn't get the keyWindow of the app")
+                return
             }
-            context.delete(lineToDelete)
+            let progressBar = MBProgressHUD.showAdded(to: window, animated: true)
+            progressBar.show(animated:true)
+            UIApplication.shared.beginIgnoringInteractionEvents()
             
-            //TODO: we need to ensure that this update is trigger if an element is deleted anywhere
-            board?.rebuildSortIndexes()
-            
-            do {
-                try context.save()
-            } catch {
-                alert(error,title:"DB Error",message:"Could not delete the board")
+            guard let clonedLine = self.createNewLine() else {
+                return
             }
+            
+            for videoToCopy in baseStoryLine.videos {
+                guard let context = videoToCopy.managedObjectContext else {
+                    self.alert(nil, title: "DB", message: "Couldn't get managedObjectContext")
+                    return
+                }
+                
+                let copiedVideo = clonedLine.addNewVideo(context: context)
+                
+                if let previousPrototypeTrack = videoToCopy.prototypeTrack {
+                    guard copiedVideo.prototypeTrack!.copyEverythingFrom(previousPrototypeTrack) else {
+                        self.alert(nil, title: "DB", message: "Couldn't copy attributes & file from the prototypeTrack")
+                        return
+                    }
+                }
+                if let previousBackgroundTrack = videoToCopy.backgroundTrack {
+                    guard copiedVideo.backgroundTrack!.copyEverythingFrom(previousBackgroundTrack) else {
+                        self.alert(nil, title: "DB", message: "Couldn't copy attributes & file from the backgroundTrack")
+                        return
+                    }
+                }
+            }
+            
+            DispatchQueue.main.async(execute: {[unowned self] () -> Void in
+                UIApplication.shared.endIgnoringInteractionEvents()
+                progressBar.hide(animated: true)
+                
+                self.tableView.reloadData()
+                let newIndexPath = self.fetchedResultsController.indexPath(forObject: clonedLine)
+                self.tableView.selectRow(at: newIndexPath, animated: true, scrollPosition: UITableViewScrollPosition.top)
+//                self.selectRowAtIndexPath(IndexPath(row: 0, section: projectLines!.index(of: clonedLine)), animated: true)
+            })
+        }
+        cloneAction.backgroundColor = UIColor.orange
+        
+        let deleteAction = UITableViewRowAction(style: UITableViewRowActionStyle.destructive, title: "Delete") {[unowned self] action, indexPath in
+            let alertController = UIAlertController(title: "Delete line", message: "Do you want to delete this line?", preferredStyle: UIAlertControllerStyle.alert)
+            
+            alertController.addAction(UIAlertAction(title: "Delete", style: UIAlertActionStyle.destructive, handler: {[unowned self] (action) -> Void in
+                self.deleteStoryLine(indexPath)
+            }))
+            
+            alertController.addAction(UIAlertAction(title: "Cancel", style: UIAlertActionStyle.default, handler: { (action) -> Void in
+                print("deletion cancelled")
+            }))
+            
+            self.present(alertController, animated: true, completion: nil)
+        }
+        deleteAction.backgroundColor = UIColor.red
+        
+        return [deleteAction,cloneAction]
+    }
+    
+    func deleteStoryLine(_ indexPath:IndexPath) {
+        let context = fetchedResultsController.managedObjectContext
+        
+        let lineToDelete = fetchedResultsController.object(at: indexPath)
+        
+        //I need to delete all the alternatives also
+        for each in lineToDelete.alternatives!.array as! [Line] {
+            context.delete(each)
+        }
+        context.delete(lineToDelete)
+        
+        //TODO: we need to ensure that this update is trigger if an element is deleted anywhere
+        board?.rebuildSortIndexes()
+        
+        do {
+            try context.save()
+        } catch {
+            alert(error,title:"DB Error",message:"Could not delete the board")
         }
     }
     
@@ -377,6 +453,10 @@ class MasterBoardController: UIViewController, NSFetchedResultsControllerDelegat
     }
 
     @IBAction func insertNewLine(_ sender: UIBarButtonItem) {
+        createNewLine()
+    }
+    
+    func createNewLine() -> Line? {
         let context = self.fetchedResultsController.managedObjectContext
         let newLine = Line(context: context)
         
@@ -389,9 +469,11 @@ class MasterBoardController: UIViewController, NSFetchedResultsControllerDelegat
         // Save the context.
         do {
             try context.save()
+            return newLine
         } catch {
             alert(error,title: "DB Error",message: "Could not insert new line")
         }
+        return nil
     }
     
     @IBAction func insertNewAlternative(_ sender:UIBarButtonItem) {
