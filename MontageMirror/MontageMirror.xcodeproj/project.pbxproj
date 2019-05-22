@@ -690,7 +690,7 @@
 			files = (
 			);
 			inputPaths = (
-				"${SRCROOT}/../Pods/Target Support Files/Pods-MontageMirror/Pods-MontageMirror-frameworks.sh",
+				"${PODS_ROOT}/Target Support Files/Pods-MontageMirror/Pods-MontageMirror-frameworks.sh",
 				"${BUILT_PRODUCTS_DIR}/MBProgressHUD/MBProgressHUD.framework",
 			);
 			name = "[CP] Embed Pods Frameworks";
@@ -699,7 +699,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "\"${SRCROOT}/../Pods/Target Support Files/Pods-MontageMirror/Pods-MontageMirror-frameworks.sh\"\n";
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-MontageMirror/Pods-MontageMirror-frameworks.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
 		77F0360313095B7BD0CDA719 /* [CP] Check Pods Manifest.lock */ = {

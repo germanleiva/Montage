@@ -7,13 +7,13 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		21BAE23F2294C8ED00F195E5 /* UserInputTransform+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21BAE23E2294C8ED00F195E5 /* UserInputTransform+CoreDataClass.swift */; };
 		A4145D602108E9D600388CAA /* VideoCatalogController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4145D5F2108E9D600388CAA /* VideoCatalogController.swift */; };
 		A442E032210E2EF5001ECB6E /* BoxObservation+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = A442E031210E2EF5001ECB6E /* BoxObservation+CoreDataClass.swift */; };
 		A44E5C8120A2E61000EBB09A /* CanvasControllerMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = A44E5C8020A2E61000EBB09A /* CanvasControllerMode.swift */; };
 		A45E93AD21148F85006552FC /* UserInputStroke+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = A45E93A521148F83006552FC /* UserInputStroke+CoreDataClass.swift */; };
 		A45E93AF21148F85006552FC /* UserInput+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = A45E93A721148F84006552FC /* UserInput+CoreDataClass.swift */; };
 		A45E93B221148F85006552FC /* UserInputPath+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = A45E93AA21148F85006552FC /* UserInputPath+CoreDataClass.swift */; };
-		A45E93B321148F85006552FC /* UserInputTransform+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = A45E93AB21148F85006552FC /* UserInputTransform+CoreDataClass.swift */; };
 		A48789C12105BF0C0006745F /* RepeatingTimer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A48789C02105BF0C0006745F /* RepeatingTimer.swift */; };
 		A4A049FA20850EA3003FDC6A /* Streamer.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A4A049F920850EA3003FDC6A /* Streamer.framework */; };
 		A4A049FB20850EA3003FDC6A /* Streamer.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = A4A049F920850EA3003FDC6A /* Streamer.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
@@ -83,15 +83,15 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		21BAE23E2294C8ED00F195E5 /* UserInputTransform+CoreDataClass.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "UserInputTransform+CoreDataClass.swift"; sourceTree = "<group>"; };
 		80DFB655FFF91A45A1D3CE6B /* Pods_MontageCanvas.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_MontageCanvas.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		83981C27285E080024844C3A /* Pods-MontageCanvas.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-MontageCanvas.release.xcconfig"; path = "../Pods/Target Support Files/Pods-MontageCanvas/Pods-MontageCanvas.release.xcconfig"; sourceTree = "<group>"; };
 		A4145D5F2108E9D600388CAA /* VideoCatalogController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoCatalogController.swift; sourceTree = "<group>"; };
-		A442E031210E2EF5001ECB6E /* BoxObservation+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "BoxObservation+CoreDataClass.swift"; path = "/Users/psycrow/Documents/Development/Montage/MontageCanvas/MontageCanvas/Model/BoxObservation+CoreDataClass.swift"; sourceTree = "<absolute>"; };
+		A442E031210E2EF5001ECB6E /* BoxObservation+CoreDataClass.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "BoxObservation+CoreDataClass.swift"; sourceTree = "<group>"; };
 		A44E5C8020A2E61000EBB09A /* CanvasControllerMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasControllerMode.swift; sourceTree = "<group>"; };
-		A45E93A521148F83006552FC /* UserInputStroke+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "UserInputStroke+CoreDataClass.swift"; path = "/Users/psycrow/Documents/Development/Montage/MontageCanvas/MontageCanvas/Model/UserInputStroke+CoreDataClass.swift"; sourceTree = "<absolute>"; };
-		A45E93A721148F84006552FC /* UserInput+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "UserInput+CoreDataClass.swift"; path = "/Users/psycrow/Documents/Development/Montage/MontageCanvas/MontageCanvas/Model/UserInput+CoreDataClass.swift"; sourceTree = "<absolute>"; };
-		A45E93AA21148F85006552FC /* UserInputPath+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "UserInputPath+CoreDataClass.swift"; path = "/Users/psycrow/Documents/Development/Montage/MontageCanvas/MontageCanvas/Model/UserInputPath+CoreDataClass.swift"; sourceTree = "<absolute>"; };
-		A45E93AB21148F85006552FC /* UserInputTransform+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "UserInputTransform+CoreDataClass.swift"; path = "/Users/psycrow/Documents/Development/Montage/MontageCanvas/MontageCanvas/Model/UserInputTransform+CoreDataClass.swift"; sourceTree = "<absolute>"; };
+		A45E93A521148F83006552FC /* UserInputStroke+CoreDataClass.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "UserInputStroke+CoreDataClass.swift"; sourceTree = "<group>"; };
+		A45E93A721148F84006552FC /* UserInput+CoreDataClass.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "UserInput+CoreDataClass.swift"; sourceTree = "<group>"; };
+		A45E93AA21148F85006552FC /* UserInputPath+CoreDataClass.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "UserInputPath+CoreDataClass.swift"; sourceTree = "<group>"; };
 		A48789C02105BF0C0006745F /* RepeatingTimer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RepeatingTimer.swift; sourceTree = "<group>"; };
 		A4A049F920850EA3003FDC6A /* Streamer.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = Streamer.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		A4D59B322084C436002350B5 /* MontageCanvas.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MontageCanvas.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -253,7 +253,7 @@
 		A4F50D232084C9E000E2E200 /* Model */ = {
 			isa = PBXGroup;
 			children = (
-				A45E93AB21148F85006552FC /* UserInputTransform+CoreDataClass.swift */,
+				21BAE23E2294C8ED00F195E5 /* UserInputTransform+CoreDataClass.swift */,
 				A45E93AA21148F85006552FC /* UserInputPath+CoreDataClass.swift */,
 				A45E93A521148F83006552FC /* UserInputStroke+CoreDataClass.swift */,
 				A45E93A721148F84006552FC /* UserInput+CoreDataClass.swift */,
@@ -426,7 +426,7 @@
 			files = (
 			);
 			inputPaths = (
-				"${SRCROOT}/../Pods/Target Support Files/Pods-MontageCanvas/Pods-MontageCanvas-frameworks.sh",
+				"${PODS_ROOT}/Target Support Files/Pods-MontageCanvas/Pods-MontageCanvas-frameworks.sh",
 				"${BUILT_PRODUCTS_DIR}/CocoaAsyncSocket/CocoaAsyncSocket.framework",
 				"${BUILT_PRODUCTS_DIR}/GSTouchesShowingWindow-Swift/GSTouchesShowingWindow_Swift.framework",
 				"${BUILT_PRODUCTS_DIR}/MBProgressHUD/MBProgressHUD.framework",
@@ -441,7 +441,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "\"${SRCROOT}/../Pods/Target Support Files/Pods-MontageCanvas/Pods-MontageCanvas-frameworks.sh\"\n";
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-MontageCanvas/Pods-MontageCanvas-frameworks.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
 		F61C734C0419F1EA1C435337 /* [CP] Check Pods Manifest.lock */ = {
@@ -485,7 +485,7 @@
 				A4F50D2A2084C9F400E2E200 /* Board+CoreDataClass.swift in Sources */,
 				A45E93AD21148F85006552FC /* UserInputStroke+CoreDataClass.swift in Sources */,
 				A4F50D462084CA2400E2E200 /* CircleButton.swift in Sources */,
-				A45E93B321148F85006552FC /* UserInputTransform+CoreDataClass.swift in Sources */,
+				21BAE23F2294C8ED00F195E5 /* UserInputTransform+CoreDataClass.swift in Sources */,
 				A4F50D472084CA2400E2E200 /* DetailLineController.swift in Sources */,
 				A4F50D4A2084CA2400E2E200 /* Util.swift in Sources */,
 				A4F50D2C2084C9F400E2E200 /* Sketch+CoreDataClass.swift in Sources */,

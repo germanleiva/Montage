@@ -13,7 +13,7 @@ DEPENDENCIES:
   - NHNetworkTime
 
 SPEC REPOS:
-  https://github.com/CocoaPods/Specs.git:
+  https://github.com/cocoapods/specs.git:
     - CocoaAsyncSocket
     - GSTouchesShowingWindow-Swift
     - MBProgressHUD
@@ -27,4 +27,4 @@ SPEC CHECKSUMS:
 
 PODFILE CHECKSUM: dd428a0222ac403744a7e5ddc4f97b9bdb16e8ac
 
-COCOAPODS: 1.5.0
+COCOAPODS: 1.6.2

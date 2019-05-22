@@ -324,7 +324,7 @@
 			files = (
 			);
 			inputPaths = (
-				"${SRCROOT}/../Pods/Target Support Files/Pods-MontageCam/Pods-MontageCam-frameworks.sh",
+				"${PODS_ROOT}/Target Support Files/Pods-MontageCam/Pods-MontageCam-frameworks.sh",
 				"${BUILT_PRODUCTS_DIR}/CocoaAsyncSocket/CocoaAsyncSocket.framework",
 				"${BUILT_PRODUCTS_DIR}/MBProgressHUD/MBProgressHUD.framework",
 				"${BUILT_PRODUCTS_DIR}/NHNetworkTime/NHNetworkTime.framework",
@@ -337,7 +337,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "\"${SRCROOT}/../Pods/Target Support Files/Pods-MontageCam/Pods-MontageCam-frameworks.sh\"\n";
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-MontageCam/Pods-MontageCam-frameworks.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
 		7F1B6DA39B88AC4FE7DAB652 /* [CP] Check Pods Manifest.lock */ = {
